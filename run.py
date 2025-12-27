@@ -9,7 +9,6 @@ import sys
 import os
 import argparse
 from typing import Optional
-from datetime import datetime
 
 # Check if running in venv or detect venv Python
 def ensure_venv():
@@ -197,12 +196,9 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
     ui.print_success("ANM is ready! Type 'help' for commands or 'exit' to quit.")
     ui.console.print() if ui.console else print()
     
-    # Query history tracking
-    query_history = []
-    
     while True:
         try:
-            user_input = ui.prompt_enhanced().strip() if hasattr(ui, 'prompt_enhanced') else ui.prompt().strip()
+            user_input = ui.prompt().strip()
             
             if not user_input:
                 continue
@@ -210,10 +206,6 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
             if user_input.lower() == "exit":
                 ui.print_success("Goodbye!")
                 break
-            
-            if user_input.lower() == "clear":
-                ui.clear()
-                continue
             
             if user_input.lower().startswith("expand "):
                 domain = user_input[7:].strip()
@@ -246,72 +238,12 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
                 })
                 continue
             
-            if user_input.lower() == "models":
-                # Get model status from inference engine
-                try:
-                    from anm.system.inference import get_inference_engine, get_inference_engine_for_domain
-                    from anm.config.settings import (
-                        MODEL_GENERAL, MODEL_MATH, MODEL_PHYSICS, MODEL_CODE,
-                        MODEL_CHEMISTRY, MODEL_BIOLOGY, MODEL_MEMORY
-                    )
-                    
-                    models_status = {}
-                    engine = get_inference_engine()
-                    models_status["DeepSeek-R1-1.5B"] = {
-                        "loaded": engine.is_loaded,
-                        "context": 4096
-                    }
-                    
-                    # Check domain-specific models
-                    for domain, model_name in [
-                        ("code", MODEL_CODE),
-                        ("math", MODEL_MATH),
-                        ("physics", MODEL_PHYSICS),
-                    ]:
-                        domain_engine = get_inference_engine_for_domain(domain)
-                        models_status[model_name] = {
-                            "loaded": domain_engine.is_loaded,
-                            "context": domain_engine.config.context_length if hasattr(domain_engine, 'config') else 4096
-                        }
-                    
-                    ui.print_model_status(models_status)
-                except Exception as e:
-                    ui.print_error(f"Could not get model status: {e}")
-                continue
-            
-            if user_input.lower() == "stats":
-                # Get system stats
-                try:
-                    import psutil
-                    memory_mb = psutil.Process().memory_info().rss / 1024 / 1024
-                    stats = {
-                        "memory_mb": memory_mb,
-                        "gpu_usage": "N/A",  # Would need GPU monitoring library
-                        "active_models": 1  # Could track this better
-                    }
-                    ui.print_system_stats(stats)
-                except ImportError:
-                    ui.print_warning("psutil not available. Install with: pip install psutil")
-                except Exception as e:
-                    ui.print_error(f"Could not get system stats: {e}")
-                continue
-            
-            if user_input.lower() == "history":
-                ui.print_query_history(query_history, limit=10)
-                continue
-            
             if user_input.lower() == "help":
                 ui.print_help()
                 continue
             
             # Process as regular query
             ui.print_processing(user_input)
-            
-            # Add to history before processing
-            query_history.append({
-                "query": user_input,
-                "timestamp": datetime.now().strftime("%H:%M:%S")
-            })
             
             progress = ui.create_progress()
             if progress:
@@ -329,15 +261,8 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
                     result['optimized_query']
                 )
             
-            # Show WoT visualization if available
-            if result.get("router_plan") or result.get("wot_steps"):
-                try:
-                    ui.print_wot_visualization(result)
-                except:
-                    pass  # Fail silently if visualization fails
-            
-            # Print result with metadata
-            ui.print_result(result, show_metadata=True)
+            # Print result
+            ui.print_result(result)
             
         except KeyboardInterrupt:
             ui.print_warning("Interrupted. Type 'exit' to quit.")
