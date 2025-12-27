@@ -1,0 +1,10 @@
+============================================================
+  ANM CLOUD DIARY (V0-OpenSource MAX)
+  LawBook V0-OpenSource Compliant • PAST-ONLY Narrative Memory
+  This diary stores ANM's PAST experiences and reasoning traces.
+  It is NOT guaranteed truth. It is NOT the real world.
+  All entries must be interpreted as historical context only.
+============================================================
+
+# Diary created (UTC): 2025-12-27T14:59:37.999336+00:00
+

@@ -1,0 +1,477 @@
+#!/usr/bin/env python3
+# ============================================================
+#  ANM-V2 — MAIN ENTRYPOINT (run.py)
+#  Unified Interface • Self-Improvement • Sanity Check • Maximum Level
+# ============================================================
+
+from __future__ import annotations
+import sys
+import os
+import argparse
+from typing import Optional
+from datetime import datetime
+
+# Check if running in venv or detect venv Python
+def ensure_venv():
+    """Ensure we're using the venv Python if venv exists."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    venv_python = os.path.join(script_dir, "venv", "bin", "python3")
+    venv_root = os.path.join(script_dir, "venv")
+    
+    # If venv doesn't exist, skip the check
+    if not os.path.exists(venv_python):
+        return
+    
+    current_python = sys.executable
+    venv_python_abs = os.path.abspath(venv_python)
+    venv_dir = os.path.dirname(venv_python_abs)
+    venv_root_abs = os.path.abspath(venv_root)
+    
+    # Check if VIRTUAL_ENV is set and points to the correct venv
+    virtual_env = os.environ.get("VIRTUAL_ENV")
+    if virtual_env:
+        virtual_env_abs = os.path.abspath(virtual_env)
+        if virtual_env_abs == venv_root_abs:
+            # Correct venv is activated, allow it even if python3 points to system Python
+            return
+    
+    # Check if we're using the venv Python directly
+    if os.path.abspath(current_python) == venv_python_abs:
+        return
+    
+    # Check if current Python is in the venv directory
+    if current_python.startswith(venv_dir):
+        return
+    
+    # Check if venv's site-packages is in sys.path (venv is active but python3 points elsewhere)
+    # This handles cases where venv is activated but python3 command still points to system Python
+    if any(venv_root_abs in path for path in sys.path):
+        # Venv packages are in path, consider it active
+        return
+    
+    # Also check if we can find site-packages in the venv (more lenient check)
+    # Look for any Python version's site-packages
+    for python_version in ["python3.14", "python3.13", "python3.12", "python3.11", "python3.10", "python3.9"]:
+        site_packages = os.path.join(venv_root_abs, "lib", python_version, "site-packages")
+        if os.path.exists(site_packages) and site_packages in sys.path:
+            # Venv is effectively active
+            return
+    
+    # If we get here, we're not using the venv
+    print("⚠️  WARNING: Not using virtual environment Python!")
+    print(f"   Current Python: {current_python}")
+    print(f"   Expected venv Python: {venv_python_abs}")
+    print()
+    if virtual_env:
+        virtual_env_abs = os.path.abspath(virtual_env)
+        if virtual_env_abs != venv_root_abs:
+            print(f"   ⚠️  VIRTUAL_ENV is set to a DIFFERENT venv:")
+            print(f"      Current: {virtual_env_abs}")
+            print(f"      Expected: {venv_root_abs}")
+            print()
+            print("   💡 Solution: Deactivate the current venv and activate the correct one:")
+            print("      deactivate")
+            print(f"      source {venv_root}/bin/activate")
+            print()
+    print("   Quick fixes:")
+    print(f"   1. Use venv Python directly: {venv_python} run.py")
+    print(f"   2. Activate correct venv: source {venv_root}/bin/activate")
+    print("   3. Try: python run.py (instead of python3)")
+    print()
+    sys.exit(1)
+
+# Check will run in main() before imports
+
+
+def load_input_from_file(path: str) -> str:
+    """Load user query from a file."""
+    if not os.path.exists(path):
+        print(f"[ERROR] File not found: {path}")
+        sys.exit(1)
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read().strip()
+
+
+def print_banner():
+    """Print ANM banner."""
+    print("""
+╔═══════════════════════════════════════════════════════════════╗
+║     ___    _   ____  __   _____    __  ____ _   __ ____       ║
+║    /   |  / | / /  |/  / / ___/   /  |/  (_) | / //___ \\     ║
+║   / /| | /  |/ / /|_/ /  \\__ \\   / /|_/ / /  |/ /  __/ /     ║
+║  / ___ |/ /|  / /  / /  ___/ /  / /  / / / /|  / / __/       ║
+║ /_/  |_/_/ |_/_/  /_/  /____/  /_/  /_/_/_/ |_/ /____/       ║
+║                                                               ║
+║         Artificial Neural Mesh V2 — Maximum Level            ║
+║       Multi-Agent • Self-Improving • LawBook Aligned         ║
+╚═══════════════════════════════════════════════════════════════╝
+""")
+
+
+def run_sanity_check(auto_fix: bool = False) -> bool:
+    """
+    Run ANM sanity check.
+    
+    Returns:
+        True if passed, False otherwise
+    """
+    from anm import run_sanity_check as sanity_check
+    
+    result = sanity_check(verbose=True, auto_fix=auto_fix)
+    return result.passed
+
+
+def run_query(query: str, verbose: bool = False, skip_sanity: bool = False, quick_mode: bool = False, auto_mode: bool = False, optimize_prompts: bool = False) -> dict:
+    """Run a query through ANM."""
+    from anm import ANM, ANMConfig
+    
+    config = ANMConfig(
+        skip_sanity_check=skip_sanity,
+        auto_fix=True,
+        verbose=verbose,
+        quick_mode=quick_mode,
+        auto_mode=auto_mode,
+        optimize_prompts=optimize_prompts,
+    )
+    anm = ANM(config)
+    
+    if not anm.sanity_passed:
+        print("[ERROR] Sanity check failed. Please fix issues before running queries.")
+        sys.exit(1)
+    
+    if verbose:
+        print(f"[INFO] Processing query: {query[:100]}...")
+    
+    result = anm.query(query)
+    return result
+
+
+def run_expansion_test(domain: str, verbose: bool = False) -> dict:
+    """Test the expansion pipeline for a domain."""
+    from anm.expansion import ExpansionEngineV2, ExpansionConfig
+    
+    if verbose:
+        print(f"[INFO] Testing expansion for domain: {domain}")
+    
+    engine = ExpansionEngineV2(ExpansionConfig(
+        use_qlora=True,
+        require_human_approval=False,  # For testing
+    ))
+    
+    result = engine.run_sync(
+        query=f"Explain advanced concepts in {domain}",
+        memory_brief="",
+    )
+    
+    return result
+
+
+def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_mode: bool = False, optimize_prompts: bool = False):
+    """Run ANM in interactive mode with beautiful terminal UI."""
+    from anm import ANM, ANMConfig
+    from anm.ui import TerminalUI
+    
+    ui = TerminalUI()
+    ui.print_banner()
+    
+    # Run sanity check first
+    if not skip_sanity:
+        ui.print_info("Running pre-startup sanity check...")
+        ui.console.print() if ui.console else print()
+    
+    ui.print_mode_info(quick_mode, auto_mode, optimize_prompts)
+    
+    config = ANMConfig(
+        skip_sanity_check=skip_sanity,
+        auto_fix=True,
+        quick_mode=quick_mode,
+        auto_mode=auto_mode,
+        optimize_prompts=optimize_prompts,
+    )
+    anm = ANM(config)
+    
+    if not anm.sanity_passed:
+        ui.print_error("Sanity check failed. Please fix issues before using ANM.")
+        return
+    
+    ui.print_success("ANM is ready! Type 'help' for commands or 'exit' to quit.")
+    ui.console.print() if ui.console else print()
+    
+    # Query history tracking
+    query_history = []
+    
+    while True:
+        try:
+            user_input = ui.prompt_enhanced().strip() if hasattr(ui, 'prompt_enhanced') else ui.prompt().strip()
+            
+            if not user_input:
+                continue
+            
+            if user_input.lower() == "exit":
+                ui.print_success("Goodbye!")
+                break
+            
+            if user_input.lower() == "clear":
+                ui.clear()
+                continue
+            
+            if user_input.lower().startswith("expand "):
+                domain = user_input[7:].strip()
+                ui.print_info(f"Testing expansion for: {domain}")
+                result = run_expansion_test(domain, verbose=True)
+                ui.print_success(result.get('message', result.get('error', 'Unknown')))
+                ui.console.print() if ui.console else print()
+                continue
+            
+            if user_input.lower() == "sanity":
+                ui.print_info("Running full sanity check...")
+                passed = run_sanity_check(auto_fix=False)
+                ui.print_sanity_check(passed)
+                continue
+            
+            if user_input.lower() == "sanity fix":
+                ui.print_info("Running sanity check with auto-fix...")
+                passed = run_sanity_check(auto_fix=True)
+                ui.print_sanity_check(passed)
+                continue
+            
+            if user_input.lower() == "status":
+                ui.print_status({
+                    "router": "Active",
+                    "wot": "Active (Polymath Mode)",
+                    "expansion": "V2 Maximum Level",
+                    "memory": "Cloud Diary Active",
+                    "safety": "LawBook v1.2 Aligned",
+                    "sanity_passed": anm.sanity_passed,
+                })
+                continue
+            
+            if user_input.lower() == "models":
+                # Get model status from inference engine
+                try:
+                    from anm.system.inference import get_inference_engine, get_inference_engine_for_domain
+                    from anm.config.settings import (
+                        MODEL_GENERAL, MODEL_MATH, MODEL_PHYSICS, MODEL_CODE,
+                        MODEL_CHEMISTRY, MODEL_BIOLOGY, MODEL_MEMORY
+                    )
+                    
+                    models_status = {}
+                    engine = get_inference_engine()
+                    models_status["DeepSeek-R1-1.5B"] = {
+                        "loaded": engine.is_loaded,
+                        "context": 4096
+                    }
+                    
+                    # Check domain-specific models
+                    for domain, model_name in [
+                        ("code", MODEL_CODE),
+                        ("math", MODEL_MATH),
+                        ("physics", MODEL_PHYSICS),
+                    ]:
+                        domain_engine = get_inference_engine_for_domain(domain)
+                        models_status[model_name] = {
+                            "loaded": domain_engine.is_loaded,
+                            "context": domain_engine.config.context_length if hasattr(domain_engine, 'config') else 4096
+                        }
+                    
+                    ui.print_model_status(models_status)
+                except Exception as e:
+                    ui.print_error(f"Could not get model status: {e}")
+                continue
+            
+            if user_input.lower() == "stats":
+                # Get system stats
+                try:
+                    import psutil
+                    memory_mb = psutil.Process().memory_info().rss / 1024 / 1024
+                    stats = {
+                        "memory_mb": memory_mb,
+                        "gpu_usage": "N/A",  # Would need GPU monitoring library
+                        "active_models": 1  # Could track this better
+                    }
+                    ui.print_system_stats(stats)
+                except ImportError:
+                    ui.print_warning("psutil not available. Install with: pip install psutil")
+                except Exception as e:
+                    ui.print_error(f"Could not get system stats: {e}")
+                continue
+            
+            if user_input.lower() == "history":
+                ui.print_query_history(query_history, limit=10)
+                continue
+            
+            if user_input.lower() == "help":
+                ui.print_help()
+                continue
+            
+            # Process as regular query
+            ui.print_processing(user_input)
+            
+            # Add to history before processing
+            query_history.append({
+                "query": user_input,
+                "timestamp": datetime.now().strftime("%H:%M:%S")
+            })
+            
+            progress = ui.create_progress()
+            if progress:
+                with progress:
+                    task = progress.add_task("[cyan]Processing...", total=None)
+                    result = anm.query(user_input)
+                    progress.update(task, completed=True)
+            else:
+                result = anm.query(user_input)
+            
+            # Show optimization info if prompt was optimized
+            if result.get("optimized_query") and result.get("original_query"):
+                ui.print_optimization_info(
+                    result['original_query'],
+                    result['optimized_query']
+                )
+            
+            # Show WoT visualization if available
+            if result.get("router_plan") or result.get("wot_steps"):
+                try:
+                    ui.print_wot_visualization(result)
+                except:
+                    pass  # Fail silently if visualization fails
+            
+            # Print result with metadata
+            ui.print_result(result, show_metadata=True)
+            
+        except KeyboardInterrupt:
+            ui.print_warning("Interrupted. Type 'exit' to quit.")
+        except Exception as e:
+            ui.print_error(str(e))
+
+
+def main():
+    """Main entry point."""
+    # Ensure we're using venv Python before doing anything
+    ensure_venv()
+    
+    parser = argparse.ArgumentParser(
+        description="ANM-V2 — Artificial Neural Mesh",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python run.py                          # Interactive mode (with sanity check)
+  python run.py "What is quantum physics?"  # Single query
+  python run.py -f query.txt             # Query from file
+  python run.py --expand geology         # Test expansion
+  python run.py --sanity                 # Run sanity check only
+  python run.py --sanity --fix           # Sanity check with auto-fix
+  python run.py --skip-sanity            # Skip sanity check
+        """
+    )
+    
+    parser.add_argument("query", nargs="?", help="Query to process")
+    parser.add_argument("-f", "--file", help="Load query from file")
+    parser.add_argument("-i", "--interactive", action="store_true", help="Interactive mode")
+    parser.add_argument("--expand", metavar="DOMAIN", help="Test expansion for a domain")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--version", action="store_true", help="Show version")
+    parser.add_argument("--quick", action="store_true", help="Quick mode: use smaller, faster model (no chain-of-thought)")
+    parser.add_argument("--auto", action="store_true", help="Auto mode: automatically choose quick/normal based on query complexity")
+    parser.add_argument("--optimize", action="store_true", help="Optimize prompts: refine user prompts using small model for better processing")
+    
+    # Sanity check options
+    parser.add_argument("--sanity", action="store_true", help="Run sanity check only")
+    parser.add_argument("--fix", action="store_true", help="Auto-fix issues (use with --sanity)")
+    parser.add_argument("--skip-sanity", action="store_true", help="Skip sanity check on startup")
+    
+    args = parser.parse_args()
+    
+    # Show version
+    if args.version:
+        from anm import __version__
+        print(f"ANM v{__version__}")
+        return
+    
+    # Sanity check only
+    if args.sanity:
+        from anm.ui import TerminalUI
+        ui = TerminalUI()
+        ui.print_banner()
+        ui.print_info("Running ANM Sanity Check...")
+        ui.console.print() if ui.console else print()
+        passed = run_sanity_check(auto_fix=args.fix)
+        ui.print_sanity_check(passed)
+        sys.exit(0 if passed else 1)
+    
+    # Test expansion
+    if args.expand:
+        from anm.ui import TerminalUI
+        ui = TerminalUI()
+        ui.print_banner()
+        if not args.skip_sanity:
+            ui.print_info("Running pre-startup sanity check...")
+            ui.console.print() if ui.console else print()
+            if not run_sanity_check(auto_fix=True):
+                ui.print_error("Sanity check failed.")
+                sys.exit(1)
+        
+        ui.print_info(f"Testing expansion for domain: {args.expand}")
+        result = run_expansion_test(args.expand, verbose=args.verbose)
+        
+        if result.get("success"):
+            ui.print_success(result.get('message', 'Success'))
+        else:
+            ui.print_error(result.get('message', result.get('error', 'Failed')))
+        return
+    
+    # Validate mode flags
+    if args.quick and args.auto:
+        print("[ERROR] Cannot use both --quick and --auto. Choose one.")
+        sys.exit(1)
+    
+    # Interactive mode
+    if args.interactive or (not args.query and not args.file):
+        interactive_mode(skip_sanity=args.skip_sanity, quick_mode=args.quick, auto_mode=args.auto, optimize_prompts=args.optimize)
+        return
+    
+    # Single query mode
+    from anm.ui import TerminalUI
+    
+    ui = TerminalUI()
+    ui.print_banner()
+    
+    ui.print_mode_info(args.quick, args.auto, args.optimize)
+    
+    if args.file:
+        query = load_input_from_file(args.file)
+        ui.print_info(f"Loaded query from: {args.file}")
+    else:
+        query = args.query
+    
+    ui.print_info(f"Query: {query[:100]}{'...' if len(query) > 100 else ''}")
+    ui.console.print() if ui.console else print()
+    
+    if not args.skip_sanity:
+        ui.print_info("Running pre-startup check...")
+        ui.console.print() if ui.console else print()
+    
+    ui.print_processing(query)
+    
+    progress = ui.create_progress()
+    if progress:
+        with progress:
+            task = progress.add_task("[cyan]Processing...", total=None)
+            result = run_query(query, verbose=args.verbose, skip_sanity=args.skip_sanity, quick_mode=args.quick, auto_mode=args.auto, optimize_prompts=args.optimize)
+            progress.update(task, completed=True)
+    else:
+        result = run_query(query, verbose=args.verbose, skip_sanity=args.skip_sanity, quick_mode=args.quick, auto_mode=args.auto, optimize_prompts=args.optimize)
+    
+    # Show optimization info if prompt was optimized
+    if result.get("optimized_query") and result.get("original_query"):
+        ui.print_optimization_info(
+            result['original_query'],
+            result['optimized_query']
+        )
+    
+    # Print result
+    ui.print_result(result)
+
+
+if __name__ == "__main__":
+    main()
