@@ -18,6 +18,8 @@ a high-quality final answer that:
 
 from __future__ import annotations
 import re
+import os
+import time
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -26,6 +28,17 @@ from anm.utils.prompts import REFINER_PROMPT
 from anm.system.inference import get_inference_engine, InferenceConfig
 
 __all__ = ["Refiner", "RefinerConfig", "RefinedAnswer", "AnswerQuality"]
+
+
+# ============================================================
+#  UTILITY FUNCTIONS
+# ============================================================
+
+def _get_debug_log_path() -> str:
+    """Get the debug log path (portable across systems)."""
+    debug_log = os.path.join(os.getcwd(), ".cursor", "debug.log")
+    os.makedirs(os.path.dirname(debug_log), exist_ok=True)
+    return debug_log
 
 
 # ============================================================
@@ -139,7 +152,7 @@ class Refiner:
         import json
         try:
             domain_outputs = {k: v for k, v in packet.items() if k.endswith("_rounds")}
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+            with open(_get_debug_log_path(), "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "refiner.py:refine", "message": "Refiner called", "data": {"user_query": packet.get("user_query", "")[:100], "domain_outputs_keys": list(domain_outputs.keys()), "domain_outputs_lengths": {k: len(v) if v else 0 for k, v in domain_outputs.items()}, "has_empty_outputs": any(not v or not v.strip() or "[produced no output]" in v for v in domain_outputs.values() if v)}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion
@@ -278,7 +291,7 @@ class Refiner:
         import json
         import time
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+            with open(_get_debug_log_path(), "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "refiner.py:_extract_key_content", "message": "Extract key content start", "data": {"domains": list(domain_outputs.keys()), "output_lengths": {k: len(v) if v else 0 for k, v in domain_outputs.items()}}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion
@@ -286,7 +299,7 @@ class Refiner:
         for domain, output in domain_outputs.items():
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                with open(_get_debug_log_path(), "a") as f:
                     f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "refiner.py:_extract_key_content", "message": "Processing domain output", "data": {"domain": domain, "output_length": len(output) if output else 0, "output_preview": output[:150] if output else "EMPTY", "is_empty": not output or output.strip() in ["", "None", "N/A"], "has_no_output_marker": "[produced no output]" in output if output else False}, "timestamp": int(time.time() * 1000)}) + "\n")
             except: pass
             # #endregion
@@ -599,7 +612,7 @@ class Refiner:
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                with open(_get_debug_log_path(), "a") as f:
                     f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R1", "location": "refiner.py:_compose_answer", "message": "Raw answer from LLM", "data": {"raw_answer_length": len(raw_answer) if raw_answer else 0, "raw_answer_preview": raw_answer[:200] if raw_answer else "EMPTY", "has_thinking_tags": "</think>" in raw_answer if raw_answer else False}, "timestamp": int(time.time() * 1000)}) + "\n")
             except: pass
             # #endregion
@@ -615,7 +628,7 @@ class Refiner:
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+            with open(_get_debug_log_path(), "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R2", "location": "refiner.py:_compose_answer", "message": "After cleaning output", "data": {"cleaned_answer_length": len(answer) if answer else 0, "cleaned_answer_preview": answer[:200] if answer else "EMPTY", "is_too_short": len(answer) < 20 if answer else True}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion
@@ -647,7 +660,7 @@ class Refiner:
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                with open(_get_debug_log_path(), "a") as f:
                     f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R1", "location": "refiner.py:_compose_answer", "message": "Triggering fallback", "data": {"reason": "thinking_tags_only" if is_thinking_tags_only else "too_short" if len(answer) < 20 else "error", "answer_length": len(answer)}, "timestamp": int(time.time() * 1000)}) + "\n")
             except: pass
             # #endregion
@@ -833,7 +846,17 @@ ANSWER (write directly, no CoT, no thinking tags):
                         para = raw.split("\n\n")[0][:200]
                         if para and len(para.strip()) > 10:
                             parts.append(f"**{domain.title()}**: {para}")
-    
+
+        # Assemble final answer from collected parts
+        if parts:
+            answer = "\n\n".join(parts)
+        else:
+            # No usable content - provide helpful error
+            user_query = packet.get("user_query", "your query") if packet else "your query"
+            answer = f"I apologize, but I was unable to generate a proper answer. The domain specialists did not produce usable output for your query: '{user_query}'. This may indicate that the models need to be loaded or the query needs to be rephrased."
+
+        return answer
+
     def _clean_malformed_instructions(self, text: str) -> str:
         """Remove repetitive instruction text from malformed specialist output."""
         if not text:
@@ -863,15 +886,6 @@ ANSWER (write directly, no CoT, no thinking tags):
                 unique_sentences.append(sent.strip())
         
         return '. '.join(unique_sentences)
-        
-        if parts:
-            answer = "\n\n".join(parts)
-        else:
-            # No usable content - provide helpful error
-            user_query = packet.get("user_query", "your query") if packet else "your query"
-            answer = f"I apologize, but I was unable to generate a proper answer. The domain specialists did not produce usable output for your query: '{user_query}'. This may indicate that the models need to be loaded or the query needs to be rephrased."
-        
-        return answer
     
     # --------------------------------------------------------
     #  QUALITY IMPROVEMENTS
@@ -950,7 +964,7 @@ ANSWER (write directly, no CoT, no thinking tags):
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+            with open(_get_debug_log_path(), "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R2", "location": "refiner.py:_clean_thinking_tags", "message": "Cleaned thinking tags", "data": {"original_length": len(text) if text else 0, "cleaned_length": len(result), "result_preview": result[:100] if result else "EMPTY"}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion

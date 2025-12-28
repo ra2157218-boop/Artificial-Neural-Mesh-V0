@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 import re
+import os
+import time
 from typing import Dict, Any
 
 # Import the shared inference engine
@@ -16,6 +18,17 @@ try:
     from anm.utils.prompts import VERIFIER_PROMPT
 except ImportError:
     VERIFIER_PROMPT = ""
+
+
+# ============================================================
+#  UTILITY FUNCTIONS
+# ============================================================
+
+def _get_debug_log_path() -> str:
+    """Get the debug log path (portable across systems)."""
+    debug_log = os.path.join(os.getcwd(), ".cursor", "debug.log")
+    os.makedirs(os.path.dirname(debug_log), exist_ok=True)
+    return debug_log
 
 
 # ============================================================
@@ -90,7 +103,7 @@ class Verifier:
         import json
         import time
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+            with open(_get_debug_log_path(), "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H3", "location": "verifier.py:run", "message": "After LLM call", "data": {"is_format_error": self._is_format_error(parsed), "parsed_status": parsed.get("status"), "query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity")}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion
@@ -107,7 +120,7 @@ class Verifier:
                 try:
                     import json
                     import time
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    with open(_get_debug_log_path(), "a") as f:
                         f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "verifier.py:run", "message": "Using adaptive fallback due to format error", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "raw2_output": raw2[:200] if 'raw2' in locals() else "N/A"}, "timestamp": int(time.time() * 1000)}) + "\n")
                 except: pass
                 # #endregion
@@ -116,7 +129,7 @@ class Verifier:
                 try:
                     import json
                     import time
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    with open(_get_debug_log_path(), "a") as f:
                         f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "verifier.py:run", "message": "After adaptive fallback", "data": {"status": parsed.get("status"), "score": parsed.get("score"), "issues": parsed.get("issues", [])}, "timestamp": int(time.time() * 1000)}) + "\n")
                 except: pass
                 # #endregion
@@ -494,13 +507,18 @@ ADAPTIVE DECISION CRITERIA:
         import json
         import time
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+            with open(_get_debug_log_path(), "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H1", "location": "verifier.py:_adaptive_fallback", "message": "Adaptive fallback called", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "answer_length": answer_analysis.get("answer_length"), "expected_length": question_analysis.get("expected_length")}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion
-        # Use analysis to make informed decision
+        # Initialize all variables upfront to avoid UnboundLocalError
         issues = []
         score = 100
+        status = "approved"
+        notes = ""
+        all_issues = []
+        fallback_issues = []
+        original_fallback = None
         
         # Check reasoning support
         if not reasoning_analysis["supports_answer"]:
@@ -538,7 +556,7 @@ ADAPTIVE DECISION CRITERIA:
         
         # #region agent log
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+            with open(_get_debug_log_path(), "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "verifier.py:_adaptive_fallback", "message": "Before calling _fallback", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "expected_length": question_analysis.get("expected_length"), "answer_length": answer_analysis.get("answer_length"), "expects_short_answer": expects_short_answer, "current_score": score, "current_issues": issues}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion
@@ -568,10 +586,6 @@ ADAPTIVE DECISION CRITERIA:
                 notes = f"Adaptive fallback: {question_analysis['query_type']} query, but answer {'missing' if not answer_analysis['has_answer'] else 'wrong format' if not answer_analysis['has_expected_format'] else 'reasoning does not support'}."
                 all_issues = issues
         else:
-            # Initialize ALL variables to avoid UnboundLocalError
-            fallback_issues = []
-            original_fallback = None
-
             # For code queries, be more lenient - check if answer has code-like content
             if question_analysis["query_type"] == "code":
                 # Code queries: approve if answer contains code indicators, even if format is slightly off
@@ -599,7 +613,7 @@ ADAPTIVE DECISION CRITERIA:
                 original_fallback = self._fallback(packet)
                 # #region agent log
                 try:
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    with open(_get_debug_log_path(), "a") as f:
                         f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "verifier.py:_adaptive_fallback", "message": "After calling _fallback", "data": {"original_status": original_fallback.get("status"), "original_notes": original_fallback.get("notes", "")[:100], "original_issues": original_fallback.get("issues", [])}, "timestamp": int(time.time() * 1000)}) + "\n")
                 except: pass
                 # #endregion
@@ -895,6 +909,7 @@ ADAPTIVE DECISION CRITERIA:
         # Check if query asks for code but answer has no code
         if merged_match:
             merged_text = merged_match.group(1).strip()
+            merged_clean = merged_text.replace("[VERIFIER_READY]", "").strip()
             query_match = re.search(r"user query:\s*['\"](.*?)['\"]", packet, re.IGNORECASE)
             if query_match:
                 user_query = query_match.group(1).lower()
@@ -950,7 +965,7 @@ ADAPTIVE DECISION CRITERIA:
             import json
             import time
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                with open(_get_debug_log_path(), "a") as f:
                     f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H2", "location": "verifier.py:_fallback", "message": "Checking answer length", "data": {"answer_length": len(merged_clean), "threshold": 50, "will_reject": len(merged_clean) < 50}, "timestamp": int(time.time() * 1000)}) + "\n")
             except: pass
             # #endregion
@@ -984,7 +999,7 @@ ADAPTIVE DECISION CRITERIA:
         import json
         import time
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+            with open(_get_debug_log_path(), "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "verifier.py:_fallback", "message": "Fallback approval (aggressive mode)", "data": {"packet_length": len(packet) if packet else 0, "packet_preview": packet[:200] if packet else "EMPTY"}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion

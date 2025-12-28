@@ -163,7 +163,8 @@ class MemoryProfiler:
         try:
             import psutil
             process = psutil.Process()
-            return process.memory_info().peak_wss / 1024 / 1024 if hasattr(process.memory_info(), 'peak_wss') else 0.0
+            mem_info = process.memory_info()
+            return mem_info.peak_wss / 1024 / 1024 if hasattr(mem_info, 'peak_wss') else 0.0
         except (ImportError, AttributeError):
             # Fallback: use tracemalloc peak
             if self._tracemalloc_started:
