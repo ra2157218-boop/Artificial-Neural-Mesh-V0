@@ -133,10 +133,13 @@ class ANMConfig:
     # Quick Mode (fast, no chain-of-thought)
     quick_mode: bool = False  # Use smaller, faster model without CoT reasoning (ignored if auto_mode=True)
     auto_mode: bool = True  # ALWAYS ENABLED: Automatically choose quick/normal based on query complexity
-    
+
+    # Research Mode (maximum quality, structured PDF output)
+    research_mode: bool = False  # Research mode: deterministic routing, authority models, PDF output
+
     # Prompt Optimization
     optimize_prompts: bool = True  # Use small model to refine user prompts before processing (auto-enabled)
-    
+
     # Safety
     skip_sanity_check: bool = False
     auto_fix: bool = True
@@ -160,13 +163,21 @@ class ANMConfig:
             self.tts_speed = 0.5
         elif self.tts_speed > 2.0:
             self.tts_speed = 2.0
-    
+
+        # Research mode validation
+        if self.research_mode and self.auto_mode:
+            self.auto_mode = False  # Disable auto mode
+
+        if self.research_mode and self.quick_mode:
+            raise ValueError("Research mode cannot be used with quick mode")
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for Router config."""
         return {
             "parallel_r1_workers": self.parallel_models,
             "quick_mode": self.quick_mode,
             "auto_mode": self.auto_mode,
+            "research_mode": self.research_mode,
             "optimize_prompts": self.optimize_prompts,
             "voice": {
                 "enabled": self.voice_enabled,
@@ -546,31 +557,37 @@ class ANM:
                 if self.anm_config.verbose:
                     print(f"[PROMPT_OPTIMIZER] Optimization failed ({type(e).__name__}), using original query: {e}")
                 optimized_query = user_query
-        
-        # Auto mode: Check domain first to avoid overriding specialist models
-        # For STEM queries (math, physics, chemistry, biology, code), specialists have their own models
-        # and should NOT be overridden by Auto Mode
 
-        # Quick coarse domain classification to check if this is a STEM query
-        from anm.router.router import Router
-        coarse_domain = self._router._coarse_domain_guess(optimized_query) if hasattr(self._router, '_coarse_domain_guess') else "general"
-
-        # Domain specialists that should use their own models
-        domain_specialists = {"math", "physics", "chemistry", "biology", "code"}
-
-        # Only use Auto Mode for general queries
-        # STEM specialists have Nanbeige4-3B (math/physics/chemistry/biology) and Stable-Code-3B (code)
-        if coarse_domain in domain_specialists:
-            # Skip Auto Mode - let specialist use its configured model
+        # Research mode: Always use normal mode (no quick, no auto)
+        if self.anm_config.research_mode:
             use_quick = False
             if self.anm_config.verbose:
-                print(f"[AUTO_MODE] Bypassed for {coarse_domain} specialist (using domain model)")
+                print("[RESEARCH_MODE] Using full reasoning pipeline with maximum quality")
         else:
-            # Use Auto Mode for general queries
-            use_quick = self._should_use_quick_mode(optimized_query)
-            if self.anm_config.verbose:
-                mode_str = "QUICK (TinyLLama)" if use_quick else "NORMAL (DeepSeek-R1)"
-                print(f"[AUTO_MODE] Query complexity analysis: {mode_str}")
+            # Auto mode: Check domain first to avoid overriding specialist models
+            # For STEM queries (math, physics, chemistry, biology, code), specialists have their own models
+            # and should NOT be overridden by Auto Mode
+
+            # Quick coarse domain classification to check if this is a STEM query
+            from anm.router.router import Router
+            coarse_domain = self._router._coarse_domain_guess(optimized_query) if hasattr(self._router, '_coarse_domain_guess') else "general"
+
+            # Domain specialists that should use their own models
+            domain_specialists = {"math", "physics", "chemistry", "biology", "code"}
+
+            # Only use Auto Mode for general queries
+            # STEM specialists have Nanbeige4-3B (math/physics/chemistry/biology) and Stable-Code-3B (code)
+            if coarse_domain in domain_specialists:
+                # Skip Auto Mode - let specialist use its configured model
+                use_quick = False
+                if self.anm_config.verbose:
+                    print(f"[AUTO_MODE] Bypassed for {coarse_domain} specialist (using domain model)")
+            else:
+                # Use Auto Mode for general queries
+                use_quick = self._should_use_quick_mode(optimized_query)
+                if self.anm_config.verbose:
+                    mode_str = "QUICK (TinyLLama)" if use_quick else "NORMAL (DeepSeek-R1)"
+                    print(f"[AUTO_MODE] Query complexity analysis: {mode_str}")
 
         from anm.system.inference import InferenceConfig, get_inference_engine
         inference_config = InferenceConfig(quick_mode=use_quick)
@@ -592,7 +609,7 @@ class ANM:
         # Process the query (use optimized version)
         # Pass quick_mode flag to router based on actual decision
         # For auto mode, pass the per-query decision; for explicit quick mode, pass True
-        result = self._router.handle(optimized_query, quick_mode=use_quick)
+        result = self._router.handle(optimized_query, quick_mode=use_quick, research_mode=self.anm_config.research_mode)
         
         # Add original query to result for reference
         if optimized_query != user_query:

@@ -151,12 +151,31 @@ class TerminalUI:
         print("  - Safety: LawBook v1.2 Aligned")
         print(f"  - Sanity: {'✅ Passed' if status.get('sanity_passed', False) else '❌ Failed'}\n")
     
-    def print_mode_info(self, quick_mode: bool = False, auto_mode: bool = False, optimize_prompts: bool = False) -> None:
+    def print_mode_info(self, quick_mode: bool = False, auto_mode: bool = False, optimize_prompts: bool = False, research_mode: bool = False) -> None:
         """Print mode information."""
         if not RICH_AVAILABLE:
-            self._print_mode_info_fallback(quick_mode, auto_mode, optimize_prompts)
+            self._print_mode_info_fallback(quick_mode, auto_mode, optimize_prompts, research_mode)
             return
-        
+
+        # Research mode takes precedence
+        if research_mode:
+            if RICH_AVAILABLE:
+                from rich.text import Text
+                research_text = Text.assemble(
+                    ("╭─ RESEARCH MODE ", "bold cyan"),
+                    ("─────────────────────────╮\n", "cyan"),
+                    ("│ ", "cyan"),
+                    ("Maximum Quality • Deterministic Routing ", "bold white"),
+                    ("│\n", "cyan"),
+                    ("│ ", "cyan"),
+                    ("Structured PDF Output                   ", "white"),
+                    ("│\n", "cyan"),
+                    ("╰─────────────────────────────────────────╯", "cyan")
+                )
+                self.console.print(research_text)
+                self.console.print()
+            return  # Skip other mode displays
+
         modes = []
         if optimize_prompts:
             modes.append(Text("✨ Prompt Optimization", style="bright_yellow"))
@@ -164,14 +183,21 @@ class TerminalUI:
             modes.append(Text("🤖 Auto Mode", style="bright_cyan"))
         elif quick_mode:
             modes.append(Text("⚡ Quick Mode", style="bright_green"))
-        
+
         if modes:
             mode_text = Text("Active Modes: ", style="bold") + Text(" • ").join(modes)
             self.console.print(Panel(mode_text, border_style="blue", box=box.ROUNDED))
             self.console.print()
-    
-    def _print_mode_info_fallback(self, quick_mode: bool, auto_mode: bool, optimize_prompts: bool) -> None:
+
+    def _print_mode_info_fallback(self, quick_mode: bool, auto_mode: bool, optimize_prompts: bool, research_mode: bool = False) -> None:
         """Fallback mode info without Rich."""
+        if research_mode:
+            print("╭─ RESEARCH MODE ─────────────────────────╮")
+            print("│ Maximum Quality • Deterministic Routing │")
+            print("│ Structured PDF Output                   │")
+            print("╰─────────────────────────────────────────╯\n")
+            return
+
         if optimize_prompts:
             print("✨ Prompt Optimization: Refining prompts for better processing\n")
         if auto_mode:
@@ -429,7 +455,29 @@ class TerminalUI:
             )
             self.console.print(empty_panel)
             self.console.print()
-    
+
+        # Research mode output (PDF or Markdown)
+        if result.get("mode") == "research" and result.get("output_path"):
+            output_format = result.get("output_format", "unknown")
+            format_icon = "📄" if output_format == "pdf" else "📝" if output_format == "markdown" else "📋"
+            format_color = "green" if output_format == "pdf" else "yellow"
+
+            self.console.print(f"\n[bold {format_color}]✓[/] {format_icon} {output_format.upper()}: {result['output_path']}")
+
+            if result.get("authority_assignments"):
+                self.console.print("\n[bold]Authority Models:[/]")
+                for domain, model in result["authority_assignments"].items():
+                    self.console.print(f"  • {domain}: [cyan]{model}[/]")
+
+            if result.get("metacognition"):
+                meta = result["metacognition"]
+                if meta.get("confidence"):
+                    self.console.print(f"\n[bold]Confidence:[/] {meta['confidence']}")
+                if meta.get("uncertainty"):
+                    self.console.print(f"[bold]Uncertainty:[/] {meta['uncertainty']}")
+
+            self.console.print()
+
     def _print_result_fallback(self, result: Dict[str, Any]) -> None:
         """Fallback result printing without Rich - only shows verified refiner response."""
         # Check verification status

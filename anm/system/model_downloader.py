@@ -89,6 +89,11 @@ DEFAULT_MODELS = {
         "filename": "nanbeige4-3b-base-q4_k_m.gguf",
         "size_gb": 2.44,
     },
+    "qwen2.5-3b-instruct": {
+        "repo_id": "Qwen/Qwen2.5-3B-Instruct-GGUF",
+        "filename": "qwen2.5-3b-instruct-q4_k_m.gguf",
+        "size_gb": 2.0,
+    },
 }
 
 

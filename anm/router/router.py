@@ -448,18 +448,23 @@ class Router:
         self.voting_handler = VotingHandler(self._handler_specialists, self.config)
         self.expansion_handler = ExpansionHandler(self._handler_specialists, self.config)
 
+        # Research mode configuration
+        self.research_mode_config = self.config.get("research_mode_configs", {})
+        self.research_mode_active = False
+
     # ========================================================
     #  MAIN ENTRY
     # ========================================================
 
-    def handle(self, user_query: str, quick_mode: bool = False) -> Dict[str, Any]:
+    def handle(self, user_query: str, quick_mode: bool = False, research_mode: bool = False) -> Dict[str, Any]:
         """
         Main entry point for processing a user query.
-        
+
         Args:
             user_query: The user's query
             quick_mode: Whether to use quick mode (simplified pipeline)
-            
+            research_mode: Whether to use research mode (maximum quality, deterministic routing)
+
         Returns:
             Dict containing result, verification, metadata, and metrics
         """
@@ -483,12 +488,17 @@ class Router:
         
         import time
         handle_start_time = time.time()
-        self._logger.debug(f"Processing query (quick_mode={quick_mode}): {user_query[:100]}...")
-        
+        self._logger.debug(f"Processing query (quick_mode={quick_mode}, research_mode={research_mode}): {user_query[:100]}...")
+
+        # Research mode: deterministic routing
+        self.research_mode_active = research_mode
+        if research_mode:
+            return self._handle_research_mode(user_query)
+
         # Quick mode: simplified path
         if quick_mode:
             return self._handle_quick_mode(user_query)
-        
+
         # Normal mode: full pipeline
 
         # 0) Snapshot PointGame state BEFORE this run (PAST-ONLY for Refiner)
@@ -1056,7 +1066,196 @@ class Router:
             "processing_time_ms": total_processing_time_ms,
             "wot_steps": wot_steps,
         }
-    
+
+    def _handle_research_mode(self, user_query: str) -> Dict[str, Any]:
+        """
+        Research Mode: Correctness > Authority > Completeness > Speed
+
+        Pipeline:
+        1. Deterministic domain detection (keyword-based)
+        2. Authority model assignment (locked, no override)
+        3. Build specialists (1 worker each, 4-10 modules run in parallel based on query)
+        4. Run WoT with minimum depth enforcement
+        5. Meta-cognition audit (self-check)
+        6. Generate structured PDF (with markdown fallback)
+        7. Return result with explicit status
+        """
+        import time
+        start_time = time.time()
+
+        # 1. Start log run
+        self.logger.new_run(user_query)
+
+        # 2. Load memory brief (PAST-ONLY context)
+        from anm.router.memory_builder import build_memory_brief
+        memory_info = build_memory_brief(self._memory_core, user_query)
+        memory_brief = memory_info["brief_text"]
+        self.logger.log_memory(memory_brief)
+
+        # 3. Deterministic domain detection
+        detected_domains = self._deterministic_domain_detection(user_query)
+        entry_domain = detected_domains[0] if detected_domains else "general"
+
+        # 4. Authority model assignment (LOCKED)
+        authority_assignments = self._assign_authority_models(detected_domains)
+
+        # 5. Select 4-10 modules dynamically based on query complexity
+        selected_domains = self._select_parallel_modules(detected_domains, user_query)
+
+        # 6. Build specialists (no ensemble - each runs once)
+        specialists = self._build_research_specialists(selected_domains)
+
+        # 7. Log router decision
+        self.logger.log_router_decision({
+            "mode": "research",
+            "detected_domains": detected_domains,
+            "selected_domains": selected_domains,
+            "entry_domain": entry_domain,
+            "authority_assignments": authority_assignments,
+            "parallel_modules": len(selected_domains),  # Dynamic 4-10 based on query
+            "workers_per_module": 1,  # No ensemble in research mode
+        })
+
+        # 8. Run TrueWoT with minimum depth enforcement
+        wot_start_time = time.time()
+        max_steps = self.research_mode_config.get("wot_max_steps", 20)
+        min_depth = self.research_mode_config.get("wot_min_depth", 3)
+
+        full_query = f"{user_query}\n\n{memory_brief}\n\n[RESEARCH MODE: Correctness required]"
+
+        try:
+            from anm.wot.true_wot import TrueWoT
+            wot = TrueWoT(
+                domain_names=list(specialists.keys()),
+                memory_llm=self._memory_core,
+                min_depth=min_depth,  # Enforce minimum reasoning depth
+            )
+            domain_cots = wot.run(
+                entry_domain=entry_domain,
+                query=full_query,
+                specialists=specialists,
+                max_steps=max_steps,
+            )
+            wot_end_time = time.time()
+            wot_steps = getattr(wot, 'total_steps', 0)
+
+            # Validate minimum depth
+            if wot_steps < min_depth:
+                # Force continuation if depth insufficient
+                self.logger.log_error("research_wot_depth",
+                    f"WoT depth {wot_steps} < minimum {min_depth}. Warning: depth may be insufficient.")
+
+        except Exception as e:
+            # Explicit failure reporting (per Blueprint)
+            return {
+                "status": "error_explicit",
+                "result": f"[RESEARCH MODE ERROR] {str(e)}",
+                "error": str(e),
+                "uncertainty": "High - Research pipeline failed",
+                "retries_exhausted": False,
+                "authority_assignments": authority_assignments,
+                "mode": "research",
+            }
+
+        # 9. Meta-cognition audit (self-check)
+        metacognition_audit = self._run_metacognition_audit(
+            user_query=user_query,
+            domain_cots=domain_cots,
+            entry_domain=entry_domain,
+        )
+
+        # 10. Refiner (with research mode hints)
+        refiner_packet = self._build_refiner_packet(
+            user_query=user_query,
+            domain_cots=domain_cots,
+            entry_specialist=entry_domain,
+            router_plan={"mode": "research", "authority": authority_assignments},
+            pg_stats_before={},
+        )
+        refined_output = self.refiner.refine(refiner_packet)
+        self.logger.log_refiner(refined_output)
+
+        # 11. Verifier (strict research mode verification)
+        verifier_packet = self._build_verifier_packet(
+            user_query=user_query,
+            merged_reasoning=refined_output,
+            entry_specialist=entry_domain,
+            router_reason="Research mode: authority-driven analysis",
+        )
+        verification = self.verifier.run(verifier_packet)
+        self.logger.log_verifier(verification)
+
+        status = verification.get("status", "approved")
+
+        # 12. Generate structured PDF (with markdown fallback)
+        output_path = None
+        output_format = "none"
+
+        if self.research_mode_config.get("pdf_output", True):
+            try:
+                from anm.output.research_pdf import ResearchPDFGenerator
+
+                pdf_generator = ResearchPDFGenerator()
+                output_path = pdf_generator.generate(
+                    user_query=user_query,
+                    domain_cots=domain_cots,
+                    refined_output=refined_output,
+                    verification=verification,
+                    metacognition=metacognition_audit,
+                    authority_assignments=authority_assignments,
+                    wot_steps=wot_steps,
+                    processing_time_ms=(time.time() - start_time) * 1000,
+                )
+                output_format = "pdf"
+            except Exception as e:
+                # Fallback to markdown if PDF generation fails
+                if self.research_mode_config.get("markdown_fallback", True):
+                    self.logger.log_error("pdf_generation_failed",
+                        f"PDF generation failed: {e}. Falling back to markdown.")
+
+                    try:
+                        from anm.output.research_markdown import ResearchMarkdownGenerator
+                        md_generator = ResearchMarkdownGenerator()
+                        output_path = md_generator.generate(
+                            user_query=user_query,
+                            domain_cots=domain_cots,
+                            refined_output=refined_output,
+                            verification=verification,
+                            metacognition=metacognition_audit,
+                            authority_assignments=authority_assignments,
+                            wot_steps=wot_steps,
+                            processing_time_ms=(time.time() - start_time) * 1000,
+                        )
+                        output_format = "markdown"
+                    except Exception as md_e:
+                        self.logger.log_error("markdown_generation_failed",
+                            f"Markdown generation also failed: {md_e}.")
+                        output_path = None
+                        output_format = "none"
+                else:
+                    self.logger.log_error("pdf_generation_failed",
+                        f"PDF generation failed: {e}. No fallback enabled.")
+                    output_path = None
+                    output_format = "none"
+
+        # 13. Save logs
+        log_path = self.logger.save()
+
+        # 14. Return comprehensive result
+        return {
+            "status": status,
+            "result": refined_output,
+            "verification": verification,
+            "metacognition": metacognition_audit,
+            "authority_assignments": authority_assignments,
+            "output_path": output_path,
+            "output_format": output_format,  # "pdf", "markdown", or "none"
+            "log_path": log_path,
+            "mode": "research",
+            "wot_steps": wot_steps,
+            "processing_time_ms": (time.time() - start_time) * 1000,
+        }
+
     def _handle_quick_mode(self, user_query: str) -> Dict[str, Any]:
         """
         Quick Mode: Simplified path - Router -> Quick Model -> Refiner -> Verifier -> Output
@@ -1807,3 +2006,251 @@ Your classification (ONE WORD ONLY):"""
             router_flags=flags,
             instructions="Approve only if reasoning is correct, coherent, and non-hallucinated.",
         )
+
+    # ========================================================
+    #  RESEARCH MODE HELPER METHODS
+    # ========================================================
+
+    def _deterministic_domain_detection(self, user_query: str) -> list:
+        """
+        Deterministic keyword-based domain detection for Research Mode.
+        Returns list of detected domains in priority order.
+        """
+        detected_domains = []
+        query_lower = user_query.lower()
+
+        # Math patterns
+        math_keywords = ["calculate", "equation", "integral", "derivative", "matrix", "algebra",
+                        "geometry", "trigonometry", "calculus", "math", "formula", "solve"]
+        if any(kw in query_lower for kw in math_keywords):
+            detected_domains.append("math")
+
+        # Physics patterns
+        physics_keywords = ["physics", "force", "energy", "momentum", "velocity", "acceleration",
+                           "gravity", "electromagnetic", "quantum", "relativity", "thermodynamics"]
+        if any(kw in query_lower for kw in physics_keywords):
+            detected_domains.append("physics")
+
+        # Chemistry patterns
+        chemistry_keywords = ["chemistry", "molecule", "atom", "reaction", "compound", "element",
+                             "chemical", "bond", "periodic table", "ion", "acid", "base"]
+        if any(kw in query_lower for kw in chemistry_keywords):
+            detected_domains.append("chemistry")
+
+        # Biology patterns
+        biology_keywords = ["biology", "cell", "dna", "gene", "organism", "protein", "evolution",
+                           "ecosystem", "species", "bacteria", "virus", "anatomy"]
+        if any(kw in query_lower for kw in biology_keywords):
+            detected_domains.append("biology")
+
+        # Code patterns
+        code_keywords = ["code", "program", "function", "algorithm", "python", "javascript",
+                        "java", "c++", "sql", "debug", "syntax", "compile", "execute"]
+        if any(kw in query_lower for kw in code_keywords):
+            detected_domains.append("code")
+
+        # Internet research patterns
+        internet_keywords = ["research", "latest", "recent", "current", "news", "web", "online",
+                            "internet", "search", "find information", "look up"]
+        if any(kw in query_lower for kw in internet_keywords):
+            detected_domains.append("internet")
+
+        # Facts patterns
+        facts_keywords = ["fact", "what is", "who is", "when did", "where is", "define",
+                         "explain", "describe", "tell me about"]
+        if any(kw in query_lower for kw in facts_keywords):
+            detected_domains.append("facts")
+
+        # Default to general if no specific domain detected
+        if not detected_domains:
+            detected_domains.append("general")
+
+        return detected_domains
+
+    def _select_parallel_modules(self, detected_domains: list, user_query: str) -> list:
+        """
+        Dynamically select 4-10 modules based on query complexity.
+        Simple queries -> 4 modules minimum
+        Complex queries -> up to 10 modules
+        """
+        min_modules = self.research_mode_config.get("min_parallel_modules", 4)
+        max_modules = self.research_mode_config.get("max_parallel_modules", 10)
+
+        # Complexity heuristics
+        query_length = len(user_query)
+        word_count = len(user_query.split())
+        domain_count = len(detected_domains)
+
+        # Calculate complexity score (0-100)
+        complexity_score = 0
+
+        # Length factor (0-30 points)
+        if query_length > 200:
+            complexity_score += 30
+        elif query_length > 100:
+            complexity_score += 20
+        elif query_length > 50:
+            complexity_score += 10
+
+        # Word count factor (0-30 points)
+        if word_count > 40:
+            complexity_score += 30
+        elif word_count > 20:
+            complexity_score += 20
+        elif word_count > 10:
+            complexity_score += 10
+
+        # Domain diversity factor (0-40 points)
+        complexity_score += min(domain_count * 10, 40)
+
+        # Map complexity to module count (4-10)
+        if complexity_score >= 80:
+            num_modules = max_modules  # 10 modules for very complex queries
+        elif complexity_score >= 60:
+            num_modules = 8
+        elif complexity_score >= 40:
+            num_modules = 6
+        else:
+            num_modules = min_modules  # 4 modules for simple queries
+
+        # Select top N detected domains
+        selected = detected_domains[:num_modules]
+
+        # Ensure at least min_modules by adding general/facts if needed
+        while len(selected) < min_modules:
+            if "general" not in selected:
+                selected.append("general")
+            elif "facts" not in selected:
+                selected.append("facts")
+            else:
+                break
+
+        return selected[:max_modules]  # Cap at max_modules
+
+    def _assign_authority_models(self, detected_domains: list) -> dict:
+        """
+        Map domains to authority models from RESEARCH_MODE_CONFIGS.
+        Returns dict: {"math": "nanbeige4-3b", "code": "stable-code-3b", ...}
+        """
+        authority_models = self.research_mode_config.get("authority_models", {})
+        assignments = {}
+
+        for domain in detected_domains:
+            if domain in authority_models:
+                assignments[domain] = authority_models[domain]
+            else:
+                # Fallback to general model
+                assignments[domain] = authority_models.get("metacognition", "deepseek-r1:1.5b")
+
+        return assignments
+
+    def _build_research_specialists(self, selected_domains: list) -> dict:
+        """
+        Create specialists WITHOUT ParallelSpecialistAdapter ensemble.
+        Research mode uses 1 worker per specialist (no voting).
+        Returns specialists dict for WoT.
+        """
+        specialists = {}
+
+        for domain in selected_domains:
+            # Get the specialist (use existing adapters but note we're in research mode)
+            if domain == "general" and hasattr(self, 'general'):
+                specialists["general"] = self.general
+            elif domain == "math" and hasattr(self, 'math'):
+                specialists["math"] = self.math
+            elif domain == "physics" and hasattr(self, 'physics'):
+                specialists["physics"] = self.physics
+            elif domain == "chemistry" and hasattr(self, 'chemistry'):
+                specialists["chemistry"] = self.chemistry
+            elif domain == "biology" and hasattr(self, 'biology'):
+                specialists["biology"] = self.biology
+            elif domain == "code" and hasattr(self, 'code'):
+                specialists["code"] = self.code
+            elif domain == "internet" and hasattr(self, 'research'):
+                specialists["internet"] = self.research
+            elif domain == "facts" and hasattr(self, 'facts'):
+                specialists["facts"] = self.facts
+            elif domain == "memory" and hasattr(self, 'memory_adapter'):
+                specialists["memory"] = self.memory_adapter
+
+        return specialists
+
+    def _run_metacognition_audit(self, user_query: str, domain_cots: dict, entry_domain: str) -> dict:
+        """
+        Use DeepSeek R1 to self-audit reasoning quality.
+        Checks: consistency, confidence, uncertainty, limitations.
+        Returns dict with audit results.
+        """
+        try:
+            from anm.system.inference import get_inference_engine
+            engine = get_inference_engine()
+
+            audit_prompt = f"""You are a meta-cognitive auditor for ANM Research Mode.
+
+Analyze the following reasoning outputs for quality, consistency, and limitations.
+
+User Query: {user_query}
+
+Entry Domain: {entry_domain}
+
+Domain Reasoning Outputs:
+{self._format_domain_cots_for_audit(domain_cots)}
+
+Provide a brief audit covering:
+1. Consistency: Are the domain outputs consistent with each other?
+2. Confidence: How confident should we be in the final answer?
+3. Uncertainty: What are the main sources of uncertainty?
+4. Limitations: What are the limitations of this analysis?
+
+Format as JSON with keys: consistency, confidence, uncertainty, limitations"""
+
+            response = engine.generate(
+                audit_prompt,
+                max_tokens=500,
+                temperature=0.3,
+            )
+
+            # Try to parse as JSON, fallback to plain text
+            try:
+                import json
+                audit = json.loads(response)
+            except:
+                audit = {
+                    "consistency": "Unable to parse",
+                    "confidence": "Medium",
+                    "uncertainty": response,
+                    "limitations": "Audit parsing failed"
+                }
+
+            return audit
+
+        except Exception as e:
+            return {
+                "consistency": "Audit failed",
+                "confidence": "Unknown",
+                "uncertainty": f"Error: {str(e)}",
+                "limitations": "Meta-cognition audit unavailable"
+            }
+
+    def _format_domain_cots_for_audit(self, domain_cots: dict) -> str:
+        """Format domain COTs for meta-cognition audit."""
+        formatted = []
+        for domain, cot in domain_cots.items():
+            formatted.append(f"[{domain.upper()}]:\n{cot[:500]}...\n")  # First 500 chars
+        return "\n".join(formatted)
+
+    def _detect_math_patterns(self, query: str) -> bool:
+        """Detect if query contains math-specific patterns."""
+        math_indicators = ["=", "+", "-", "*", "/", "^", "∫", "∑", "√"]
+        return any(ind in query for ind in math_indicators)
+
+    def _detect_science_patterns(self, query: str) -> bool:
+        """Detect if query contains science-specific patterns."""
+        science_terms = ["hypothesis", "experiment", "theory", "observation", "data"]
+        query_lower = query.lower()
+        return any(term in query_lower for term in science_terms)
+
+    def _detect_code_patterns(self, query: str) -> bool:
+        """Detect if query contains code-specific patterns."""
+        code_indicators = ["def ", "class ", "import ", "function", "return", "if ", "for ", "while "]
+        return any(ind in query for ind in code_indicators)

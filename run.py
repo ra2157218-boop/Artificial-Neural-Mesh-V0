@@ -120,7 +120,7 @@ def run_sanity_check(auto_fix: bool = False) -> bool:
     return result.passed
 
 
-def run_query(query: str, verbose: bool = False, skip_sanity: bool = False, quick_mode: bool = False, auto_mode: bool = False, optimize_prompts: bool = False) -> dict:
+def run_query(query: str, verbose: bool = False, skip_sanity: bool = False, quick_mode: bool = False, auto_mode: bool = False, optimize_prompts: bool = False, research_mode: bool = False) -> dict:
     """Run a query through ANM."""
     from anm import ANM, ANMConfig
     
@@ -131,6 +131,7 @@ def run_query(query: str, verbose: bool = False, skip_sanity: bool = False, quic
         quick_mode=quick_mode,
         auto_mode=auto_mode,
         optimize_prompts=optimize_prompts,
+        research_mode=research_mode,
     )
     anm = ANM(config)
     
@@ -165,7 +166,7 @@ def run_expansion_test(domain: str, verbose: bool = False) -> dict:
     return result
 
 
-def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_mode: bool = False, optimize_prompts: bool = False):
+def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_mode: bool = False, optimize_prompts: bool = False, research_mode: bool = False):
     """Run ANM in interactive mode with beautiful terminal UI."""
     from anm import ANM, ANMConfig
     from anm.ui import TerminalUI
@@ -178,14 +179,15 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
         ui.print_info("Running pre-startup sanity check...")
         ui.console.print() if ui.console else print()
     
-    ui.print_mode_info(quick_mode, auto_mode, optimize_prompts)
-    
+    ui.print_mode_info(quick_mode, auto_mode, optimize_prompts, research_mode)
+
     config = ANMConfig(
         skip_sanity_check=skip_sanity,
         auto_fix=True,
         quick_mode=quick_mode,
         auto_mode=auto_mode,
         optimize_prompts=optimize_prompts,
+        research_mode=research_mode,
     )
     anm = ANM(config)
     
@@ -298,8 +300,9 @@ Examples:
     parser.add_argument("--version", action="store_true", help="Show version")
     parser.add_argument("--quick", action="store_true", help="Quick mode: use smaller, faster model (no chain-of-thought)")
     parser.add_argument("--auto", action="store_true", help="Auto mode: automatically choose quick/normal based on query complexity")
+    parser.add_argument("--research", action="store_true", help="Research mode: maximum quality, structured PDF output")
     parser.add_argument("--optimize", action="store_true", help="Optimize prompts: refine user prompts using small model for better processing")
-    
+
     # Sanity check options
     parser.add_argument("--sanity", action="store_true", help="Run sanity check only")
     parser.add_argument("--fix", action="store_true", help="Auto-fix issues (use with --sanity)")
@@ -349,19 +352,28 @@ Examples:
     if args.quick and args.auto:
         print("[ERROR] Cannot use both --quick and --auto. Choose one.")
         sys.exit(1)
-    
+
+    # Research mode validation
+    if args.research and args.auto:
+        print("[ERROR] Cannot use both --research and --auto. Research mode uses deterministic routing.")
+        sys.exit(1)
+
+    if args.research and args.quick:
+        print("[ERROR] Cannot use --research with --quick. Research mode requires full reasoning.")
+        sys.exit(1)
+
     # Interactive mode
     if args.interactive or (not args.query and not args.file):
-        interactive_mode(skip_sanity=args.skip_sanity, quick_mode=args.quick, auto_mode=args.auto, optimize_prompts=args.optimize)
+        interactive_mode(skip_sanity=args.skip_sanity, quick_mode=args.quick, auto_mode=args.auto, optimize_prompts=args.optimize, research_mode=args.research)
         return
-    
+
     # Single query mode
     from anm.ui import TerminalUI
-    
+
     ui = TerminalUI()
     ui.print_banner()
-    
-    ui.print_mode_info(args.quick, args.auto, args.optimize)
+
+    ui.print_mode_info(args.quick, args.auto, args.optimize, args.research)
     
     if args.file:
         query = load_input_from_file(args.file)
@@ -382,10 +394,10 @@ Examples:
     if progress:
         with progress:
             task = progress.add_task("[cyan]Processing...", total=None)
-            result = run_query(query, verbose=args.verbose, skip_sanity=args.skip_sanity, quick_mode=args.quick, auto_mode=args.auto, optimize_prompts=args.optimize)
+            result = run_query(query, verbose=args.verbose, skip_sanity=args.skip_sanity, quick_mode=args.quick, auto_mode=args.auto, optimize_prompts=args.optimize, research_mode=args.research)
             progress.update(task, completed=True)
     else:
-        result = run_query(query, verbose=args.verbose, skip_sanity=args.skip_sanity, quick_mode=args.quick, auto_mode=args.auto, optimize_prompts=args.optimize)
+        result = run_query(query, verbose=args.verbose, skip_sanity=args.skip_sanity, quick_mode=args.quick, auto_mode=args.auto, optimize_prompts=args.optimize, research_mode=args.research)
     
     # Show optimization info if prompt was optimized
     if result.get("optimized_query") and result.get("original_query"):

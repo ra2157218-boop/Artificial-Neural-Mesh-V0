@@ -54,12 +54,56 @@ MODEL_MEMORY       = "deepseek-r1:1.5b"
 # Meta-specialists
 MODEL_RESEARCH     = "deepseek-r1:1.5b"
 MODEL_FACTS        = "deepseek-r1:1.5b"
+MODEL_RESEARCH_INTERNET = "qwen2.5-3b-instruct"  # Internet research authority
 
 # Executive modules
 MODEL_REFINER      = "deepseek-r1:1.5b"
 MODEL_VERIFIER     = "deepseek-r1:1.5b"
 MODEL_ROUTER       = "deepseek-r1:1.5b"
 MODEL_EXPANSION    = "deepseek-r1:1.5b"  # Future creative engine
+
+
+# ============================================================
+#  Research Mode Configuration
+# ============================================================
+
+RESEARCH_MODE_CONFIGS = {
+    # Authority model assignments (LOCKED - no voting override)
+    "authority_models": {
+        "math": MODEL_MATH,           # nanbeige4-3b
+        "physics": MODEL_PHYSICS,     # nanbeige4-3b
+        "chemistry": MODEL_CHEMISTRY, # nanbeige4-3b
+        "biology": MODEL_BIOLOGY,     # nanbeige4-3b
+        "code": MODEL_CODE,           # stable-code-3b
+        "internet": MODEL_RESEARCH_INTERNET,  # qwen2.5-3b-instruct
+        "metacognition": MODEL_GENERAL,  # deepseek-r1:1.5b
+    },
+
+    # Deterministic routing
+    "deterministic_routing": True,
+    "hard_domain_binding": True,
+    "no_fast_fallback": True,
+
+    # Parallelism (dynamic 4-10 modules based on query)
+    "max_parallelism": True,
+    "min_parallel_modules": 4,    # Minimum 4 specialists run in parallel
+    "max_parallel_modules": 10,   # Maximum 10 specialists can run concurrently
+    "workers_per_module": 1,      # Each specialist runs once (no ensemble in research mode)
+
+    # WoT configuration
+    "wot_mandatory": True,
+    "wot_min_depth": 3,
+    "wot_max_steps": 20,
+
+    # Failure policy
+    "explicit_reporting": True,
+    "retries_allowed": 2,
+    "return_uncertainty": True,
+
+    # PDF output
+    "pdf_output": True,
+    "markdown_fallback": True,  # If PDF generation fails, save as structured markdown
+}
 
 
 # ============================================================
@@ -167,6 +211,10 @@ def get_config() -> dict:
         "model_verifier": MODEL_VERIFIER,
         "model_router": MODEL_ROUTER,
         "model_expansion": MODEL_EXPANSION,
+
+        # Research mode
+        "research_mode_configs": RESEARCH_MODE_CONFIGS,
+        "model_research_internet": MODEL_RESEARCH_INTERNET,
 
         # Diary memory system
         "memory_enabled": MEMORY_ENABLED,
