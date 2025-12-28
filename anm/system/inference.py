@@ -48,9 +48,6 @@ class InferenceConfig:
     quick_model_repo: str = "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF"
     quick_model_filename: str = "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
     
-    # Domain-specific model overrides (e.g., {"code": {"repo": "...", "filename": "..."}})
-    domain_models: Optional[Dict[str, Dict[str, str]]] = None
-    
     # Generation settings
     max_tokens: int = 2048
     temperature: float = 0.7
@@ -102,21 +99,9 @@ class InferenceEngine:
     _instance: Optional['InferenceEngine'] = None
     _lock: Lock = Lock()
     
-    def __new__(cls, config: Optional[InferenceConfig] = None, _bypass_singleton: bool = False):
-        """
-        Singleton pattern - only one engine instance.
-        
-        Args:
-            config: Optional configuration
-            _bypass_singleton: If True, create a new instance (for domain-specific engines)
-        """
+    def __new__(cls, config: Optional[InferenceConfig] = None):
+        """Singleton pattern - only one engine instance."""
         with cls._lock:
-            if _bypass_singleton:
-                # Create a new instance (bypass singleton for domain-specific engines)
-                instance = super().__new__(cls)
-                instance._initialized = False
-                return instance
-            
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
                 cls._instance._initialized = False
@@ -563,8 +548,6 @@ class InferenceEngine:
 # ============================================================
 
 _engine: Optional[InferenceEngine] = None
-# Domain-specific engines (for models that differ from default)
-_domain_engines: Dict[str, Optional[InferenceEngine]] = {}
 
 
 def get_inference_engine(config: Optional[InferenceConfig] = None) -> InferenceEngine:
@@ -586,123 +569,17 @@ def get_inference_engine(config: Optional[InferenceConfig] = None) -> InferenceE
     return _engine
 
 
-def get_inference_engine_for_domain(domain: str, config: Optional[InferenceConfig] = None) -> InferenceEngine:
-    """
-    Get inference engine for a specific domain.
-    
-    This allows domain-specific models (e.g., Stable-Code-3B for code domain,
-    Nanbeige4-3B for math/physics/chemistry/biology domains).
-    
-    IMPORTANT: Domain-specific models ALWAYS use normal mode (quick_mode=False),
-    regardless of any config passed. These are high-quality models that should
-    never be downgraded to quick mode.
-    
-    Args:
-        domain: Domain name (e.g., "code", "math", "physics", "chemistry", "biology")
-        config: Optional configuration (note: quick_mode will be forced to False for domain-specific models)
-    
-    Returns:
-        InferenceEngine instance for the domain
-    """
-    global _domain_engines, _engine
-    
-    # Domain-specific model configurations
-    # NOTE: These models ALWAYS use normal mode (quick_mode=False)
-    # Domain-specific models (stable-code-3b, nanbeige4-3b) are high-quality models
-    # that should never be downgraded to quick mode, even if Auto Mode suggests it
-    DOMAIN_MODEL_CONFIGS = {
-        "code": InferenceConfig(
-            model_repo="TheBloke/Stable-Code-3B-GGUF",
-            model_filename="stable-code-3b.Q4_K_M.gguf",
-            quick_mode=False,  # ALWAYS normal mode - never quick mode
-            context_length=16384,  # Stable-Code-3B has 16k context
-        ),
-        "math": InferenceConfig(
-            model_repo="enacimie/Nanbeige4-3B-Base-Q4_K_M-GGUF",
-            model_filename="nanbeige4-3b-base-q4_k_m.gguf",
-            quick_mode=False,  # ALWAYS normal mode - never quick mode
-            context_length=4096,  # Nanbeige4-3B context length
-        ),
-        "physics": InferenceConfig(
-            model_repo="enacimie/Nanbeige4-3B-Base-Q4_K_M-GGUF",
-            model_filename="nanbeige4-3b-base-q4_k_m.gguf",
-            quick_mode=False,  # ALWAYS normal mode - never quick mode
-            context_length=4096,
-        ),
-        "chemistry": InferenceConfig(
-            model_repo="enacimie/Nanbeige4-3B-Base-Q4_K_M-GGUF",
-            model_filename="nanbeige4-3b-base-q4_k_m.gguf",
-            quick_mode=False,  # ALWAYS normal mode - never quick mode
-            context_length=4096,
-        ),
-        "biology": InferenceConfig(
-            model_repo="enacimie/Nanbeige4-3B-Base-Q4_K_M-GGUF",
-            model_filename="nanbeige4-3b-base-q4_k_m.gguf",
-            quick_mode=False,  # ALWAYS normal mode - never quick mode
-            context_length=4096,
-        ),
-    }
-    
-    # Check if domain has a specific model
-    if domain in DOMAIN_MODEL_CONFIGS:
-        # Create a fresh config (don't modify the template)
-        domain_config = InferenceConfig(
-            model_repo=DOMAIN_MODEL_CONFIGS[domain].model_repo,
-            model_filename=DOMAIN_MODEL_CONFIGS[domain].model_filename,
-            quick_mode=DOMAIN_MODEL_CONFIGS[domain].quick_mode,
-            context_length=DOMAIN_MODEL_CONFIGS[domain].context_length,
-        )
-        
-        # Merge with provided config if any
-        if config:
-            # Update domain config with provided values
-            # BUT: Domain-specific models (stable-code-3b, nanbeige4-3b) ALWAYS use normal mode
-            # Never allow quick_mode=True to override domain-specific models
-            for key, value in config.__dict__.items():
-                if value is not None:
-                    # Enforce quick_mode=False for domain-specific models (normal mode only)
-                    if key == "quick_mode":
-                        # Domain-specific models should always use normal mode
-                        setattr(domain_config, key, False)
-                    else:
-                        setattr(domain_config, key, value)
-        
-        # Use domain-specific engine (separate instance, not singleton)
-        # Cache by domain name (simpler key)
-        if domain not in _domain_engines or _domain_engines[domain] is None:
-            # Create new instance bypassing singleton
-            # We need to call __new__ directly with bypass flag, then __init__
-            domain_engine = InferenceEngine.__new__(InferenceEngine, domain_config, _bypass_singleton=True)
-            domain_engine.__init__(domain_config)
-            _domain_engines[domain] = domain_engine
-        elif config:
-            # Update config if provided (but don't reinit if already initialized)
-            if not _domain_engines[domain]._initialized:
-                _domain_engines[domain].__init__(domain_config)
-        
-        return _domain_engines[domain]
-    
-    # Fall back to default engine (ensure it's separate)
-    return get_inference_engine(config)
-
-
-def run_model(prompt: str, max_tokens: int = 2048, domain: Optional[str] = None, force_domain_model: bool = True) -> str:
+def run_model(prompt: str, max_tokens: int = 2048) -> str:
     """
     Run model inference on prompt.
-
+    
     This is the main function called by specialists.
     Drop-in replacement for run_ollama.
-
+    
     Args:
         prompt: Input prompt
         max_tokens: Maximum tokens to generate
-        domain: Optional domain name for domain-specific models (e.g., "code", "math", "physics")
-        force_domain_model: If True, when domain is specified, ALWAYS use the domain-specific
-                           model regardless of Auto Mode complexity check. This ensures that
-                           specialists (Math, Code, Physics, etc.) always use their configured
-                           high-quality models instead of being downgraded to Quick Mode.
-                           Default: True (specialists should use their assigned models)
-
+        
     Returns:
         Generated text string
     """
@@ -710,24 +587,11 @@ def run_model(prompt: str, max_tokens: int = 2048, domain: Optional[str] = None,
     import json
     try:
         with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:run_model", "message": "run_model called", "data": {"prompt_length": len(prompt) if prompt else 0, "max_tokens": max_tokens, "domain": domain, "force_domain_model": force_domain_model}, "timestamp": int(time.time() * 1000)}) + "\n")
+            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:run_model", "message": "run_model called", "data": {"prompt_length": len(prompt) if prompt else 0, "max_tokens": max_tokens}, "timestamp": int(time.time() * 1000)}) + "\n")
     except: pass
     # #endregion
-
-    # Use domain-specific engine if domain is specified AND force_domain_model is True
-    # This prevents Auto Mode from overriding specialist model selection
-    if domain and force_domain_model:
-        # Specialist explicitly requested - use configured domain-specific model
-        # (e.g., Nanbeige4-3B for math, Stable-Code-3B for code)
-        engine = get_inference_engine_for_domain(domain)
-    elif domain and not force_domain_model:
-        # Domain specified but allowing Auto Mode to override
-        # Fall back to default engine (which may use Quick Mode based on complexity)
-        engine = get_inference_engine()
-    else:
-        # No domain specified - use default engine
-        engine = get_inference_engine()
-
+    
+    engine = get_inference_engine()
     result = engine.generate(prompt, max_tokens=max_tokens)
     
     # #region agent log

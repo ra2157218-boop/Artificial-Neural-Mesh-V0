@@ -154,7 +154,6 @@ COMMON RULES:
 2. Be honest about limitations and uncertainties
 3. DO NOT fabricate data, citations, or facts
 4. End with exactly one: WOT_REQUEST: <DOMAIN or NONE>
-5. **CRITICAL: Respond in English only. Never use Chinese characters or any other language.**
 
 WOT ROUTING:
 - Need math/derivations → WOT_REQUEST: MATH
@@ -194,16 +193,8 @@ WOT ROUTING:
         except: pass
         # #endregion
         
-        # Run LLM using direct model loading with domain-specific inference
-        # This allows Math, Physics, Chemistry, Biology to use Nanbeige4-3B
-        # and Code to use Stable-Code-3B
-        # force_domain_model=True ensures Auto Mode doesn't override specialist models
-        raw_output = run_model(
-            prompt,
-            max_tokens=self.config.max_tokens,
-            domain=self.domain_name,
-            force_domain_model=True  # ALWAYS use specialist's configured model, bypass Auto Mode
-        )
+        # Run LLM using direct model loading
+        raw_output = run_model(prompt, max_tokens=self.config.max_tokens)
         
         # #region agent log
         import json

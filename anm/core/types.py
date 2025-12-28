@@ -18,11 +18,7 @@ from typing import (
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from abc import ABC, abstractmethod
-import sys
 import time
-
-# Python version compatibility: slots=True requires Python 3.10+
-_SUPPORTS_SLOTS = sys.version_info >= (3, 10)
 
 __all__ = [
     # Version
@@ -142,7 +138,7 @@ R = TypeVar('R')
 #  DATA CLASSES
 # ============================================================
 
-@dataclass(frozen=True, **({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(frozen=True, slots=True)
 class ReasoningStep:
     """A single step in the reasoning chain."""
     step_id: int
@@ -154,7 +150,7 @@ class ReasoningStep:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class DomainResult:
     """Result from a single domain specialist."""
     domain: Domain
@@ -166,7 +162,7 @@ class DomainResult:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class QueryResult:
     """Complete result from query processing."""
     query: str
@@ -184,7 +180,7 @@ class QueryResult:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class ANMResult:
     """Top-level ANM query result."""
     success: bool

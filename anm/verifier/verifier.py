@@ -7,8 +7,6 @@
 
 from __future__ import annotations
 import re
-import os
-import time
 from typing import Dict, Any
 
 # Import the shared inference engine
@@ -18,17 +16,6 @@ try:
     from anm.utils.prompts import VERIFIER_PROMPT
 except ImportError:
     VERIFIER_PROMPT = ""
-
-
-# ============================================================
-#  UTILITY FUNCTIONS
-# ============================================================
-
-def _get_debug_log_path() -> str:
-    """Get the debug log path (portable across systems)."""
-    debug_log = os.path.join(os.getcwd(), ".cursor", "debug.log")
-    os.makedirs(os.path.dirname(debug_log), exist_ok=True)
-    return debug_log
 
 
 # ============================================================
@@ -103,7 +90,7 @@ class Verifier:
         import json
         import time
         try:
-            with open(_get_debug_log_path(), "a") as f:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H3", "location": "verifier.py:run", "message": "After LLM call", "data": {"is_format_error": self._is_format_error(parsed), "parsed_status": parsed.get("status"), "query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity")}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion
@@ -120,7 +107,7 @@ class Verifier:
                 try:
                     import json
                     import time
-                    with open(_get_debug_log_path(), "a") as f:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
                         f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "verifier.py:run", "message": "Using adaptive fallback due to format error", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "raw2_output": raw2[:200] if 'raw2' in locals() else "N/A"}, "timestamp": int(time.time() * 1000)}) + "\n")
                 except: pass
                 # #endregion
@@ -129,7 +116,7 @@ class Verifier:
                 try:
                     import json
                     import time
-                    with open(_get_debug_log_path(), "a") as f:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
                         f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "verifier.py:run", "message": "After adaptive fallback", "data": {"status": parsed.get("status"), "score": parsed.get("score"), "issues": parsed.get("issues", [])}, "timestamp": int(time.time() * 1000)}) + "\n")
                 except: pass
                 # #endregion
@@ -174,21 +161,12 @@ class Verifier:
             analysis["query_type"] = "code"
             analysis["expected_format"] = "code"
             analysis["requirements"].append("code_blocks")
-        elif (
-            # Math operations and keywords
-            any(word in query_lower for word in ["calculate", "compute", "solve", "derive", "prove", "formula", "multiply", "multiplied", "divide", "divided", "add", "subtract", "square root", "sqrt", "derivative", "integral", "equation", "gcd", "lcm", "factorial", "power"]) or
-            # Math operators in the query
-            any(op in user_query for op in ["+", "-", "*", "/", "=", "×", "÷", "^", "²", "³"]) or
-            # Patterns like "product of", "sum of", "difference", "quotient"
-            any(phrase in query_lower for phrase in ["product of", "sum of", "difference", "quotient", "mean of", "average of", "median", "mode", "probability"])
-        ):
+        elif any(word in query_lower for word in ["calculate", "compute", "solve", "derive", "prove", "formula"]) or any(op in user_query for op in ["+", "-", "*", "/", "=", "×", "÷", "^"]):
             # Check for math operations FIRST (before "what is" which catches too much)
             analysis["query_type"] = "calculation"
             analysis["expected_format"] = "math"
             analysis["expected_length"] = "short"  # Simple calculations can be short
-            # Mathematical steps are OPTIONAL, not required for simple calculations
-            if analysis.get("complexity") != "simple":
-                analysis["requirements"].append("mathematical_steps")
+            analysis["requirements"].append("mathematical_steps")
         elif any(word in query_lower for word in ["explain", "describe", "how", "why"]) or (query_lower.startswith("what is") and len(user_query) > 30):
             # Only treat "what is" as explanation if it's a longer query (not simple math)
             analysis["query_type"] = "explanation"
@@ -507,18 +485,13 @@ ADAPTIVE DECISION CRITERIA:
         import json
         import time
         try:
-            with open(_get_debug_log_path(), "a") as f:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H1", "location": "verifier.py:_adaptive_fallback", "message": "Adaptive fallback called", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "answer_length": answer_analysis.get("answer_length"), "expected_length": question_analysis.get("expected_length")}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion
-        # Initialize all variables upfront to avoid UnboundLocalError
+        # Use analysis to make informed decision
         issues = []
         score = 100
-        status = "approved"
-        notes = ""
-        all_issues = []
-        fallback_issues = []
-        original_fallback = None
         
         # Check reasoning support
         if not reasoning_analysis["supports_answer"]:
@@ -556,7 +529,7 @@ ADAPTIVE DECISION CRITERIA:
         
         # #region agent log
         try:
-            with open(_get_debug_log_path(), "a") as f:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "verifier.py:_adaptive_fallback", "message": "Before calling _fallback", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "expected_length": question_analysis.get("expected_length"), "answer_length": answer_analysis.get("answer_length"), "expects_short_answer": expects_short_answer, "current_score": score, "current_issues": issues}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion
@@ -598,7 +571,7 @@ ADAPTIVE DECISION CRITERIA:
                     "import " in answer_text_for_check.lower() or
                     "return " in answer_text_for_check.lower()
                 )
-
+                
                 if answer_analysis["has_answer"] and (has_code_indicators or reasoning_analysis["supports_answer"]):
                     status = "approved"
                     notes = f"Adaptive fallback: code query - answer contains code content."
@@ -613,11 +586,11 @@ ADAPTIVE DECISION CRITERIA:
                 original_fallback = self._fallback(packet)
                 # #region agent log
                 try:
-                    with open(_get_debug_log_path(), "a") as f:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
                         f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "verifier.py:_adaptive_fallback", "message": "After calling _fallback", "data": {"original_status": original_fallback.get("status"), "original_notes": original_fallback.get("notes", "")[:100], "original_issues": original_fallback.get("issues", [])}, "timestamp": int(time.time() * 1000)}) + "\n")
                 except: pass
                 # #endregion
-
+                
                 # Combine issues (but filter out "too_short" for queries expecting short answers)
                 fallback_issues = original_fallback.get("issues", [])
                 if question_analysis.get("expected_length") == "short" and "too_short" in fallback_issues:
@@ -626,19 +599,14 @@ ADAPTIVE DECISION CRITERIA:
                 if "answer too short" in original_fallback.get("notes", "").lower():
                     original_fallback["notes"] = original_fallback.get("notes", "").replace("Fallback: answer too short for meaningful response (< 50 chars)", "").strip()
             all_issues = list(set(issues + fallback_issues))
-
+            
             # Make final decision
             if score < 50 or "reasoning_does_not_support_answer" in all_issues or not answer_analysis["matches_requirements"]:
                 status = "rejected"
                 notes = f"Adaptive fallback: Question analysis shows {question_analysis['query_type']} query, but answer {'does not match requirements' if not answer_analysis['matches_requirements'] else 'reasoning does not support answer' if not reasoning_analysis['supports_answer'] else 'is incomplete'}."
             else:
-                # Use original_fallback if available (non-code path), otherwise default to approved
-                if original_fallback:
-                    status = original_fallback.get("status", "approved")
-                    notes = f"Adaptive fallback: Based on question analysis ({question_analysis['query_type']}), reasoning quality ({reasoning_analysis['reasoning_quality']}), and answer completeness ({answer_analysis['completeness']}). " + original_fallback.get("notes", "")
-                else:
-                    # Code path - status and notes already set above
-                    pass
+                status = original_fallback.get("status", "approved")
+                notes = f"Adaptive fallback: Based on question analysis ({question_analysis['query_type']}), reasoning quality ({reasoning_analysis['reasoning_quality']}), and answer completeness ({answer_analysis['completeness']}). " + original_fallback.get("notes", "")
         
         return {
             "status": status,
@@ -909,7 +877,6 @@ ADAPTIVE DECISION CRITERIA:
         # Check if query asks for code but answer has no code
         if merged_match:
             merged_text = merged_match.group(1).strip()
-            merged_clean = merged_text.replace("[VERIFIER_READY]", "").strip()
             query_match = re.search(r"user query:\s*['\"](.*?)['\"]", packet, re.IGNORECASE)
             if query_match:
                 user_query = query_match.group(1).lower()
@@ -965,26 +932,17 @@ ADAPTIVE DECISION CRITERIA:
             import json
             import time
             try:
-                with open(_get_debug_log_path(), "a") as f:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
                     f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H2", "location": "verifier.py:_fallback", "message": "Checking answer length", "data": {"answer_length": len(merged_clean), "threshold": 50, "will_reject": len(merged_clean) < 50}, "timestamp": int(time.time() * 1000)}) + "\n")
             except: pass
             # #endregion
-            # Check for very short answers, but allow short factual answers
             if len(merged_clean) < 50:
-                # Allow short answers if they contain numbers, formulas, or chemical symbols
-                # (e.g., "33", "H2O", "9.8 m/s²", "12", "3.14")
-                has_number = bool(re.search(r'\d+', merged_clean))
-                has_formula = bool(re.search(r'[A-Z][a-z]?\d*', merged_clean))  # Chemical formula pattern
-                has_scientific = bool(re.search(r'\d+\.?\d*\s*[a-zA-Z/²³°]+', merged_clean))  # e.g., "9.8 m/s²"
-
-                # If it's a short factual answer, don't reject
-                if not (has_number or has_formula or has_scientific):
-                    return {
-                        "status": "rejected",
-                        "notes": "Fallback: answer too short for meaningful response (< 50 chars) and no factual content detected",
-                        "score": 20,
-                        "issues": ["too_short"],
-                    }
+                return {
+                    "status": "rejected",
+                    "notes": "Fallback: answer too short for meaningful response (< 50 chars)",
+                    "score": 20,
+                    "issues": ["too_short"],
+                }
             
             # Check for title-only answers (no actual content)
             if len(merged_clean.split()) < 10 and not any(char in merged_clean for char in [".", "!", "?", ":", ";"]):
@@ -999,7 +957,7 @@ ADAPTIVE DECISION CRITERIA:
         import json
         import time
         try:
-            with open(_get_debug_log_path(), "a") as f:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "verifier.py:_fallback", "message": "Fallback approval (aggressive mode)", "data": {"packet_length": len(packet) if packet else 0, "packet_preview": packet[:200] if packet else "EMPTY"}, "timestamp": int(time.time() * 1000)}) + "\n")
         except: pass
         # #endregion

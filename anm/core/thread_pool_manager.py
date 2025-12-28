@@ -20,12 +20,8 @@ from concurrent.futures import ThreadPoolExecutor, Future, as_completed
 from dataclasses import dataclass, field
 from threading import RLock, Event
 from enum import Enum
-import sys
 import time
 import threading
-
-# Python version compatibility: slots=True requires Python 3.10+
-_SUPPORTS_SLOTS = sys.version_info >= (3, 10)
 
 __all__ = [
     "ThreadPoolManager",
@@ -44,7 +40,7 @@ class PoolHealth(Enum):
     CRITICAL = "critical"
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class PoolStats:
     """Statistics for a thread pool."""
     pool_name: str
@@ -110,7 +106,7 @@ class PoolStats:
         }
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class PoolConfig:
     """Configuration for a thread pool."""
     name: str

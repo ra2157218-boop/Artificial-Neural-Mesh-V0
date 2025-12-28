@@ -150,69 +150,27 @@ USER PROMPT:
             "OPTIMIZED PROMPT:",
             "REFINED:",
         ]
-
+        
         cleaned = optimized.strip()
-
+        
         for prefix in prefixes_to_remove:
             if cleaned.lower().startswith(prefix.lower()):
                 cleaned = cleaned[len(prefix):].strip()
-
+        
         # Remove quotes if the model wrapped it
         if cleaned.startswith('"') and cleaned.endswith('"'):
             cleaned = cleaned[1:-1]
         if cleaned.startswith("'") and cleaned.endswith("'"):
             cleaned = cleaned[1:-1]
-
+        
         # Validate: don't return empty or too different
         if not cleaned or len(cleaned) < 5:
             return original
-
+        
         # If optimized version is way longer, might be adding too much
         if len(cleaned) > len(original) * 3:
             return original
-
-        # CRITICAL FIX: Check for query meaning corruption
-        # If the optimizer completely changed the question, reject it
-        original_lower = original.lower()
-        cleaned_lower = cleaned.lower()
-
-        # Extract key question words from original
-        key_words = []
-        if "what is" in original_lower or "what's" in original_lower:
-            key_words.append("what")
-        if "when" in original_lower:
-            key_words.append("when")
-        if "where" in original_lower:
-            key_words.append("where")
-        if "who" in original_lower:
-            key_words.append("who")
-        if "why" in original_lower:
-            key_words.append("why")
-        if "how" in original_lower:
-            key_words.append("how")
-
-        # Check if question type changed (e.g., "what" -> "when")
-        if key_words:
-            if not any(word in cleaned_lower for word in key_words):
-                # Question type changed - reject optimization
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.warning(f"Prompt optimizer changed question type. Original: '{original}' -> Optimized: '{cleaned}'. Rejecting optimization.")
-                return original
-
-        # Check for key nouns/entities in factual questions
-        # Extract potential entities (capitalized words, numbers, quoted terms)
-        import re
-        original_entities = set(re.findall(r'\b[A-Z][a-z]+\b|\b\d+\b', original))
-        cleaned_entities = set(re.findall(r'\b[A-Z][a-z]+\b|\b\d+\b', cleaned))
-
-        # If original had entities and they're all missing, likely corrupted
-        if original_entities and not original_entities.intersection(cleaned_entities):
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.warning(f"Prompt optimizer removed all entities. Original: '{original}' -> Optimized: '{cleaned}'. Rejecting optimization.")
-            return original
-
+        
         return cleaned.strip()
     
     def optimize_batch(self, prompts: list[str]) -> list[str]:

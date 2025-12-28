@@ -23,12 +23,8 @@ from threading import RLock, Event as ThreadEvent
 from enum import Enum, auto
 from weakref import WeakValueDictionary
 from collections import defaultdict
-import sys
 import time
 import logging
-
-# Python version compatibility: slots=True requires Python 3.10+
-_SUPPORTS_SLOTS = sys.version_info >= (3, 10)
 
 __all__ = [
     "ComponentRegistry",
@@ -60,7 +56,7 @@ class ComponentStatus(Enum):
     SHUTDOWN = auto()
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class ComponentInfo:
     """Information about a registered component."""
     name: str
@@ -308,7 +304,7 @@ class EventBus:
                 self._subscribers.clear()
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class StateSnapshot:
     """Enhanced snapshot of system state."""
     timestamp: float
@@ -329,7 +325,7 @@ class StateSnapshot:
         return computed == self.checksum
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class StateDiff:
     """Difference between two state versions."""
     from_version: int
@@ -340,7 +336,7 @@ class StateDiff:
     changes: Dict[str, Dict[str, Any]] = field(default_factory=dict)  # key -> {old, new}
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class StateSchema:
     """Schema definition for state validation."""
     key: str

@@ -1,10 +1,7 @@
 # ============================================================
 #  ANM V0-OpenSource — UI Module
+#  Terminal User Interface
 # ============================================================
-
-"""
-ANM UI Module - Terminal interface components.
-"""
 
 from anm.ui.terminal import TerminalUI, RICH_AVAILABLE
 

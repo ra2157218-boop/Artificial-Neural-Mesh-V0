@@ -25,9 +25,6 @@ import time
 import logging
 from contextlib import contextmanager
 
-# Python version compatibility: slots=True requires Python 3.10+
-_SUPPORTS_SLOTS = sys.version_info >= (3, 10)
-
 logger = logging.getLogger("anm.memory")
 
 T = TypeVar('T')
@@ -44,7 +41,7 @@ __all__ = [
 ]
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class MemorySnapshot:
     """Memory usage snapshot."""
     timestamp: float
@@ -55,7 +52,7 @@ class MemorySnapshot:
     top_allocations: List[tuple] = field(default_factory=list)
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class ResourceInfo:
     """Information about a tracked resource."""
     name: str
@@ -163,8 +160,7 @@ class MemoryProfiler:
         try:
             import psutil
             process = psutil.Process()
-            mem_info = process.memory_info()
-            return mem_info.peak_wss / 1024 / 1024 if hasattr(mem_info, 'peak_wss') else 0.0
+            return process.memory_info().peak_wss / 1024 / 1024 if hasattr(process.memory_info(), 'peak_wss') else 0.0
         except (ImportError, AttributeError):
             # Fallback: use tracemalloc peak
             if self._tracemalloc_started:

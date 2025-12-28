@@ -120,7 +120,7 @@ class SanityChecker:
         "anm.sim.renderer_2d",
     ]
     
-    # Expansion modules (optional - require additional dependencies like requests, huggingface-hub)
+    # Expansion modules
     EXPANSION_MODULES = [
         "anm.expansion.expansion_engine_v2",
         "anm.expansion.core.novelty_detector",
@@ -321,9 +321,9 @@ class SanityChecker:
         for module in self.OPTIONAL_MODULES:
             self._check_import(module, IssueSeverity.WARNING)
         
-        # Expansion modules (WARNING - optional, requires additional dependencies)
+        # Expansion modules (ERROR)
         for module in self.EXPANSION_MODULES:
-            self._check_import(module, IssueSeverity.WARNING)
+            self._check_import(module, IssueSeverity.ERROR)
         
         # Memory modules (ERROR)
         for module in self.MEMORY_MODULES:
@@ -331,19 +331,16 @@ class SanityChecker:
     
     def _check_components(self) -> None:
         """Check if core components can be instantiated."""
-        # Expansion components (optional - require additional dependencies)
-        expansion_components = [
-            ("anm.expansion.core.novelty_detector", "NoveltyDetectorV2", {}, IssueSeverity.WARNING),
-            ("anm.expansion.core.voting_system", "VotingSystemV2", {}, IssueSeverity.WARNING),
-            ("anm.expansion.core.metrics", "ExpansionMetrics", {}, IssueSeverity.WARNING),
-            ("anm.expansion.discovery.multi_source", "MultiSourceDiscovery", {}, IssueSeverity.WARNING),
-            ("anm.expansion.code.validator", "CodeValidator", {}, IssueSeverity.WARNING),
-            ("anm.expansion.training.trainer", "LoRATrainer", {}, IssueSeverity.WARNING),
+        components_to_check = [
+            ("anm.expansion.core.novelty_detector", "NoveltyDetectorV2", {}),
+            ("anm.expansion.core.voting_system", "VotingSystemV2", {}),
+            ("anm.expansion.core.metrics", "ExpansionMetrics", {}),
+            ("anm.expansion.discovery.multi_source", "MultiSourceDiscovery", {}),
+            ("anm.expansion.code.validator", "CodeValidator", {}),
+            ("anm.expansion.training.trainer", "LoRATrainer", {}),
         ]
         
-        components_to_check = expansion_components
-        
-        for module_name, class_name, kwargs, severity in components_to_check:
+        for module_name, class_name, kwargs in components_to_check:
             self.checks_run += 1
             try:
                 module = importlib.import_module(module_name)
@@ -353,40 +350,16 @@ class SanityChecker:
             except Exception as e:
                 self._add_issue(
                     category=IssueCategory.INSTANTIATION,
-                    severity=severity,  # Use WARNING for expansion components
+                    severity=IssueSeverity.ERROR,
                     module=f"{module_name}.{class_name}",
                     message=f"Failed to instantiate: {e}",
                     exception=e,
-                    suggested_fix=f"Check {class_name} constructor in {module_name} (optional module)",
+                    suggested_fix=f"Check {class_name} constructor in {module_name}",
                     auto_fixable=True,
                 )
     
     def _check_integration(self) -> None:
         """Check if components integrate properly."""
-        # Suppress traceback printing for import errors in this section
-        import sys
-        original_excepthook = sys.excepthook
-        
-        def silent_excepthook(exc_type, exc_value, exc_traceback):
-            # Only suppress AttributeError from pyarrow/NumPy compatibility
-            if exc_type == AttributeError and ('_ARRAY_API' in str(exc_value) or 'pyarrow' in str(exc_value).lower()):
-                # Suppress this specific error - it's handled gracefully
-                pass
-            else:
-                # Use default handler for other exceptions
-                original_excepthook(exc_type, exc_value, exc_traceback)
-        
-        # Temporarily replace excepthook to suppress noisy tracebacks
-        sys.excepthook = silent_excepthook
-        
-        try:
-            self._check_integration_impl()
-        finally:
-            # Restore original excepthook
-            sys.excepthook = original_excepthook
-    
-    def _check_integration_impl(self) -> None:
-        """Implementation of integration check."""
         # Test Router can be created with all specialists
         self.checks_run += 1
         try:
@@ -425,7 +398,7 @@ class SanityChecker:
                 auto_fixable=True,
             )
         
-        # Test Expansion Engine can be created (WARNING - optional module)
+        # Test Expansion Engine can be created
         self.checks_run += 1
         try:
             from anm.expansion import ExpansionEngineV2, ExpansionConfig
@@ -448,120 +421,18 @@ class SanityChecker:
         except Exception as e:
             self._add_issue(
                 category=IssueCategory.INTEGRATION,
-                severity=IssueSeverity.WARNING,  # Changed to WARNING - expansion is optional
+                severity=IssueSeverity.ERROR,
                 module="anm.expansion.ExpansionEngineV2",
                 message=f"Expansion Engine integration failed: {e}",
                 exception=e,
-                suggested_fix="Check ExpansionEngineV2 and its dependencies (optional module)",
+                suggested_fix="Check ExpansionEngineV2 and its dependencies",
                 auto_fixable=True,
             )
         
-        # Test NoveltyDetector actually works (WARNING - optional module)
+        # Test NoveltyDetector actually works
         self.checks_run += 1
-        
-        # Helper function to safely check if sentence_transformers can be imported
-        # This handles NumPy/pyarrow compatibility issues that cause AttributeError
-        def _safe_check_sentence_transformers():
-            """Safely check if sentence_transformers can be imported."""
-            import sys
-            import warnings
-            import contextlib
-            import io
-            
-            # Suppress warnings and stderr during import attempt to avoid noisy tracebacks
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                
-                # Suppress stderr to prevent traceback from being printed
-                stderr_suppressor = io.StringIO()
-                
-                try:
-                    with contextlib.redirect_stderr(stderr_suppressor):
-                        # Clear any partially loaded module from cache to avoid stale imports
-                        modules_to_clear = [
-                            'sentence_transformers',
-                            'sklearn',
-                            'pandas',
-                            'pyarrow'
-                        ]
-                        for mod in modules_to_clear:
-                            if mod in sys.modules:
-                                try:
-                                    del sys.modules[mod]
-                                except (KeyError, AttributeError):
-                                    pass  # Module might not exist or be in use
-                        
-                        # Try direct import - this can fail with AttributeError if NumPy/pyarrow incompatible
-                        import sentence_transformers  # noqa: F401
-                        return True, None
-                        
-                except AttributeError as e:
-                    # NumPy/pyarrow compatibility issue - AttributeError during import
-                    # e.g., "AttributeError: _ARRAY_API not found" in pyarrow when NumPy 2.x is used
-                    # Suppress the traceback by catching it here
-                    return False, e
-                except (ImportError, ModuleNotFoundError) as e:
-                    # Module not installed
-                    return False, e
-                except Exception as e:
-                    # Any other error during import (RuntimeError, SystemError, etc.)
-                    return False, e
-                except BaseException as e:
-                    # Catch even system-level exceptions (though unlikely)
-                    return False, e
-                finally:
-                    # Clear the stderr buffer
-                    stderr_suppressor.close()
-        
         try:
-            # Check if sentence_transformers can be imported
-            st_available, import_err = _safe_check_sentence_transformers()
-            
-            if not st_available:
-                # Handle the error gracefully
-                error_msg = str(import_err) if import_err else "Unknown import error"
-                error_type = type(import_err).__name__ if import_err else "Unknown"
-                
-                # Check for specific NumPy/pyarrow compatibility issues
-                is_numpy_issue = (
-                    isinstance(import_err, AttributeError) or
-                    "_ARRAY_API" in error_msg or 
-                    "pyarrow" in error_msg.lower() or 
-                    "numpy" in error_msg.lower() or
-                    error_type == "AttributeError"
-                )
-                
-                if is_numpy_issue:
-                    suggested = "Novelty detection is optional. NumPy/pyarrow compatibility issue detected. Try: pip install 'numpy<2' or upgrade pyarrow"
-                else:
-                    suggested = "Novelty detection is optional. Install: pip install sentence-transformers"
-                
-                self._add_issue(
-                    category=IssueCategory.INTEGRATION,
-                    severity=IssueSeverity.WARNING,
-                    module="anm.expansion.NoveltyDetectorV2",
-                    message=f"Novelty detection dependencies unavailable ({error_type}): {error_msg[:100]}",
-                    exception=import_err,
-                    suggested_fix=suggested,
-                    auto_fixable=False,
-                )
-                return  # Skip the actual test if dependencies aren't available
-            
-            # Try to import NoveltyDetectorV2 (this may also fail if expansion module has issues)
-            try:
-                from anm.expansion import NoveltyDetectorV2
-            except (ImportError, AttributeError, ModuleNotFoundError) as import_err:
-                self._add_issue(
-                    category=IssueCategory.INTEGRATION,
-                    severity=IssueSeverity.WARNING,
-                    module="anm.expansion.NoveltyDetectorV2",
-                    message=f"NoveltyDetectorV2 import failed: {import_err}",
-                    exception=import_err,
-                    suggested_fix="Novelty detection is optional. Check expansion module dependencies",
-                    auto_fixable=False,
-                )
-                return
-            
+            from anm.expansion import NoveltyDetectorV2
             detector = NoveltyDetectorV2()
             result = detector.detect("Test query for sanity check")
             
@@ -571,28 +442,10 @@ class SanityChecker:
                 raise AttributeError("NoveltyResult missing confidence")
             
             self.checks_passed += 1
-        except (ImportError, AttributeError, ModuleNotFoundError) as e:
-            # Handle import/dependency errors gracefully
-            error_msg = str(e)
-            if "_ARRAY_API" in error_msg or "pyarrow" in error_msg.lower():
-                suggested = "Novelty detection is optional. NumPy/pyarrow compatibility issue. Try: pip install 'numpy<2'"
-            else:
-                suggested = "Novelty detection is optional. Check dependencies (sentence-transformers, numpy compatibility)"
-            
-            self._add_issue(
-                category=IssueCategory.INTEGRATION,
-                severity=IssueSeverity.WARNING,  # Changed to WARNING - expansion is optional
-                module="anm.expansion.NoveltyDetectorV2",
-                message=f"Novelty detection unavailable: {error_msg}",
-                exception=e,
-                suggested_fix=suggested,
-                auto_fixable=False,
-            )
         except Exception as e:
-            # Other runtime errors
             self._add_issue(
                 category=IssueCategory.INTEGRATION,
-                severity=IssueSeverity.WARNING,  # Changed to WARNING - expansion is optional
+                severity=IssueSeverity.ERROR,
                 module="anm.expansion.NoveltyDetectorV2",
                 message=f"Novelty detection failed: {e}",
                 exception=e,
@@ -637,21 +490,13 @@ class SanityChecker:
             try:
                 importlib.import_module(dep_name)
                 self.checks_passed += 1
-            except (ImportError, AttributeError, ValueError, ModuleNotFoundError) as e:
-                # Catch ImportError, AttributeError (NumPy compatibility), ValueError (binary incompatibility)
-                # These all indicate the dependency is unavailable or incompatible
-                error_msg = str(e)
-                if "numpy" in error_msg.lower() or "binary incompatibility" in error_msg.lower():
-                    suggested_fix = f"pip install {dep_name} (Note: NumPy compatibility issue detected - may need to downgrade numpy: pip install 'numpy<2')"
-                else:
-                    suggested_fix = f"pip install {dep_name}"
-                
+            except ImportError:
                 self._add_issue(
                     category=IssueCategory.DEPENDENCY,
                     severity=IssueSeverity.INFO,
                     module=dep_name,
-                    message=f"Optional dependency not available: {dep_name} ({purpose}) - {error_msg[:100]}",
-                    suggested_fix=suggested_fix,
+                    message=f"Optional dependency not installed: {dep_name} ({purpose})",
+                    suggested_fix=f"pip install {dep_name}",
                     auto_fixable=False,
                 )
                 self.checks_passed += 1  # Optional, so still counts as pass
@@ -713,7 +558,7 @@ class SanityChecker:
                 auto_fixable=True,
             )
         
-        # Check expansion module exports (WARNING - optional module)
+        # Check expansion module exports
         self.checks_run += 1
         try:
             from anm.expansion import (
@@ -730,11 +575,11 @@ class SanityChecker:
         except Exception as e:
             self._add_issue(
                 category=IssueCategory.SYNC,
-                severity=IssueSeverity.WARNING,  # Changed to WARNING - expansion is optional
+                severity=IssueSeverity.ERROR,
                 module="anm.expansion",
                 message=f"Expansion module out of sync: {e}",
                 exception=e,
-                suggested_fix="Check anm/expansion/__init__.py exports (optional module)",
+                suggested_fix="Check anm/expansion/__init__.py exports",
                 auto_fixable=True,
             )
         

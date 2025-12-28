@@ -29,9 +29,6 @@ try:
 except ImportError:
     CODE_PROMPT = ""
 
-# Import domain-specific inference
-from anm.system.inference import run_model
-
 __all__ = ["CodeLLM"]
 
 
@@ -77,16 +74,12 @@ class CodeLLM(BaseSpecialist):
         code_blocks = self._extract_code_blocks(text)
         security = self._check_security(text)
         
-        # Calculate total lines (must be outside f-string due to backslash restriction)
-        newline = '\n'
-        total_lines = sum(len(b.split(newline)) for b in code_blocks)
-        
         code_meta = [
             "",
             "[CODE_ANALYSIS]",
             f"languages: {', '.join(languages) if languages else 'none'}",
             f"code_blocks: {len(code_blocks)}",
-            f"total_lines: {total_lines}",
+            f"total_lines: {sum(len(b.split('\\n')) for b in code_blocks)}",
             f"security_check: {security}",
             f"has_tests: {self._has_tests(text)}",
             f"has_docs: {self._has_documentation(text)}",
@@ -194,55 +187,3 @@ class CodeLLM(BaseSpecialist):
         total_lines = len(text.split('\n'))
         
         return comment_lines / max(total_lines, 1) > 0.1
-    
-    def run(self, wot_packet: str) -> str:
-        """
-        Override run method to use Stable-Code-3B instead of default model.
-        
-        CodeLLM uses Stable-Code-3B, a specialized code generation model,
-        instead of the default DeepSeek-R1-1.5B model used by other specialists.
-        
-        Args:
-            wot_packet: The WoT packet containing query and context
-            
-        Returns:
-            Processed output with WOT_REQUEST
-        """
-        import time
-        start_time = time.perf_counter()
-        
-        # Build prompt
-        prompt = self._build_prompt(wot_packet)
-        prompt_length = len(prompt)
-        
-        # Run LLM using domain-specific model (Stable-Code-3B for code domain)
-        # This uses a separate inference engine instance specifically for code tasks
-        raw_output = run_model(prompt, max_tokens=self.config.max_tokens, domain="code")
-        
-        # Clean output
-        cleaned = self._clean_output(raw_output)
-        
-        # Ensure WOT_REQUEST
-        cleaned = self._ensure_wot_request(cleaned)
-        
-        # Calculate processing time
-        processing_time = (time.perf_counter() - start_time) * 1000
-        
-        # Calculate efficiency metrics
-        efficiency_metrics = self._calculate_efficiency_metrics(
-            cleaned, prompt_length, processing_time
-        )
-        
-        # Store efficiency metrics for meta block
-        self._last_efficiency_metrics = efficiency_metrics
-        
-        # Build meta block (now includes efficiency)
-        meta_text = self._build_meta_block(cleaned)
-        
-        # Combine
-        final = self._attach_meta(cleaned, meta_text)
-        
-        # Log to memory
-        self._log_to_memory(final, processing_time)
-        
-        return final

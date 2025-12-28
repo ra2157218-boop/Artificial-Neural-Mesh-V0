@@ -35,11 +35,11 @@ class ModelLoader:
     # ========================================================
     HARD_DEFAULTS = {
         "general":     "deepseek-r1:1.5b",
-        "math":        "nanbeige4-3b",  # Uses Nanbeige4-3B for superior mathematical reasoning
-        "physics":     "nanbeige4-3b",  # Uses Nanbeige4-3B for superior scientific understanding
-        "code":        "stable-code-3b",  # Uses Stable-Code-3B (domain-specific model)
-        "chemistry":   "nanbeige4-3b",  # Uses Nanbeige4-3B for superior scientific understanding
-        "biology":     "nanbeige4-3b",  # Uses Nanbeige4-3B for superior scientific understanding
+        "math":        "deepseek-r1:1.5b",
+        "physics":     "deepseek-r1:1.5b",
+        "code":        "deepseek-r1:1.5b",
+        "chemistry":   "deepseek-r1:1.5b",
+        "biology":     "deepseek-r1:1.5b",
         "memory":      "deepseek-r1:1.5b",
         "research":    "deepseek-r1:1.5b",
         "facts":       "deepseek-r1:1.5b",
@@ -71,9 +71,6 @@ class ModelLoader:
         "deepseek-vl",
         "dsr1",
         "dsvl",
-        "nanbeige4",
-        "nanbeige",
-        "stable-code",
         "custom",
         "local",
         "quantized",

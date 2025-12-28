@@ -18,11 +18,8 @@ from typing import Dict, Any, Optional, TypeVar, Generic, Callable, Tuple, List
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from threading import RLock
-import sys
 import time
-
-# Python version compatibility: slots=True requires Python 3.10+
-_SUPPORTS_SLOTS = sys.version_info >= (3, 10)
+import sys
 
 # Use centralized hash utility
 from anm.utils.hash_utils import hash_query
@@ -40,7 +37,7 @@ K = TypeVar('K')
 V = TypeVar('V')
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class CacheStats:
     """Enhanced cache statistics with detailed metrics."""
     hits: int = 0
@@ -123,7 +120,7 @@ class CacheStats:
         }
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class CacheEntry(Generic[V]):
     """A single cache entry with metadata."""
     value: V

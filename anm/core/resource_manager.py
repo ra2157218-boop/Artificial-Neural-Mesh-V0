@@ -23,9 +23,6 @@ import atexit
 import logging
 import sys
 
-# Python version compatibility: slots=True requires Python 3.10+
-_SUPPORTS_SLOTS = sys.version_info >= (3, 10)
-
 from anm.core.memory_optimizer import CleanupHook
 
 logger = logging.getLogger("anm.resource")
@@ -42,7 +39,7 @@ __all__ = [
 ]
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class ManagedResource:
     """Information about a managed resource."""
     name: str

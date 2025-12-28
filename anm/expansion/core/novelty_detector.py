@@ -282,36 +282,28 @@ class NoveltyDetectorV2:
         """Embedding-based semantic similarity detection."""
         try:
             # Try to get or compute embeddings
-            # This can fail with AttributeError if sentence_transformers dependencies have NumPy/pyarrow issues
             query_embedding = self._get_embedding(query)
             if query_embedding is None:
                 return None
-        except (AttributeError, ImportError, ModuleNotFoundError) as e:
-            # Handle NumPy/pyarrow compatibility issues and import errors gracefully
-            # AttributeError can occur when pyarrow fails due to NumPy 2.x compatibility
-            import logging
-            logging.getLogger(__name__).warning(f"Embedding module unavailable: {e}")
-            return None
-
-        # Compare with domain embeddings
-        try:
+            
+            # Compare with domain embeddings
             domain_similarities: Dict[str, float] = {}
-
+            
             for domain, keywords in self.KNOWN_DOMAINS.items():
                 domain_text = " ".join(keywords)
                 domain_embedding = self._get_embedding(domain_text)
-
+                
                 if domain_embedding:
                     similarity = self._cosine_similarity(query_embedding, domain_embedding)
                     domain_similarities[domain] = similarity
-
+            
             # Find best matching known domain
             best_match = max(domain_similarities.items(), key=lambda x: x[1]) if domain_similarities else (None, 0.0)
-
+            
             # If similarity is low, it's potentially a novel domain
             max_similarity = best_match[1]
             requires_new = max_similarity < self.embedding_similarity_threshold
-
+            
             return {
                 "requires_new": requires_new,
                 "best_known_domain": best_match[0],
@@ -512,11 +504,7 @@ Respond in JSON format:
             model = SentenceTransformer('all-MiniLM-L6-v2')
             embedding = model.encode(text).tolist()
             return embedding
-        except (ImportError, AttributeError, ModuleNotFoundError):
-            # Handle ImportError, AttributeError (NumPy/pyarrow compatibility), and ModuleNotFoundError
-            pass
-        except Exception:
-            # Handle any other errors gracefully (e.g., model download failures)
+        except ImportError:
             pass
         
         # Try OpenAI embeddings if available
@@ -527,7 +515,7 @@ Respond in JSON format:
                 model="text-embedding-ada-002"
             )
             return response['data'][0]['embedding']
-        except Exception:
+        except:
             pass
         
         # Fallback: simple word-based embedding (bag of words with TF-IDF-like weighting)
@@ -536,11 +524,10 @@ Respond in JSON format:
         
         # Create a simple 100-dimensional embedding
         embedding = [0.0] * 100
-        if len(words) > 0:
-            for i, word in enumerate(word_set):
-                idx = hash(word) % 100
-                embedding[idx] += 1.0 / len(words)  # TF-like weighting
-
+        for i, word in enumerate(word_set):
+            idx = hash(word) % 100
+            embedding[idx] += 1.0 / len(words)  # TF-like weighting
+        
         return embedding
     
     def _cosine_similarity(self, a: List[float], b: List[float]) -> float:

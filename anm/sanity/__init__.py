@@ -1,9 +1,18 @@
 # ============================================================
-#  ANM V0-OpenSource — Sanity Check Module
+# ANM V0-OpenSource — SANITY CHECK MODULE
+#  Pre-Startup Validation • Auto-Fix • Human Escalation
 # ============================================================
 
 """
-ANM Sanity Check Module - Pre-startup validation and auto-fixing.
+ANM Sanity Check System
+
+Validates system integrity before ANM starts:
+- Import checks for all modules
+- Component instantiation tests
+- Integration tests
+- Config validation
+- Auto-fix with up to 3 retries
+- Human escalation if auto-fix fails
 """
 
 from anm.sanity.sanity_checker import (
@@ -13,21 +22,7 @@ from anm.sanity.sanity_checker import (
     IssueSeverity,
     IssueCategory,
 )
-
-try:
-    from anm.sanity.auto_fixer import AutoFixer
-except ImportError:
-    # AutoFixer is optional - create a stub if missing
-    class AutoFixer:
-        """Stub AutoFixer for when auto_fixer.py is not available."""
-        def __init__(self, verbose: bool = True):
-            self.verbose = verbose
-        
-        def fix_all_issues(self, issues):
-            """Stub method - returns empty results."""
-            if self.verbose:
-                print("⚠️  AutoFixer not available - skipping auto-fix")
-            return [], False
+from anm.sanity.auto_fixer import AutoFixer, FixResult, FixStrategy
 
 __all__ = [
     "SanityChecker",
@@ -36,5 +31,6 @@ __all__ = [
     "IssueSeverity",
     "IssueCategory",
     "AutoFixer",
+    "FixResult",
+    "FixStrategy",
 ]
-

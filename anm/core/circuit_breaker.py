@@ -19,12 +19,8 @@ from typing import Dict, Any, Optional, Callable, TypeVar, Generic, List
 from dataclasses import dataclass, field
 from enum import Enum
 from threading import RLock
-import sys
 import time
 import random
-
-# Python version compatibility: slots=True requires Python 3.10+
-_SUPPORTS_SLOTS = sys.version_info >= (3, 10)
 
 __all__ = [
     "CircuitBreaker",
@@ -48,7 +44,7 @@ class CircuitState(Enum):
     HALF_OPEN = "half_open"  # Testing if service recovered
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class CircuitBreakerStats:
     """Statistics for circuit breaker."""
     total_requests: int = 0
@@ -104,7 +100,7 @@ class CircuitBreakerStats:
         }
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class CircuitBreakerConfig:
     """Configuration for circuit breaker."""
     failure_threshold: int = 5  # Open circuit after N consecutive failures
@@ -114,7 +110,7 @@ class CircuitBreakerConfig:
     name: str = "default"  # Circuit breaker name
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class RetryPolicy:
     """Retry policy configuration."""
     max_retries: int = 3

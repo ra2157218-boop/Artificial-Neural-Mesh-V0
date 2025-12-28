@@ -24,11 +24,7 @@ from concurrent.futures import (
 from dataclasses import dataclass, field
 from threading import Semaphore, Event
 from queue import Queue, Empty
-import sys
 import time
-
-# Python version compatibility: slots=True requires Python 3.10+
-_SUPPORTS_SLOTS = sys.version_info >= (3, 10)
 
 __all__ = [
     "WorkerPool",
@@ -43,7 +39,7 @@ T = TypeVar('T')
 R = TypeVar('R')
 
 
-@dataclass(**({"slots": True} if _SUPPORTS_SLOTS else {}))
+@dataclass(slots=True)
 class TaskResult(Generic[T]):
     """Result from a pooled task execution."""
     success: bool
