@@ -210,7 +210,7 @@ ANM-V0-OpenSource/
 This project was developed with the assistance of:
 
 - **[Cursor](https://cursor.sh)** - AI-powered code editor
-- **[GPT-5.1](https://openai.com)** - OpenAI's language model
+- **[GPT-5.1,GPT-5.2](https://openai.com)** - OpenAI's language model
 - **[Claude Code](https://claude.ai)** - Anthropic's Claude for code assistance
 
 ### Contributing
