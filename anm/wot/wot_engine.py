@@ -28,6 +28,7 @@
 
 from __future__ import annotations
 from typing import Dict, Any, List, Optional, Callable, Tuple
+import time
 
 from anm.utils.prompts import WOT_PACKET_TEMPLATES  # kept for future use / compatibility
 
@@ -246,6 +247,14 @@ class TrueWoT:
             ]
         ] = None,
     ) -> Dict[str, str]:
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "J", "location": "wot_engine.py:run", "message": "WoT.run entry", "data": {"entry_domain": entry_domain, "max_steps": max_steps, "mode": mode, "specialists_count": len(specialists)}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
         """
         Execute polymath Web-of-Thought until stable.
 
@@ -340,8 +349,27 @@ class TrueWoT:
         prev_domain: Optional[str] = None  # for ping-pong detection
 
         # Initial packet for the entry domain
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "J", "location": "wot_engine.py:run", "message": "Before initial specialist call", "data": {"current": current, "has_specialist": current in specialists}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
         init_packet = self._build_wot_packet(query)
         out = specialists[current].run(init_packet)
+        
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "J", "location": "wot_engine.py:run", "message": "After initial specialist call", "data": {"current": current, "output_length": len(out) if out else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
         self._record(current, out)
         self._register_intent_from_output(step_index=0, domain=current, output=out)
 
@@ -381,6 +409,15 @@ class TrueWoT:
 
             analysis = self._analyze_output(current, out)
             wot_request = self._extract_wot_request(out)
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "WOT_STABILITY", "location": "wot_engine.py:run", "message": "WoT step", "data": {"step": steps, "current_domain": current, "wot_request": wot_request, "global_stable": self.global_stable, "no_change_steps": self.no_change_steps, "max_steps": max_steps}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
 
             # ----------------------------------------
             # Micro-verifier (pre-routing override / stop)
@@ -536,6 +573,14 @@ class TrueWoT:
 
             # If STILL NONE → stable stop
             if wot_request == "NONE":
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "WOT_STABILITY", "location": "wot_engine.py:run", "message": "WoT stable: WOT_REQUEST NONE", "data": {"step": steps, "current_domain": current}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
                 self.global_stable = True
                 if on_step is not None:
                     on_step(
@@ -566,6 +611,14 @@ class TrueWoT:
 
             # Self-loop request (non-MEMORY) → stop to avoid infinite cycles
             if wot_request == current:
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "WOT_STABILITY", "location": "wot_engine.py:run", "message": "WoT stable: self-loop detected", "data": {"step": steps, "current_domain": current, "wot_request": wot_request}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
                 self.global_stable = True
                 if on_step is not None:
                     on_step(
@@ -609,6 +662,14 @@ class TrueWoT:
                     self.domain_stats.get(current, {}).get("calls", 0) > 0
                     and self.domain_stats.get(prev_domain, {}).get("calls", 0) > 0
                 ):
+                    # #region agent log
+                    try:
+                        with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                            import json
+                            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "WOT_STABILITY", "location": "wot_engine.py:run", "message": "WoT stable: ping-pong detected", "data": {"step": steps, "current_domain": current, "prev_domain": prev_domain, "next_domain": next_domain}, "timestamp": int(time.time() * 1000)}) + "\n")
+                    except Exception:
+                        pass
+                    # #endregion
                     self.global_stable = True
                     if on_step is not None:
                         on_step(
@@ -631,7 +692,34 @@ class TrueWoT:
 
             prev_domain = current
             current = next_domain
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H", "location": "wot_engine.py:run", "message": "Before specialist.run call", "data": {"domain": current, "step": steps, "packet_length": len(packet) if packet else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             out = specialists[current].run(packet)
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H", "location": "wot_engine.py:run", "message": "After specialist.run call", "data": {"domain": current, "step": steps, "output_length": len(out) if out else 0, "is_empty": not out or not out.strip()}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
+            # CRITICAL: Ensure no empty output - if empty, log error and provide fallback
+            if not out or not out.strip() or out.strip() in ["", "None", "N/A"]:
+                import logging
+                logging.error(f"WoT: {current} specialist returned empty output at step {steps}")
+                # Provide a fallback response to prevent pipeline failure
+                out = f"[{current.upper()} specialist encountered an issue]\nThe {current} domain was called but produced no output. This may indicate a processing error.\nWOT_REQUEST: NONE"
+            
             self._record(current, out)
             self._register_intent_from_output(step_index=steps, domain=current, output=out)
 
@@ -660,10 +748,26 @@ class TrueWoT:
             w_for_loop = self._extract_wot_request(out)
             self._update_loop_window(current_domain=current, wot_request=w_for_loop)
             if self._loop_pattern_detected():
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "WOT_STABILITY", "location": "wot_engine.py:run", "message": "WoT stable: loop pattern detected", "data": {"step": steps, "current_domain": current, "loop_window": self.loop_window[-6:] if len(self.loop_window) >= 6 else self.loop_window}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
                 self.global_stable = True
                 break
 
         # End of loop — return final CoTs per domain
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "WOT_STABILITY", "location": "wot_engine.py:run", "message": "WoT completed", "data": {"total_steps": self.total_steps, "global_stable": self.global_stable, "no_change_steps": self.no_change_steps, "domains_used": list(self.cots.keys()), "domain_stats": {d: self.domain_stats[d]["calls"] for d in self.domains}}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
         return self.cots
 
     # ========================================================
@@ -698,8 +802,10 @@ class TrueWoT:
                 dict(self.cots),
                 dict(self.domain_stats),
             ) or {}
-        except Exception:
+        except Exception as e:
             # Micro-verifier must never crash WoT
+            # Blueprint compliance: Log failure for transparency
+            logging.warning(f"Micro-verifier failed at step {step_index} for {current_domain}: {e}")
             return wot_request, False
 
         force_stop = bool(decision.get("force_stop", False))
@@ -737,8 +843,10 @@ class TrueWoT:
                 output,
                 dict(self.cots),
             )
-        except Exception:
+        except Exception as e:
             # KG failures must never crash WoT
+            # Blueprint compliance: Log failure for transparency
+            logging.debug(f"Knowledge graph hook failed at step {step_index}: {e}")
             return
 
     def _maybe_emit_sim_stream(
@@ -764,8 +872,10 @@ class TrueWoT:
                 dict(self.cots),
                 dict(self.domain_stats),
             )
-        except Exception:
+        except Exception as e:
             # Streaming hook must not crash WoT
+            # Blueprint compliance: Log failure for transparency
+            logging.debug(f"Simulation stream hook failed at step {step_index}: {e}")
             return
 
     # ========================================================

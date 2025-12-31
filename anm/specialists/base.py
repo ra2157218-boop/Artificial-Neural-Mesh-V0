@@ -112,8 +112,12 @@ class BaseSpecialist(ABC):
         selfaware: Optional[Any] = None,
         working_memory: Optional[Any] = None,
         meta_memory: Optional[Any] = None,
+        model_name: Optional[str] = None,  # Research Mode: authority model override
     ) -> None:
         self.config = config or SpecialistConfig()
+        
+        # Research Mode: Store authority model name
+        self._authority_model = model_name
         
         # Meta modules (optional)
         self.gre = gre
@@ -123,7 +127,10 @@ class BaseSpecialist(ABC):
         
         # Efficiency tracking
         self._last_efficiency_metrics: Optional[Dict[str, Any]] = None
-        
+
+        # Blueprint compliance: Track uncertainty/failures for transparent reporting
+        self._uncertainty_flags: List[str] = []
+
         # Build system prompt
         self._system_prompt = self._build_system_prompt()
     
@@ -147,28 +154,14 @@ class BaseSpecialist(ABC):
         """Build complete system prompt with common elements."""
         base = self._get_system_prompt()
         
-        common = f"""
-
-=== ANM V0-OpenSource {self.domain_name.upper()} SPECIALIST ===
-
-COMMON RULES:
-1. Process the WoT packet and provide domain-specific reasoning
-2. Be honest about limitations and uncertainties
-3. DO NOT fabricate data, citations, or facts
-4. End with exactly one: WOT_REQUEST: <DOMAIN or NONE>
-
-WOT ROUTING:
-- Need math/derivations → WOT_REQUEST: MATH
-- Need physics analysis → WOT_REQUEST: PHYSICS  
-- Need code/algorithms → WOT_REQUEST: CODE
-- Need chemistry → WOT_REQUEST: CHEMISTRY
-- Need biology → WOT_REQUEST: BIOLOGY
-- Need web search → WOT_REQUEST: INTERNET
-- Need fact checking → WOT_REQUEST: FACTS
-- Need memory/diary → WOT_REQUEST: MEMORY
-- Need simulation → WOT_REQUEST: SIMULATION
-- Satisfied/done → WOT_REQUEST: NONE
-"""
+        # Use optimized common base from prompts.py
+        try:
+            from anm.utils.prompts import COMMON_SPECIALIST_BASE
+            common = f"\n\n{COMMON_SPECIALIST_BASE}"
+        except ImportError:
+            # Fallback if not available
+            common = "\n\nInternal specialist. Provide domain reasoning. Do NOT write final answer. End with: WOT_REQUEST: <DOMAIN|NONE>"
+        
         return base + common
     
     def run(self, wot_packet: str) -> str:
@@ -196,7 +189,17 @@ WOT ROUTING:
             # #endregion
         
         # Run LLM using direct model loading
-        raw_output = run_model(prompt, max_tokens=self.config.max_tokens)
+        # Research Mode: Use authority model if specified
+        raw_output = run_model(prompt, max_tokens=self.config.max_tokens, model_name=self._authority_model)
+        
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "G", "location": "base.py:run", "message": "After run_model call", "data": {"domain": self.domain_name, "raw_output_length": len(raw_output) if raw_output else 0, "is_empty": not raw_output or not raw_output.strip()}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
         
         # #region agent log
         import json
@@ -208,6 +211,15 @@ WOT ROUTING:
         
         # Clean output
         cleaned = self._clean_output(raw_output)
+        
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "G", "location": "base.py:run", "message": "After _clean_output", "data": {"domain": self.domain_name, "cleaned_length": len(cleaned) if cleaned else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
         
         # #region agent log
         try:
@@ -238,6 +250,15 @@ WOT ROUTING:
         
         # Log to memory
         self._log_to_memory(final, processing_time)
+        
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "G", "location": "base.py:run", "message": "Before returning final", "data": {"domain": self.domain_name, "final_length": len(final) if final else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
         
         return final
     
@@ -282,8 +303,11 @@ WOT ROUTING:
     
     def _clean_output(self, text: str) -> str:
         """Clean LLM output using common utilities."""
-        if not text:
-            return f"[{self.domain_name.upper()} produced no output]\nWOT_REQUEST: NONE"
+        if not text or not text.strip():
+            # CRITICAL: Never allow empty output - retry or provide minimal response
+            logging.warning(f"{self.domain_name.upper()} specialist produced empty output - this should not happen")
+            # Return a minimal response indicating the issue but still providing something
+            return f"[{self.domain_name.upper()} encountered an issue but attempting to respond]\nThe query requires {self.domain_name} domain expertise. Please retry or provide more context.\nWOT_REQUEST: NONE"
         
         # Use centralized cleaning utility
         cleaned = clean_output(
@@ -292,6 +316,11 @@ WOT ROUTING:
             clean_thinking=self.config.clean_thinking_tags,
             remove_role_prefixes=True,
         )
+        
+        # Double-check after cleaning - ensure we still have content
+        if not cleaned or not cleaned.strip() or cleaned.strip() in ["", "None", "N/A"]:
+            logging.warning(f"{self.domain_name.upper()} specialist output became empty after cleaning")
+            return f"[{self.domain_name.upper()} output was filtered but attempting to respond]\nThe query requires {self.domain_name} domain expertise. Please retry or provide more context.\nWOT_REQUEST: NONE"
         
         return cleaned
     
@@ -452,36 +481,51 @@ WOT ROUTING:
                 result = self.selfaware.analyze(self.domain_name, text)
                 if isinstance(result, dict):
                     return result
-            except Exception:
-                pass
-        
-        # Fallback: simple heuristic
+            except Exception as e:
+                # Blueprint compliance: Log failure, track uncertainty
+                logging.warning(f"Self-awareness analysis failed for {self.domain_name}: {e}")
+                self._uncertainty_flags.append("selfaware_unavailable")
+
+        # Fallback: simple heuristic (mark as heuristic-based)
         lower = text.lower()
-        
+
         confidence = "high"
         if any(w in lower for w in ["uncertain", "not sure", "maybe"]):
             confidence = "medium"
         if any(w in lower for w in ["don't know", "cannot determine"]):
             confidence = "low"
-        
+
         uncertainty = "low"
         if any(w in lower for w in ["possibly", "might", "could be"]):
             uncertainty = "medium"
         if any(w in lower for w in ["unknown", "unclear", "ambiguous"]):
             uncertainty = "high"
-        
-        return {"confidence": confidence, "uncertainty": uncertainty}
+
+        result = {"confidence": confidence, "uncertainty": uncertainty}
+
+        # Mark as heuristic if self-awareness module was unavailable
+        if "selfaware_unavailable" in self._uncertainty_flags:
+            result["source"] = "heuristic_fallback"
+
+        return result
     
     def _check_gre(self, text: str) -> Dict[str, Any]:
         """Check global rules."""
         if self.gre:
             try:
                 return self.gre.analyze(text, module_name=f"{self.domain_name.title()}LLM")
-            except Exception:
-                pass
-        
-        # Default: passed
-        return {"passed": True, "risk_level": "low", "violations": []}
+            except Exception as e:
+                # Blueprint compliance: Log failure, track uncertainty
+                logging.warning(f"GRE check failed for {self.domain_name}: {e}")
+                self._uncertainty_flags.append("gre_unavailable")
+
+        # Default: passed (but mark as unchecked if GRE failed)
+        result = {"passed": True, "risk_level": "low", "violations": []}
+
+        if "gre_unavailable" in self._uncertainty_flags:
+            result["source"] = "unchecked_fallback"
+
+        return result
     
     def _attach_meta(self, cleaned: str, meta: str) -> str:
         """Attach meta block before WOT_REQUEST."""
@@ -512,5 +556,22 @@ WOT ROUTING:
                         "output_length": len(output),
                     },
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                # Blueprint compliance: Log failure (non-critical, but track it)
+                logging.debug(f"Memory logging failed for {self.domain_name}: {e}")
+
+    def get_uncertainty_report(self) -> str:
+        """
+        Get a report of any uncertainty/failures that occurred during processing.
+        Blueprint compliance: Transparent reporting of meta-module failures.
+        """
+        if not self._uncertainty_flags:
+            return ""
+
+        markers = {
+            "selfaware_unavailable": "Confidence estimate based on heuristics (self-awareness unavailable)",
+            "gre_unavailable": "Rule check skipped (GRE unavailable)",
+        }
+
+        reports = [markers.get(flag, flag) for flag in set(self._uncertainty_flags)]
+        return "\n[UNCERTAINTY: " + "; ".join(reports) + "]"

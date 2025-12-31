@@ -131,8 +131,9 @@ For structure analysis:
         reactions = []
         
         # Arrow patterns for reactions
+        # Note: - must be escaped or at end of character class to avoid range interpretation
         patterns = [
-            r'[A-Z][a-z]?\d*\s*[+→⟶->]+\s*[A-Z]',
+            r'[A-Z][a-z]?\d*\s*[+→⟶>\-]+\s*[A-Z]',
             r'\bproducts?\b',
             r'\breactants?\b',
             r'\byield\b',
@@ -182,4 +183,5 @@ For structure analysis:
     def _has_balanced_equation(self, text: str) -> bool:
         """Check if text contains balanced equation."""
         # Look for arrow with numbers
-        return bool(re.search(r'\d+\s*[A-Z].*[→⟶->].*\d+\s*[A-Z]', text))
+        # Note: - must be escaped or at end of character class to avoid range interpretation
+        return bool(re.search(r'\d+\s*[A-Z].*[→⟶>\-].*\d+\s*[A-Z]', text))

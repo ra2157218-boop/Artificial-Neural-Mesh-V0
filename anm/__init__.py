@@ -55,7 +55,7 @@ VERSION: 0.1.0-opensource (Aurora)
 """
 
 from __future__ import annotations
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, Callable
 from dataclasses import dataclass, field
 from anm.utils.debug_logger import log_debug
 
@@ -92,12 +92,6 @@ class ANMConfig:
         - Smart detection: Considers query length, complexity indicators, domain keywords, and intent
         - Provides best balance: fast for simple queries, thorough for complex ones
         - Cannot be disabled - ensures optimal performance for all queries
-    
-    Prompt Optimization:
-        optimize_prompts: Use small model to refine user prompts before processing
-        - True: Prompts are optimized for clarity, specificity, and better routing
-        - False: Prompts are used as-is (default)
-        - Optimization improves ANM's understanding and routing accuracy
     
     Voice I/O:
         voice_enabled: Enable voice input/output
@@ -138,8 +132,8 @@ class ANMConfig:
     # Research Mode (maximum quality, structured PDF output)
     research_mode: bool = False  # Research mode: deterministic routing, authority models, PDF output
 
-    # Prompt Optimization
-    optimize_prompts: bool = True  # Use small model to refine user prompts before processing (auto-enabled)
+    # Prompt Optimization - REMOVED (was interfering with query understanding)
+    optimize_prompts: bool = False  # Disabled - kept for backward compatibility only
 
     # Safety
     skip_sanity_check: bool = False
@@ -179,7 +173,6 @@ class ANMConfig:
             "quick_mode": self.quick_mode,
             "auto_mode": self.auto_mode,
             "research_mode": self.research_mode,
-            "optimize_prompts": self.optimize_prompts,
             "voice": {
                 "enabled": self.voice_enabled,
                 "hands_free": self.hands_free,
@@ -275,11 +268,8 @@ class ANM:
         # Don't initialize inference engine here - auto_mode decides per-query
         # Engine will be configured dynamically based on query complexity
         
-        # Initialize prompt optimizer if enabled
+        # Prompt optimizer REMOVED - was interfering with user query understanding
         self._prompt_optimizer = None
-        if config.optimize_prompts:
-            from anm.prompt_optimizer import PromptOptimizer
-            self._prompt_optimizer = PromptOptimizer(enabled=True)
         
         self._router = None
         self._expansion_engine = None
@@ -509,7 +499,7 @@ class ANM:
         
         self._initialized = True
     
-    def query(self, user_query: str, use_memory: bool = True) -> Dict[str, Any]:
+    def query(self, user_query: str, use_memory: bool = True, progress_callback: Optional[Callable[[str, float], None]] = None) -> Dict[str, Any]:
         """
         Process a user query through ANM with full feature utilization.
         
@@ -548,18 +538,8 @@ class ANM:
         self._ensure_initialized()
         self._session_count += 1
         
-        # Optimize prompt if enabled
+        # Use query directly - prompt optimizer removed
         optimized_query = user_query
-        if self.anm_config.optimize_prompts and self._prompt_optimizer is not None:
-            try:
-                optimized_query = self._prompt_optimizer.optimize(user_query)
-                if optimized_query != user_query and self.anm_config.verbose:
-                    print(f"[PROMPT_OPTIMIZER] Refined query for better processing")
-            except (AttributeError, ImportError, TypeError, ValueError) as e:
-                # If optimization fails, use original query
-                if self.anm_config.verbose:
-                    print(f"[PROMPT_OPTIMIZER] Optimization failed ({type(e).__name__}), using original query: {e}")
-                optimized_query = user_query
 
         # Research mode: Always use normal mode (no quick, no auto)
         if self.anm_config.research_mode:
@@ -612,7 +592,23 @@ class ANM:
         # Process the query (use optimized version)
         # Pass quick_mode flag to router based on actual decision
         # For auto mode, pass the per-query decision; for explicit quick mode, pass True
-        result = self._router.handle(optimized_query, quick_mode=use_quick, research_mode=self.anm_config.research_mode)
+        
+        # #region agent log
+        try:
+            import json
+            import time
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_ANM", "location": "anm/__init__.py:query", "message": "Calling router.handle with research_mode", "data": {"research_mode": self.anm_config.research_mode, "quick_mode": use_quick}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
+        result = self._router.handle(
+            optimized_query, 
+            quick_mode=use_quick, 
+            research_mode=self.anm_config.research_mode,
+            progress_callback=progress_callback
+        )
         
         # Add original query to result for reference
         if optimized_query != user_query:
@@ -649,8 +645,8 @@ class ANM:
             import time
             log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H2", "location": "anm/__init__.py:_learn_from_result", "message": "Entering _learn_from_result", "data": {"has_router_plan_key": "router_plan" in result, "result_keys": list(result.keys())[:10]}, "timestamp": int(time.time() * 1000)})
         except Exception as e:
-                logging.warning(f"Debug logging failed: {e}")
-            # #endregion
+            pass  # Debug logging failed silently
+        # #endregion
         try:
             # Extract info from result
             domains = result.get("router_plan", {}).get("active_domains", [])

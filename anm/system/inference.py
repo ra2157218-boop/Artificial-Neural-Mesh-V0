@@ -97,19 +97,38 @@ class InferenceEngine:
     - Thread-safe inference
     """
     
-    _instance: Optional['InferenceEngine'] = None
+    _default_instance: Optional['InferenceEngine'] = None
     _lock: Lock = Lock()
     
-    def __new__(cls, config: Optional[InferenceConfig] = None):
-        """Singleton pattern - only one engine instance."""
+    def __new__(cls, config: Optional[InferenceConfig] = None, force_new: bool = False):
+        """
+        Create engine instance.
+        
+        Args:
+            config: Optional configuration
+            force_new: If True, always create new instance (for Research Mode multi-model support)
+        """
+        if force_new:
+            # Research Mode: Create new instance for specific model
+            instance = super().__new__(cls)
+            instance._initialized = False
+            return instance
+        
+        # Default: Singleton pattern for backward compatibility
         with cls._lock:
-            if cls._instance is None:
-                cls._instance = super().__new__(cls)
-                cls._instance._initialized = False
-            return cls._instance
+            if cls._default_instance is None:
+                cls._default_instance = super().__new__(cls)
+                cls._default_instance._initialized = False
+            return cls._default_instance
     
-    def __init__(self, config: Optional[InferenceConfig] = None):
-        """Initialize the inference engine."""
+    def __init__(self, config: Optional[InferenceConfig] = None, force_new: bool = False):
+        """
+        Initialize the inference engine.
+        
+        Args:
+            config: Optional configuration
+            force_new: Ignored (handled by __new__), kept for compatibility
+        """
         self._logger = logging.getLogger(__name__)
         
         if self._initialized:
@@ -248,13 +267,15 @@ class InferenceEngine:
             n_gpu_layers = self.config.n_gpu_layers
             if n_gpu_layers == -1:
                 n_gpu_layers = self._detect_gpu_layers()
-                if n_gpu_layers == 0:
-                    print("[InferenceEngine] No GPU detected, using CPU")
+                if self.config.verbose:
+                    if n_gpu_layers == 0:
+                        print("[InferenceEngine] No GPU detected, using CPU")
                 else:
                     print("[InferenceEngine] GPU detected, offloading all layers")
             
-            # Load model
-            print(f"[InferenceEngine] Loading model: {path.name}")
+            # Load model (only print if verbose)
+            if self.config.verbose:
+                print(f"[InferenceEngine] Loading model: {path.name}")
             start_time = time.time()
             
             # Use appropriate context length based on mode
@@ -272,8 +293,9 @@ class InferenceEngine:
             )
             
             load_time = time.time() - start_time
-            print(f"[InferenceEngine] Model loaded in {load_time:.2f}s")
-            
+            if self.config.verbose:
+                print(f"[InferenceEngine] Model loaded in {load_time:.2f}s")
+
             return True
             
         except Exception as e:
@@ -461,7 +483,25 @@ class InferenceEngine:
         stop = stop or []
         
         try:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "inference.py:generate_full", "message": "Before lock acquisition", "data": {"model_loaded": self._model is not None, "lock_acquired": False, "thread_id": os.getpid()}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             with self._inference_lock:
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "inference.py:generate_full", "message": "Lock acquired", "data": {"model_loaded": self._model is not None, "lock_acquired": True}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 start_time = time.time()
                 
                 # Cap max_tokens to reasonable limit based on context window
@@ -509,6 +549,15 @@ class InferenceEngine:
                     logging.warning(f"Debug logging failed: {e}")
                 # #endregion
                 
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "inference.py:generate_full", "message": "Before model call", "data": {"model_is_none": self._model is None, "max_tokens": max_generation_tokens, "prompt_length": len(prompt), "temperature": temperature}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 output = self._model(
                     prompt,
                     max_tokens=max_generation_tokens,
@@ -520,7 +569,25 @@ class InferenceEngine:
                     echo=False,
                 )
                 
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "inference.py:generate_full", "message": "After model call", "data": {"output_type": type(output).__name__, "has_choices": "choices" in output if isinstance(output, dict) else False, "elapsed_so_far_ms": (time.time() - start_time) * 1000}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 elapsed_ms = (time.time() - start_time) * 1000
+                
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:generate_full", "message": "After elapsed_ms calculation", "data": {"elapsed_ms": elapsed_ms}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
                 
                 # Extract text from response
                 # #region agent log
@@ -534,8 +601,36 @@ class InferenceEngine:
                         logging.warning(f"Debug logging failed: {e}")
                 # #endregion
                 
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:generate_full", "message": "Before text extraction", "data": {"has_choices": "choices" in output if isinstance(output, dict) else False, "choices_len": len(output.get("choices", [])) if isinstance(output, dict) else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 text = output["choices"][0]["text"]
+                
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:generate_full", "message": "After text extraction", "data": {"text_length": len(text) if text else 0, "text_preview": text[:100] if text else "EMPTY"}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 tokens = output["usage"]["completion_tokens"]
+                
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:generate_full", "message": "After tokens extraction", "data": {"tokens": tokens}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
                 
                 # #region agent log
                 try:
@@ -544,8 +639,26 @@ class InferenceEngine:
                     logging.warning(f"Debug logging failed: {e}")
                 # #endregion
                 
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:generate_full", "message": "Before tps calculation", "data": {}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 # Calculate tokens per second
                 tps = (tokens / elapsed_ms) * 1000 if elapsed_ms > 0 else 0
+                
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:generate_full", "message": "Before empty check", "data": {"tps": tps, "text_is_empty": not text or not text.strip()}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
                 
                 # Check for empty output
                 if not text or not text.strip():
@@ -569,6 +682,15 @@ class InferenceEngine:
                         error="Model returned empty output",
                     )
                 
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:generate_full", "message": "Before returning InferenceResult", "data": {"text_length": len(text.strip()) if text else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 return InferenceResult(
                     text=text.strip(),
                     tokens_generated=tokens,
@@ -578,6 +700,14 @@ class InferenceEngine:
                 )
                 
         except Exception as e:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "inference.py:generate_full", "message": "Exception caught", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200], "traceback": str(e.__traceback__)[:500] if hasattr(e, "__traceback__") else "N/A"}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
             return InferenceResult(
                 text=f"[ERROR: {e}]",
                 tokens_generated=0,
@@ -604,23 +734,47 @@ class InferenceEngine:
 
 
 # ============================================================
-#  Global Singleton Access
+#  Global Singleton Access + Multi-Model Registry (Research Mode)
 # ============================================================
 
 _engine: Optional[InferenceEngine] = None
+_model_engines: Dict[str, InferenceEngine] = {}  # Registry for per-model engines (Research Mode)
+_model_engines_lock: Lock = Lock()
 
 
-def get_inference_engine(config: Optional[InferenceConfig] = None) -> InferenceEngine:
+def get_inference_engine(config: Optional[InferenceConfig] = None, model_name: Optional[str] = None) -> InferenceEngine:
     """
-    Get the global inference engine instance.
+    Get inference engine instance.
     
     Args:
         config: Optional configuration (used on first call or to update mode)
+        model_name: Optional model name for Research Mode (e.g., "nanbeige4-3b", "stable-code-3b")
+                   If provided, returns a model-specific engine from registry
         
     Returns:
-        InferenceEngine singleton
+        InferenceEngine instance
     """
-    global _engine
+    global _engine, _model_engines
+    
+    # Research Mode: Use per-model engines
+    if model_name:
+        from anm.system.model_registry import get_inference_config_for_model
+        normalized_name = model_name.replace(":", "-").lower()
+        
+        with _model_engines_lock:
+            if normalized_name not in _model_engines:
+                # Create new engine for this model (force_new=True to bypass singleton)
+                model_config = get_inference_config_for_model(normalized_name)
+                if model_config:
+                    _model_engines[normalized_name] = InferenceEngine(model_config, force_new=True)
+                else:
+                    # Fallback to default engine if model not found
+                    if _engine is None:
+                        _engine = InferenceEngine(config)
+                    return _engine
+            return _model_engines[normalized_name]
+    
+    # Default: Use global singleton
     if _engine is None:
         _engine = InferenceEngine(config)
     elif config is not None:
@@ -629,7 +783,7 @@ def get_inference_engine(config: Optional[InferenceConfig] = None) -> InferenceE
     return _engine
 
 
-def run_model(prompt: str, max_tokens: int = 2048) -> str:
+def run_model(prompt: str, max_tokens: int = 2048, model_name: Optional[str] = None) -> str:
     """
     Run model inference on prompt.
     
@@ -639,6 +793,8 @@ def run_model(prompt: str, max_tokens: int = 2048) -> str:
     Args:
         prompt: Input prompt
         max_tokens: Maximum tokens to generate
+        model_name: Optional model name for Research Mode (e.g., "nanbeige4-3b", "stable-code-3b")
+                   If provided, uses the specified model instead of default
         
     Returns:
         Generated text string
@@ -646,17 +802,17 @@ def run_model(prompt: str, max_tokens: int = 2048) -> str:
     # #region agent log
     import json
     try:
-        log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:run_model", "message": "run_model called", "data": {"prompt_length": len(prompt) if prompt else 0, "max_tokens": max_tokens}, "timestamp": int(time.time() * 1000)})
+        log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:run_model", "message": "run_model called", "data": {"prompt_length": len(prompt) if prompt else 0, "max_tokens": max_tokens, "model_name": model_name}, "timestamp": int(time.time() * 1000)})
     except Exception as e:
         logging.warning(f"Debug logging failed: {e}")
     # #endregion
     
-    engine = get_inference_engine()
+    engine = get_inference_engine(model_name=model_name)
     result = engine.generate(prompt, max_tokens=max_tokens)
     
     # #region agent log
     try:
-        log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:run_model", "message": "run_model returning", "data": {"result_length": len(result) if result else 0, "result_preview": result[:200] if result else "EMPTY", "is_empty": not result or not result.strip()}, "timestamp": int(time.time() * 1000)})
+        log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:run_model", "message": "run_model returning", "data": {"result_length": len(result) if result else 0, "result_preview": result[:200] if result else "EMPTY", "is_empty": not result or not result.strip(), "model_name": model_name}, "timestamp": int(time.time() * 1000)})
     except Exception as e:
         logging.warning(f"Debug logging failed: {e}")
     # #endregion

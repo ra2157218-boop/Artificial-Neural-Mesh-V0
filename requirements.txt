@@ -1,86 +1,115 @@
 # ANM V0-OpenSource Requirements
 # Complete dependency list for all features
+# Ready to use out of the box - install with: pip install -r requirements.txt
 
 # ============================================================
-# CORE DEPENDENCIES (Required)
+# CORE DEPENDENCIES (Required for basic functionality)
 # ============================================================
 
 # Vector Store & RAG (Memory System)
 chromadb>=0.4.0,<2.0.0
 sentence-transformers>=2.2.0
+
+# Data Validation & Configuration
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 
 # LLM Inference Engine
 llama-cpp-python>=0.2.0
 
+# Model Downloading (HuggingFace Hub)
+huggingface-hub>=0.20.0
+
 # Network & Web
 requests>=2.28.0
 
+# Web Search (Research Mode - for proper DuckDuckGo web search)
+duckduckgo-search>=4.0.0
+
 # Numerical Computing
 numpy>=1.22.0
+
+# System Monitoring (Memory optimization, hardware detection)
+psutil>=5.9.0
+
+# ============================================================
+# UI & OUTPUT DEPENDENCIES (Required for full experience)
+# ============================================================
+
+# Terminal UI (Rich formatting - required for interactive mode)
+rich>=13.0.0
+
+# PDF Generation (Research Mode - required for PDF output)
+reportlab>=4.0.0
 
 # ============================================================
 # OPTIONAL DEPENDENCIES (Enhanced Features)
 # ============================================================
 
-# Terminal UI (Rich formatting)
-rich>=13.0.0
-
-# PDF Generation (Research Mode)
-reportlab>=4.0.0
-
-# Deep Learning Framework (Audio/Simulation)
-torch>=2.0.0
+# Deep Learning Framework (Audio/Simulation features)
+# Uncomment if you need audio/simulation capabilities
+ torch>=2.0.0
 
 # ============================================================
-# AUDIO PROCESSING (Voice Features)
+# AUDIO PROCESSING (Voice Features - Optional)
 # ============================================================
 
-# Speech-to-Text (Choose one)
+# Speech-to-Text (Choose one if needed)
 # openai-whisper>=20230314
 # faster-whisper>=0.9.0
 
-# Text-to-Speech (Choose one)
+# Text-to-Speech (Choose one if needed)
 # piper-tts>=1.0.0
 # coqui-tts>=0.15.0
 
-# Audio I/O
+# Audio I/O (Required for voice features)
 # sounddevice>=0.4.0
 
 # ============================================================
-# COMPUTER VISION (Simulation Features)
+# COMPUTER VISION (Simulation Features - Optional)
 # ============================================================
 
-# Video Encoding & Image Processing
+# Video Encoding & Image Processing (Required for simulation)
 # opencv-python>=4.8.0
 # Pillow>=10.0.0
 
 # ============================================================
-# TESTING & DEVELOPMENT
+# TESTING & DEVELOPMENT (Optional)
 # ============================================================
 
 # pytest>=7.0.0
 
 # ============================================================
-# NOTES
+# INSTALLATION NOTES
 # ============================================================
 #
-# Installation Guide:
-#
-# 1. Core features only (minimal):
-#    pip install chromadb sentence-transformers pydantic pydantic-settings llama-cpp-python requests numpy
-#
-# 2. Full installation (all features):
+# Quick Start (Recommended):
 #    pip install -r requirements.txt
 #
-# 3. Python Version Compatibility:
-#    - Recommended: Python 3.9 - 3.12
-#    - Python 3.14: Not yet supported (onnxruntime unavailable)
-#    - Python 3.8: May work but not tested
+# This will install all core dependencies needed for:
+#   - Basic ANM functionality (routing, specialists, WoT)
+#   - Memory system (ChromaDB, embeddings)
+#   - Research Mode (PDF generation)
+#   - Terminal UI (Rich formatting)
+#   - Model downloading (HuggingFace Hub)
 #
-# 4. Platform-specific notes:
-#    - macOS (Apple Silicon): Metal GPU acceleration available
-#    - Windows: Some audio features may need additional setup
-#    - Linux: Full compatibility
+# Python Version Compatibility:
+#   - Recommended: Python 3.9 - 3.13
+#   - Python 3.8: May work but not tested
+#   - Python 3.14: Not yet supported (some dependencies unavailable)
+#
+# Platform-specific notes:
+#   - macOS (Apple Silicon): Metal GPU acceleration available for llama-cpp-python
+#   - Windows: Full compatibility, may need Visual C++ redistributables for llama-cpp-python
+#   - Linux: Full compatibility
+#
+# Optional Features:
+#   - Voice I/O: Uncomment audio dependencies above
+#   - Simulation: Uncomment torch, opencv-python, Pillow above
+#   - Testing: Uncomment pytest above
+#
+# Troubleshooting:
+#   - If llama-cpp-python fails to install, try: pip install llama-cpp-python --no-cache-dir
+#   - For GPU support, ensure CUDA/Metal drivers are installed before installing llama-cpp-python
+#   - If reportlab fails, ensure you have write permissions for PDF output directory
 #

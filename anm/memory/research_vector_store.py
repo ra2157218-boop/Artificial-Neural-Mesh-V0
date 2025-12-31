@@ -39,7 +39,11 @@ class ResearchVectorStore:
             embedding_model: Sentence-transformers model name
         """
         self.persist_directory = Path(persist_directory)
-        self.persist_directory.mkdir(parents=True, exist_ok=True)
+        try:
+            self.persist_directory.mkdir(parents=True, exist_ok=True)
+        except (OSError, PermissionError) as e:
+            logger.warning(f"Cannot create persist directory {self.persist_directory}: {e}")
+            raise
 
         # Initialize base vector store
         self._vector_store = VectorStore(

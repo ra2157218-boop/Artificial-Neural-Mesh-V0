@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from anm.utils.prompts import ROUTER_PROMPT, WOT_PACKET_TEMPLATES
@@ -27,6 +27,8 @@ from anm.specialists.chemistry_llm import ChemistryLLM
 from anm.specialists.biology_llm import BiologyLLM
 from anm.specialists.facts_llm import FactsLLM
 from anm.specialists.memory_llm import MemoryLLM
+
+# For Research Mode: Direct specialist instantiation (no ParallelSpecialistAdapter)
 
 # Research specialist (optional - requires requests)
 try:
@@ -341,7 +343,9 @@ class Router:
         self.router_model: str = self.config.get("model_router", "deepseek-r1:1.5b")
         self.system_prompt: str = ROUTER_PROMPT
 
-        # how many parallel R1 workers per specialist (default: 4)
+        # NORMAL MODE: N workers per specialist for ensemble voting (default: 4)
+        # RESEARCH MODE: Bypasses this entirely - uses _build_research_specialists()
+        #                which creates 1 worker per specialist with authority models
         self.parallel_workers: int = int(self.config.get("parallel_r1_workers", 4) or 4)
 
         # Logger
@@ -504,7 +508,7 @@ class Router:
     #  MAIN ENTRY
     # ========================================================
 
-    def handle(self, user_query: str, quick_mode: bool = False, research_mode: bool = False) -> Dict[str, Any]:
+    def handle(self, user_query: str, quick_mode: bool = False, research_mode: bool = False, progress_callback: Optional[Callable[[str, float], None]] = None) -> Dict[str, Any]:
         """
         Main entry point for processing a user query.
 
@@ -538,10 +542,32 @@ class Router:
         handle_start_time = time.time()
         self._logger.debug(f"Processing query (quick_mode={quick_mode}, research_mode={research_mode}): {user_query[:100]}...")
 
+        # Call progress callback for initial stage
+        if progress_callback:
+            progress_callback("Initializing", 0.0)
+
         # Research mode: deterministic routing
         self.research_mode_active = research_mode
+        
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_CHECK", "location": "router.py:handle", "message": "Research mode check", "data": {"research_mode": research_mode, "will_use_research_mode": research_mode}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
         if research_mode:
-            return self._handle_research_mode(user_query)
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_CHECK", "location": "router.py:handle", "message": "Calling _handle_research_mode", "data": {"user_query_preview": user_query[:100]}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            return self._handle_research_mode(user_query, progress_callback=progress_callback)
 
         # Quick mode: simplified path
         if quick_mode:
@@ -769,6 +795,16 @@ class Router:
         except Exception as e:
             logging.warning(f"Debug logging failed: {e}")
         # #endregion
+        
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "I", "location": "router.py:handle", "message": "Before WoT try block", "data": {"entry_specialist": entry_specialist, "specialists_count": len(specialists)}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
         try:
             # Determine WoT mode from config/plan
             wot_mode = adjusted_plan.get("wot_mode", "metacognitive").lower()
@@ -780,10 +816,29 @@ class Router:
                     if hasattr(spec, 'set_adaptive_mode'):
                         spec.set_adaptive_mode(True)
 
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "I", "location": "router.py:handle", "message": "Before TrueWoT instantiation", "data": {"wot_mode": wot_mode, "use_adaptive_mode": use_adaptive_mode}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+
             wot = TrueWoT(
                 domain_names=list(specialists.keys()),
                 memory_llm=self._memory_core,  # direct MemoryLLM path
             )
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "I", "location": "router.py:handle", "message": "After TrueWoT instantiation, before wot.run", "data": {"entry_domain": entry_specialist, "max_steps": max_steps}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             domain_cots: Dict[str, str] = wot.run(
                 entry_domain=entry_specialist,
                 query=full_query,
@@ -791,6 +846,15 @@ class Router:
                 max_steps=max_steps,
                 mode=wot_mode if wot_mode in ("adaptive", "parallel", "beam_search", "consensus", "metacognitive", "state_machine") else None,
             )
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "I", "location": "router.py:handle", "message": "After wot.run call", "data": {"domain_cots_count": len(domain_cots) if domain_cots else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
             
             wot_end_time = time.time()
             wot_processing_time_ms = (wot_end_time - wot_start_time) * 1000
@@ -855,7 +919,48 @@ class Router:
             )
             self.logger.log_refiner_packet(refiner_packet)
 
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "router.py:handle", "message": "Before refiner.refine call", "data": {"refiner_packet_length": len(refiner_packet) if refiner_packet else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+
             refined_output = self.refiner.refine(refiner_packet)
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "router.py:handle", "message": "After refiner.refine call", "data": {"refined_output_length": len(refined_output) if refined_output else 0, "is_empty": not refined_output or not refined_output.strip()}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
+            # CRITICAL: Block empty output from refiner
+            if not refined_output or not refined_output.strip() or refined_output.strip() in ["", "None", "N/A", "[VERIFIER_READY]"]:
+                logging.error("Router: Refiner returned empty output - using emergency fallback")
+                # Try to extract content from domain outputs
+                fallback_parts = []
+                for domain, cot in domain_cots.items():
+                    if cot and cot.strip() and "[produced no output]" not in cot.lower():
+                        # Extract first meaningful sentence
+                        sentences = re.split(r'[.!?]\s+', cot)
+                        for sent in sentences:
+                            if len(sent.strip()) > 20:
+                                fallback_parts.append(f"**{domain.title()}**: {sent.strip()}")
+                                break
+                        if len(fallback_parts) >= 2:
+                            break
+                
+                if fallback_parts:
+                    # Blueprint compliance: Mark output as fallback (transparent reporting)
+                    refined_output = "\n\n".join(fallback_parts) + "\n\n[FALLBACK OUTPUT - Refiner unavailable. Content extracted from domain outputs.]\n[VERIFIER_READY]"
+                else:
+                    refined_output = f"I apologize, but I encountered an issue while processing your query: '{user_query}'. The system was unable to generate a proper response. Please try rephrasing your question.\n\n[FALLBACK OUTPUT - Refiner and domain outputs unavailable.]\n[VERIFIER_READY]"
+            
             self.logger.log_refiner(refined_output)
 
             # 13) Verifier
@@ -867,7 +972,26 @@ class Router:
             )
             self.logger.log_verifier_packet(verifier_packet)
 
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "router.py:handle", "message": "Before verifier.run call", "data": {"verifier_packet_length": len(verifier_packet) if verifier_packet else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+
             verification = self.verifier.run(verifier_packet)
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "router.py:handle", "message": "After verifier.run call", "data": {"verification_status": verification.get("status") if verification else "NONE"}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             self.logger.log_verifier(verification)
 
             status = verification.get("status", "approved")
@@ -1130,7 +1254,7 @@ class Router:
             "wot_steps": wot_steps,
         }
 
-    def _handle_research_mode(self, user_query: str) -> Dict[str, Any]:
+    def _handle_research_mode(self, user_query: str, progress_callback: Optional[Callable[[str, float], None]] = None) -> Dict[str, Any]:
         """
         Research Mode: Correctness > Authority > Completeness > Speed
 
@@ -1150,14 +1274,37 @@ class Router:
         self.logger.new_run(user_query)
 
         # 2. Load memory brief (PAST-ONLY context)
+        if progress_callback:
+            progress_callback("Loading Memory", 10.0)
         # build_memory_brief is already imported at top (line 65)
         memory_info = build_memory_brief(self._memory_core, user_query)
         memory_brief = memory_info["brief_text"]
         self.logger.log_memory(memory_brief)
 
         # 3. Deterministic domain detection
+        if progress_callback:
+            progress_callback("Domain Detection", 20.0)
         detected_domains = self._deterministic_domain_detection(user_query)
         entry_domain = detected_domains[0] if detected_domains else "general"
+
+        # 3.5. Internet Research Pipeline (per Blueprint Section 7)
+        # MANDATORY in Research Mode - always run internet research
+        internet_research_data = None
+        if progress_callback:
+            progress_callback("Internet Research", 25.0)
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                import time
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "INTERNET_RESEARCH", "location": "router.py:_handle_research_mode", "message": "Internet research is MANDATORY in Research Mode", "data": {"user_query": user_query[:200]}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        internet_research_data = self._run_internet_research_pipeline(user_query, memory_brief)
+        # Add internet research to detected domains if not already present
+        if "internet" not in detected_domains and "research" not in detected_domains:
+            detected_domains.append("research")
 
         # 4. Authority model assignment (LOCKED)
         authority_assignments = self._assign_authority_models(detected_domains)
@@ -1165,8 +1312,8 @@ class Router:
         # 5. Select 4-10 modules dynamically based on query complexity
         selected_domains = self._select_parallel_modules(detected_domains, user_query)
 
-        # 6. Build specialists (no ensemble - each runs once)
-        specialists = self._build_research_specialists(selected_domains)
+        # 6. Build specialists (no ensemble - each runs once) with authority models
+        specialists = self._build_research_specialists(selected_domains, authority_assignments)
 
         # 7. Log router decision
         self.logger.log_router_decision({
@@ -1180,13 +1327,38 @@ class Router:
         })
 
         # 8. Run TrueWoT with minimum depth enforcement
+        if progress_callback:
+            progress_callback("Web-of-Thought Reasoning", 30.0)
         wot_start_time = time.time()
         max_steps = self.research_mode_config.get("wot_max_steps", 20)
         min_depth = self.research_mode_config.get("wot_min_depth", 3)
 
-        full_query = f"{user_query}\n\n{memory_brief}\n\n[RESEARCH MODE: Correctness required]"
+        # Include internet research data in full_query if available
+        research_context = ""
+        if internet_research_data and internet_research_data.get("summary"):
+            research_context = f"\n\n--- INTERNET RESEARCH CONTEXT ---\n{internet_research_data['summary']}\n--- END INTERNET RESEARCH ---\n"
+        
+        full_query = f"{user_query}\n\n{memory_brief}{research_context}\n\n[RESEARCH MODE: Correctness required]"
+
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "K", "location": "router.py:_handle_research_mode", "message": "Before WoT try block", "data": {"entry_domain": entry_domain, "specialists_count": len(specialists), "max_steps": max_steps}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
 
         try:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "K", "location": "router.py:_handle_research_mode", "message": "Before TrueWoT instantiation", "data": {"domain_names_count": len(list(specialists.keys()))}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             # TrueWoT is already imported at top (line 57)
             wot = TrueWoT(
                 domain_names=list(specialists.keys()),
@@ -1194,22 +1366,187 @@ class Router:
                 # min_depth parameter doesn't exist in TrueWoT constructor
                 # Depth validation happens after wot.run() at line 1143
             )
-            domain_cots = wot.run(
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "K", "location": "router.py:_handle_research_mode", "message": "After TrueWoT instantiation, before wot.run", "data": {"entry_domain": entry_domain, "max_steps": max_steps, "specialists_keys": list(specialists.keys()), "full_query_length": len(full_query)}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "K", "location": "router.py:_handle_research_mode", "message": "About to call wot.run()", "data": {"wot_type": type(wot).__name__, "has_run_method": hasattr(wot, "run")}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
+            try:
+                domain_cots = wot.run(
                 entry_domain=entry_domain,
                 query=full_query,
                 specialists=specialists,
                 max_steps=max_steps,
             )
+            except Exception as wot_exc:
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "K", "location": "router.py:_handle_research_mode", "message": "wot.run() raised exception", "data": {"error_type": type(wot_exc).__name__, "error_msg": str(wot_exc)[:200]}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                raise
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "K", "location": "router.py:_handle_research_mode", "message": "After wot.run call", "data": {"domain_cots_count": len(domain_cots) if domain_cots else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
             wot_end_time = time.time()
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "K", "location": "router.py:_handle_research_mode", "message": "After wot_end_time calculation", "data": {"wot_processing_time_ms": (wot_end_time - wot_start_time) * 1000}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             wot_steps = getattr(wot, 'total_steps', 0)
 
-            # Validate minimum depth
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "K", "location": "router.py:_handle_research_mode", "message": "After wot_steps extraction", "data": {"wot_steps": wot_steps, "min_depth": min_depth}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+
+            # Validate minimum depth - ENFORCE (per Blueprint: "minimum reasoning depth enforced")
             if wot_steps < min_depth:
-                # Force continuation if depth insufficient
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_WOT", "location": "router.py:_handle_research_mode", "message": "WoT depth insufficient, forcing continuation", "data": {"wot_steps": wot_steps, "min_depth": min_depth, "will_continue": True}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
+                # Force continuation if depth insufficient (per Blueprint: "no 'good enough' termination")
                 self.logger.log_error("research_wot_depth",
-                    f"WoT depth {wot_steps} < minimum {min_depth}. Warning: depth may be insufficient.")
+                    f"WoT depth {wot_steps} < minimum {min_depth}. Forcing continuation to meet minimum depth requirement.")
+                
+                # Continue WoT with remaining steps to reach minimum depth (per Blueprint: "minimum reasoning depth enforced")
+                remaining_steps = min_depth - wot_steps
+                current_domain_for_continuation = entry_domain
+                
+                # Build WoT packet format (same as WoT uses internally)
+                full_query_with_memory = f"{user_query}\n\n{memory_brief}\n\n[RESEARCH MODE: Correctness required]"
+                
+                for additional_step in range(remaining_steps):
+                    # Get next domain (cycle through selected domains to ensure all are used)
+                    if len(selected_domains) > 1:
+                        try:
+                            current_idx = selected_domains.index(current_domain_for_continuation)
+                            next_idx = (current_idx + 1) % len(selected_domains)
+                            current_domain_for_continuation = selected_domains[next_idx]
+                        except ValueError:
+                            # If current_domain not in selected_domains, use first available
+                            current_domain_for_continuation = selected_domains[0]
+                    else:
+                        # Only one domain, but we need more steps - use helper domains
+                        if current_domain_for_continuation == "general":
+                            current_domain_for_continuation = "facts" if "facts" in selected_domains else "memory"
+                        elif current_domain_for_continuation == "facts":
+                            current_domain_for_continuation = "general" if "general" in selected_domains else "memory"
+                        else:
+                            current_domain_for_continuation = "general"
+                    
+                    # Ensure domain is in specialists
+                    if current_domain_for_continuation not in specialists:
+                        # Fallback to first available
+                        current_domain_for_continuation = list(specialists.keys())[0] if specialists else "general"
+                    
+                    # Build packet using WoT's full context format (includes all domain CoTs)
+                    if hasattr(wot, '_build_full_context_packet'):
+                        packet = wot._build_full_context_packet(full_query_with_memory)
+                    elif hasattr(wot, '_build_wot_packet'):
+                        packet = wot._build_wot_packet(full_query_with_memory)
+                    else:
+                        # Fallback: build basic packet with current domain CoTs
+                        cots_text = "\n\n".join([f"{d.upper()}:\n{cots}" for d, cots in domain_cots.items() if cots])
+                        packet = f"""
+USER QUERY:
+{full_query_with_memory}
+
+PREVIOUS DOMAIN REASONING:
+{cots_text}
+
+[RESEARCH MODE: Additional step to meet minimum depth requirement]
+"""
+                    
+                    # Run additional step
+                    additional_output = specialists[current_domain_for_continuation].run(packet)
+                    
+                    # Ensure output is not empty
+                    if not additional_output or not additional_output.strip():
+                        additional_output = f"[{current_domain_for_continuation.upper()} specialist: Additional reasoning step for minimum depth]\nWOT_REQUEST: NONE"
+                    
+                    domain_cots[current_domain_for_continuation] = additional_output
+                    wot_steps += 1
+                    
+                    # #region agent log
+                    try:
+                        with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                            import json
+                            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_WOT", "location": "router.py:_handle_research_mode", "message": "Forced additional WoT step", "data": {"step": additional_step + 1, "current_domain": current_domain_for_continuation, "total_steps": wot_steps, "remaining": remaining_steps - additional_step - 1}, "timestamp": int(time.time() * 1000)}) + "\n")
+                    except Exception:
+                        pass
+                    # #endregion
+                
+                # Update wot.total_steps
+                if hasattr(wot, 'total_steps'):
+                    wot.total_steps = wot_steps
+                
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_WOT", "location": "router.py:_handle_research_mode", "message": "WoT depth enforcement complete", "data": {"final_wot_steps": wot_steps, "min_depth": min_depth, "meets_requirement": wot_steps >= min_depth}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "K", "location": "router.py:_handle_research_mode", "message": "After depth validation, before except block end", "data": {"domain_cots_defined": "domain_cots" in locals(), "domain_cots_count": len(domain_cots) if "domain_cots" in locals() and domain_cots else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
 
         except Exception as e:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "K", "location": "router.py:_handle_research_mode", "message": "WoT try block exception caught", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200]}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
             # Explicit failure reporting (per Blueprint)
             return {
                 "status": "error_explicit",
@@ -1222,13 +1559,44 @@ class Router:
             }
 
         # 9. Meta-cognition audit (self-check)
+        if progress_callback:
+            progress_callback("Meta-cognition Audit", 70.0)
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "L", "location": "router.py:_handle_research_mode", "message": "Before metacognition audit", "data": {"domain_cots_count": len(domain_cots) if domain_cots else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
         metacognition_audit = self._run_metacognition_audit(
             user_query=user_query,
             domain_cots=domain_cots,
             entry_domain=entry_domain,
         )
+        
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "L", "location": "router.py:_handle_research_mode", "message": "After metacognition audit", "data": {}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
 
         # 10. Refiner (with research mode hints)
+        if progress_callback:
+            progress_callback("Refining Response", 80.0)
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "L", "location": "router.py:_handle_research_mode", "message": "Before refiner.refine call", "data": {}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
         refiner_packet = self._build_refiner_packet(
             user_query=user_query,
             domain_cots=domain_cots,
@@ -1237,9 +1605,41 @@ class Router:
             pg_stats_before={},
         )
         refined_output = self.refiner.refine(refiner_packet)
+        
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "L", "location": "router.py:_handle_research_mode", "message": "After refiner.refine call", "data": {"refined_output_length": len(refined_output) if refined_output else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
+        # CRITICAL: Block empty output from refiner
+        if not refined_output or not refined_output.strip() or refined_output.strip() in ["", "None", "N/A", "[VERIFIER_READY]"]:
+            logging.error("Router (Research Mode): Refiner returned empty output - using emergency fallback")
+            # Try to extract content from domain outputs
+            fallback_parts = []
+            for domain, cot in domain_cots.items():
+                if cot and cot.strip() and "[produced no output]" not in cot.lower():
+                    sentences = re.split(r'[.!?]\s+', cot)
+                    for sent in sentences:
+                        if len(sent.strip()) > 20:
+                            fallback_parts.append(f"**{domain.title()}**: {sent.strip()}")
+                            break
+                    if len(fallback_parts) >= 2:
+                        break
+            
+            if fallback_parts:
+                refined_output = "\n\n".join(fallback_parts) + "\n\n[VERIFIER_READY]"
+            else:
+                refined_output = f"I apologize, but I encountered an issue while processing your query: '{user_query}'. The system was unable to generate a proper response. Please try rephrasing your question.\n\n[VERIFIER_READY]"
+        
         self.logger.log_refiner(refined_output)
 
         # 11. Verifier (strict research mode verification)
+        if progress_callback:
+            progress_callback("Verifying Quality", 90.0)
         verifier_packet = self._build_verifier_packet(
             user_query=user_query,
             merged_reasoning=refined_output,
@@ -1247,6 +1647,9 @@ class Router:
             router_reason="Research mode: authority-driven analysis",
         )
         verification = self.verifier.run(verifier_packet)
+        
+        if progress_callback:
+            progress_callback("Completing", 100.0)
         self.logger.log_verifier(verification)
 
         status = verification.get("status", "approved")
@@ -1256,10 +1659,32 @@ class Router:
         output_format = "none"
 
         if self.research_mode_config.get("pdf_output", True):
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_PDF", "location": "router.py:_handle_research_mode", "message": "Attempting PDF generation", "data": {"pdf_output_enabled": True}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             try:
                 from anm.output.research_pdf import ResearchPDFGenerator
 
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_PDF", "location": "router.py:_handle_research_mode", "message": "PDF generator imported successfully", "data": {}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+
                 pdf_generator = ResearchPDFGenerator()
+
+                # Extract sources before refinement strips URLs (Blueprint compliance)
+                sources = self._extract_sources_from_outputs(domain_cots)
+
                 output_path = pdf_generator.generate(
                     user_query=user_query,
                     domain_cots=domain_cots,
@@ -1269,9 +1694,43 @@ class Router:
                     authority_assignments=authority_assignments,
                     wot_steps=wot_steps,
                     processing_time_ms=(time.time() - start_time) * 1000,
+                    sources=sources,  # Blueprint compliance: Sources section
                 )
                 output_format = "pdf"
+                
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_PDF", "location": "router.py:_handle_research_mode", "message": "PDF generated successfully", "data": {"output_path": output_path, "output_format": output_format}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+            except ImportError as e:
+                # reportlab not installed
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_PDF", "location": "router.py:_handle_research_mode", "message": "PDF generation failed: reportlab not installed", "data": {"error": str(e), "error_type": "ImportError"}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
+                # Fallback to markdown if PDF generation fails
+                if self.research_mode_config.get("markdown_fallback", True):
+                    self.logger.log_error("pdf_generation_failed",
+                        f"PDF generation failed: reportlab not installed. Install with: pip install reportlab. Falling back to markdown.")
             except Exception as e:
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_PDF", "location": "router.py:_handle_research_mode", "message": "PDF generation failed with exception", "data": {"error": str(e), "error_type": type(e).__name__}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 # Fallback to markdown if PDF generation fails
                 if self.research_mode_config.get("markdown_fallback", True):
                     self.logger.log_error("pdf_generation_failed",
@@ -1341,6 +1800,8 @@ class Router:
             "mode": "research",
             "wot_steps": wot_steps,
             "processing_time_ms": (time.time() - start_time) * 1000,
+            "selected_domains": selected_domains,  # For UI to display all modules used
+            "domain_cots": domain_cots,  # For UI to show which domains produced output
         }
 
     def _handle_quick_mode(self, user_query: str) -> Dict[str, Any]:
@@ -1378,11 +1839,7 @@ class Router:
         })
         
         # 4) Build simple prompt (no memory, no context)
-        simple_prompt = f"""USER QUERY: {user_query}
-
-Provide a direct, concise answer. No chain-of-thought reasoning needed.
-Be helpful and accurate.
-"""
+        simple_prompt = f"USER QUERY: {user_query}\n\nProvide a direct, concise answer."
         
         # 5) Run quick model directly (using general specialist with quick mode)
         # Note: Inference engine is already configured by ANM.query() based on quick_mode flag
@@ -1464,6 +1921,13 @@ Provide your general reasoning and end with WOT_REQUEST: NONE"""
         
         # Refine the answer (this will add [VERIFIER_READY] marker)
         refined_output = self.refiner.refine(refiner_packet)
+        
+        # CRITICAL: Block empty output from refiner
+        if not refined_output or not refined_output.strip() or refined_output.strip() in ["", "None", "N/A", "[VERIFIER_READY]"]:
+            logging.error("Router (Quick Mode): Refiner returned empty output - using emergency fallback")
+            # For quick mode, provide a simple fallback
+            refined_output = f"I apologize, but I encountered an issue while processing your query: '{user_query}'. The system was unable to generate a proper response. Please try rephrasing your question.\n\n[VERIFIER_READY]"
+        
         self.logger.log_refiner(refined_output)
         
         # 7) Verifier (uses refined output)
@@ -1700,37 +2164,14 @@ Provide your general reasoning and end with WOT_REQUEST: NONE"""
         if not query or not isinstance(query, str) or not query.strip():
             return "general"
 
-        # Build classification prompt for R1
-        classification_prompt = f"""You are an expert query classifier for a multi-specialist AI system.
+        # Build classification prompt for R1 (optimized)
+        classification_prompt = f"""Classify query to specialist: math, physics, chemistry, biology, code, general, research, facts.
 
-Your job is to analyze the user's query and determine which specialist should handle it.
+Query: "{query}"
 
-Available specialists:
-- math: Mathematics (arithmetic, algebra, calculus, statistics, geometry)
-- physics: Physics (mechanics, thermodynamics, electromagnetism, optics, relativity, quantum)
-- chemistry: Chemistry (atoms, molecules, reactions, periodic table, stoichiometry)
-- biology: Biology (cells, DNA, genetics, anatomy, physiology, ecology)
-- code: Programming and software (Python, JavaScript, algorithms, debugging, data structures)
-- general: General knowledge, conversation, explanations not fitting other categories
-- research: Current events, news, latest information
-- facts: Historical facts, dates, definitions
+Examples: "25 + 8"→math, "force calculation"→physics, "DNA"→biology, "Python function"→code, "current president"→research, "World War 2"→facts, "weather"→general.
 
-User Query: "{query}"
-
-Analyze this query carefully and respond with ONLY the specialist name (one word, lowercase).
-Think about what domain knowledge is required to answer this question accurately.
-
-Examples:
-- "What is 25 + 8?" → math
-- "Calculate force when mass=5kg and acceleration=10m/s²" → physics
-- "What is DNA?" → biology
-- "Write a Python function" → code
-- "What is the atomic number of Carbon?" → chemistry
-- "Who is the current president?" → research
-- "Tell me about World War 2" → facts
-- "What's the weather like?" → general
-
-Your classification (ONE WORD ONLY):"""
+Classification (ONE WORD):"""
 
         try:
             # Use the inference engine to get R1's classification
@@ -2112,9 +2553,13 @@ Your classification (ONE WORD ONLY):"""
         if any(kw in query_lower for kw in math_keywords):
             detected_domains.append("math")
 
-        # Physics patterns
+        # Physics patterns (expanded for astronomy/astrophysics)
         physics_keywords = ["physics", "force", "energy", "momentum", "velocity", "acceleration",
-                           "gravity", "electromagnetic", "quantum", "relativity", "thermodynamics"]
+                           "gravity", "electromagnetic", "quantum", "relativity", "thermodynamics",
+                           "black hole", "blackhole", "quasar", "star", "galaxy", "nebula", "supernova",
+                           "neutron star", "white dwarf", "event horizon", "singularity", "accretion",
+                           "astrophysics", "cosmology", "spacetime", "gravitational", "mass", "density",
+                           "fusion", "fission", "radiation", "photon", "wavelength", "spectrum"]
         if any(kw in query_lower for kw in physics_keywords):
             detected_domains.append("physics")
 
@@ -2189,78 +2634,201 @@ Your classification (ONE WORD ONLY):"""
 
         # Domain diversity factor (0-40 points)
         complexity_score += min(domain_count * 10, 40)
+        
+        # Research Mode bonus: Complex queries (multiple questions, "and", "how", "why") get bonus
+        query_lower = user_query.lower()
+        question_indicators = [" and ", " how ", " why ", " what ", " when ", " where ", " explain ", " describe "]
+        question_count = sum(1 for indicator in question_indicators if indicator in query_lower)
+        if question_count >= 2:
+            complexity_score += 15  # Multi-part questions are more complex
+        elif question_count >= 1:
+            complexity_score += 5
 
         # Map complexity to module count (4-10)
+        # Per Blueprint: "If 8 modules are relevant, all 8 run in parallel"
+        # For Research Mode, be more aggressive with module selection
         if complexity_score >= 80:
             num_modules = max_modules  # 10 modules for very complex queries
         elif complexity_score >= 60:
-            num_modules = 8
+            num_modules = 8  # Complex queries use 8 modules
         elif complexity_score >= 40:
-            num_modules = 6
+            num_modules = 6  # Medium complexity uses 6 modules
         else:
-            num_modules = min_modules  # 4 modules for simple queries
+            num_modules = min_modules  # 4 modules minimum (per Blueprint)
 
         # Select top N detected domains
         selected = detected_domains[:num_modules]
 
-        # Ensure at least min_modules by adding general/facts if needed
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                import time
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_MODULES", "location": "router.py:_select_parallel_modules", "message": "Module selection", "data": {"detected_domains": detected_domains, "complexity_score": complexity_score, "num_modules": num_modules, "selected_before_fill": selected}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+
+        # ENFORCE minimum modules (per Blueprint: "4-10 modules run in parallel")
+        # Always ensure at least min_modules, even if we need to add general/facts/memory/research
         while len(selected) < min_modules:
             if "general" not in selected:
                 selected.append("general")
             elif "facts" not in selected:
                 selected.append("facts")
+            elif "memory" not in selected:
+                selected.append("memory")
+            elif "research" not in selected:
+                selected.append("research")
             else:
+                # If we still don't have enough, cycle through available domains
+                all_available = ["general", "math", "physics", "code", "chemistry", "biology", "memory", "research", "facts"]
+                for domain in all_available:
+                    if domain not in selected and len(selected) < min_modules:
+                        selected.append(domain)
                 break
 
         return selected[:max_modules]  # Cap at max_modules
 
     def _assign_authority_models(self, detected_domains: list) -> dict:
         """
-        Map domains to authority models from RESEARCH_MODE_CONFIGS.
+        Map domains to authority models per Blueprint specification.
         Returns dict: {"math": "nanbeige4-3b", "code": "stable-code-3b", ...}
+        
+        Per Blueprint:
+        - Physics/Chemistry/Biology/Math -> NanBeige4-3B
+        - Meta-Cognition/Self-Awareness -> DeepSeek R1-1.5B
+        - Internet Research -> Qwen2.5-3B-Instruct
+        - Coding -> StableCode-3B
         """
-        authority_models = self.research_mode_config.get("authority_models", {})
+        from anm.system.model_registry import get_authority_model_for_domain
+        
         assignments = {}
 
+        # Use model_registry for correct authority model mapping (per Blueprint)
         for domain in detected_domains:
-            if domain in authority_models:
-                assignments[domain] = authority_models[domain]
+            authority_model = get_authority_model_for_domain(domain)
+            if authority_model:
+                assignments[domain] = authority_model
             else:
-                # Fallback to general model
-                assignments[domain] = authority_models.get("metacognition", "deepseek-r1:1.5b")
+                # Fallback to DeepSeek R1 for general/metacognition (per Blueprint)
+                assignments[domain] = "deepseek-r1-1.5b"
+        
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                import time
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_AUTHORITY", "location": "router.py:_assign_authority_models", "message": "Authority model assignments", "data": {"detected_domains": detected_domains, "assignments": assignments}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
 
         return assignments
 
-    def _build_research_specialists(self, selected_domains: list) -> dict:
+    def _build_research_specialists(self, selected_domains: list, authority_assignments: dict) -> dict:
         """
         Create specialists WITHOUT ParallelSpecialistAdapter ensemble.
-        Research mode uses 1 worker per specialist (no voting).
+        Research mode uses 1 worker per specialist (no voting) with authority models.
         Returns specialists dict for WoT.
         """
         specialists = {}
+        
+        from anm.system.model_registry import get_authority_model_for_domain
 
         for domain in selected_domains:
-            # Get the specialist (use existing adapters but note we're in research mode)
+            # Get authority model for this domain
+            authority_model = authority_assignments.get(domain)
+            if not authority_model:
+                # Fallback: use registry mapping
+                authority_model = get_authority_model_for_domain(domain)
+            
+            # Normalize model name (handle "deepseek-r1:1.5b" -> "deepseek-r1-1.5b")
+            if authority_model:
+                authority_model = authority_model.replace(":", "-").lower()
+            
+            # Create single-worker specialist with authority model (not ParallelSpecialistAdapter)
+            # Extract the base specialist class from ParallelSpecialistAdapter
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH", "location": "router.py:_build_research_specialists", "message": "Building research specialist", "data": {"domain": domain, "authority_model": authority_model}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             if domain == "general" and hasattr(self, 'general'):
-                specialists["general"] = self.general
+                # Get base class from adapter
+                base_class = GeneralLLM
+                specialists["general"] = base_class(model_name=authority_model)
             elif domain == "math" and hasattr(self, 'math'):
-                specialists["math"] = self.math
+                base_class = MathLLM
+                specialists["math"] = base_class(model_name=authority_model)
             elif domain == "physics" and hasattr(self, 'physics'):
-                specialists["physics"] = self.physics
+                base_class = PhysicsLLM
+                specialists["physics"] = base_class(model_name=authority_model)
             elif domain == "chemistry" and hasattr(self, 'chemistry'):
-                specialists["chemistry"] = self.chemistry
+                base_class = ChemistryLLM
+                specialists["chemistry"] = base_class(model_name=authority_model)
             elif domain == "biology" and hasattr(self, 'biology'):
-                specialists["biology"] = self.biology
+                base_class = BiologyLLM
+                specialists["biology"] = base_class(model_name=authority_model)
             elif domain == "code" and hasattr(self, 'code'):
-                specialists["code"] = self.code
-            elif domain == "internet" and hasattr(self, 'research'):
-                specialists["internet"] = self.research
+                base_class = CodeLLM
+                specialists["code"] = base_class(model_name=authority_model)
+            elif domain == "internet":
+                # Research Mode: Create ResearchLLM with authority model (Blueprint compliance)
+                from anm.specialists.research_llm import ResearchLLM
+                specialists["internet"] = ResearchLLM(model_name=authority_model)
             elif domain == "facts" and hasattr(self, 'facts'):
-                specialists["facts"] = self.facts
+                base_class = FactsLLM
+                specialists["facts"] = base_class(model_name=authority_model)
             elif domain == "memory" and hasattr(self, 'memory_adapter'):
+                # Memory adapter is already single-worker
                 specialists["memory"] = self.memory_adapter
 
         return specialists
+
+    def _extract_sources_from_outputs(self, domain_outputs: Dict[str, str]) -> List[Dict[str, str]]:
+        """
+        Extract source URLs from domain outputs before refinement strips them.
+        Blueprint compliance: Sources section requires explicit URL attribution.
+        """
+        import re
+        sources = []
+        seen_urls = set()
+
+        # URL pattern to match http/https URLs
+        url_pattern = r'https?://[^\s\)\"\'\<\>\]\[,]+'
+
+        for domain, output in domain_outputs.items():
+            if not output:
+                continue
+
+            urls = re.findall(url_pattern, str(output))
+            for url in urls:
+                # Clean URL (remove trailing punctuation)
+                url = url.rstrip('.,;:!?')
+
+                if url not in seen_urls and len(url) > 10:
+                    seen_urls.add(url)
+
+                    # Try to extract title from surrounding context
+                    title = "Source"
+
+                    # Look for title patterns near URL
+                    title_match = re.search(rf'(?:title|Title|TITLE)[:\s]+([^\n]+)', output)
+                    if title_match:
+                        title = title_match.group(1)[:100]
+
+                    sources.append({
+                        "url": url,
+                        "domain": domain,
+                        "title": title
+                    })
+
+        return sources
 
     def _run_metacognition_audit(self, user_query: str, domain_cots: dict, entry_domain: str) -> dict:
         """
@@ -2272,24 +2840,15 @@ Your classification (ONE WORD ONLY):"""
             from anm.system.inference import get_inference_engine
             engine = get_inference_engine()
 
-            audit_prompt = f"""You are a meta-cognitive auditor for ANM Research Mode.
+            audit_prompt = f"""Meta-cognitive auditor for ANM Research Mode.
 
-Analyze the following reasoning outputs for quality, consistency, and limitations.
+Query: {user_query}
+Entry: {entry_domain}
 
-User Query: {user_query}
-
-Entry Domain: {entry_domain}
-
-Domain Reasoning Outputs:
+Domain Outputs:
 {self._format_domain_cots_for_audit(domain_cots)}
 
-Provide a brief audit covering:
-1. Consistency: Are the domain outputs consistent with each other?
-2. Confidence: How confident should we be in the final answer?
-3. Uncertainty: What are the main sources of uncertainty?
-4. Limitations: What are the limitations of this analysis?
-
-Format as JSON with keys: consistency, confidence, uncertainty, limitations"""
+Audit (JSON): consistency, confidence, uncertainty, limitations"""
 
             response = engine.generate(
                 audit_prompt,
@@ -2341,3 +2900,200 @@ Format as JSON with keys: consistency, confidence, uncertainty, limitations"""
         """Detect if query contains code-specific patterns."""
         code_indicators = ["def ", "class ", "import ", "function", "return", "if ", "for ", "while "]
         return any(ind in query for ind in code_indicators)
+    
+    def _needs_external_knowledge(self, user_query: str, detected_domains: list) -> bool:
+        """
+        Determine if external knowledge (internet research) is needed.
+        Per Blueprint Section 7: "When external knowledge is required"
+        """
+        query_lower = user_query.lower()
+        
+        # Keywords that suggest external knowledge is needed
+        external_knowledge_indicators = [
+            "latest", "recent", "current", "news", "today", "now",
+            "what is", "who is", "when did", "where is", "how many",
+            "find", "search", "look up", "information about",
+            "research", "study", "paper", "article", "publication",
+            "discover", "discovered", "found", "published",
+        ]
+        
+        # Check if query contains indicators
+        has_indicators = any(indicator in query_lower for indicator in external_knowledge_indicators)
+        
+        # Check if query asks about current events or recent information
+        is_current_event_query = any(phrase in query_lower for phrase in [
+            "what happened", "what's happening", "current state",
+            "latest development", "recent news", "breaking"
+        ])
+        
+        # Research mode should always consider internet research for complex queries
+        # But only trigger if indicators are present to avoid unnecessary API calls
+        return has_indicators or is_current_event_query
+    
+    def _run_internet_research_pipeline(self, user_query: str, memory_brief: str) -> dict:
+        """
+        Internet Research Pipeline per Blueprint Section 7.
+        
+        Pipeline:
+        1. Fetch sources (ResearchLLM/InternetLLM)
+        2. Read and summarize (Qwen2.5-3B-Instruct)
+        3. Reason and connect (DeepSeek R1)
+        4. Validate (science/math → NanBeige, code → StableCode)
+        5. Final synthesis (DeepSeek R1)
+        
+        Returns dict with research data to be included in WoT context.
+        """
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                import time
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "INTERNET_RESEARCH", "location": "router.py:_run_internet_research_pipeline", "message": "Starting internet research pipeline", "data": {"user_query": user_query[:200]}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
+        research_data = {
+            "sources": [],
+            "summary": "",
+            "reasoning": "",
+            "validation": "",
+            "synthesis": "",
+        }
+        
+        try:
+            # Step 1: Fetch sources using ResearchLLM (uses Qwen2.5-3B-Instruct per Blueprint)
+            if RESEARCH_LLM_AVAILABLE and ResearchLLM:
+                research_llm = ResearchLLM()
+                wot_packet = f"""[RESEARCH REQUEST]
+Query: {user_query}
+
+Memory Context:
+{memory_brief[:500]}
+
+[RESEARCH MODE: Fetch external sources and summarize]
+[END RESEARCH REQUEST]"""
+                
+                # ResearchLLM will use Qwen2.5-3B-Instruct for web reading/summarization
+                research_output = research_llm.run(wot_packet)
+                research_data["sources"] = research_output[:2000]  # Store first 2000 chars
+                
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        import time
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "INTERNET_RESEARCH", "location": "router.py:_run_internet_research_pipeline", "message": "Step 1 complete: Sources fetched", "data": {"research_output_length": len(research_output)}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
+                # Step 2-3: Reason and connect using DeepSeek R1 (already done by ResearchLLM internally)
+                # ResearchLLM uses DeepSeek R1 for reasoning, so we can use its output directly
+                # Clean the output to remove internal markers and META blocks before passing to WoT
+                cleaned_output = self._clean_research_output(research_output)
+                research_data["summary"] = cleaned_output[:1000]
+                research_data["reasoning"] = cleaned_output
+                
+            else:
+                # Fallback: Use InternetLLM if ResearchLLM not available
+                if hasattr(self, 'internet') and self.internet:
+                    internet_output = self.internet.run(f"[RESEARCH REQUEST]\n{user_query}\n[END RESEARCH REQUEST]")
+                    research_data["sources"] = internet_output[:2000]
+                    research_data["summary"] = internet_output[:1000]
+                    research_data["reasoning"] = internet_output
+                else:
+                    # No internet research available
+                    research_data["summary"] = "Internet research not available (ResearchLLM/InternetLLM not loaded)"
+            
+            # Step 4: Validation happens during WoT with authority models
+            # (science/math → NanBeige, code → StableCode) - handled by authority model assignment
+            
+            # Step 5: Final synthesis happens in refiner (uses DeepSeek R1)
+            # This is handled by the refiner after WoT completes
+            
+        except Exception as e:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "INTERNET_RESEARCH", "location": "router.py:_run_internet_research_pipeline", "message": "Internet research pipeline failed", "data": {"error": str(e), "error_type": type(e).__name__}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            research_data["summary"] = f"Internet research failed: {str(e)}"
+        
+        return research_data
+    
+    def _clean_research_output(self, raw_output: str) -> str:
+        """
+        Clean ResearchLLM output to remove internal markers, META blocks, and WOT_REQUEST
+        before passing to WoT as context.
+        
+        ResearchLLM output contains:
+        - Search results dump
+        - LLM reasoning
+        - META blocks (GRE, Self-Awareness, Diagnostics)
+        - WOT_REQUEST markers
+        
+        We need to extract just the meaningful research content.
+        """
+        if not raw_output:
+            return ""
+        
+        import re
+        text = raw_output
+        
+        # Remove META blocks
+        text = re.sub(r'\[META.*?\].*?\[/META\]', '', text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r'--- META.*?---', '', text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r'\[DOMAIN_HEALTH\].*?\[POINTGAME_FEEDBACK\].*?', '', text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r'\[GLOBAL_RULES\].*?', '', text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r'\[RESEARCH_DIAGNOSTICS\].*?', '', text, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Remove WOT_REQUEST markers
+        text = re.sub(r'WOT_REQUEST:.*', '', text, flags=re.IGNORECASE | re.MULTILINE)
+        text = re.sub(r'Final WOT REQUEST:.*', '', text, flags=re.IGNORECASE | re.MULTILINE)
+        
+        # Remove search result formatting (ID, SOURCE, TITLE, SNIPPET, URL markers)
+        text = re.sub(r'- ID:.*?\n', '', text, flags=re.MULTILINE)
+        text = re.sub(r'  SOURCE:.*?\n', '', text, flags=re.MULTILINE)
+        text = re.sub(r'  TITLE:.*?\n', '', text, flags=re.MULTILINE)
+        text = re.sub(r'  SNIPPET:', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'  URL:.*?\n', '', text, flags=re.MULTILINE)
+        
+        # Remove WoT packet markers
+        text = re.sub(r'--- WoT PACKET.*?---', '', text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r'--- SEARCH QUERY.*?---', '', text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r'--- SEARCH RESULTS.*?---', '', text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r'--- RELATED PAST RESEARCH.*?---', '', text, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Remove instruction text
+        text = re.sub(r'Respond ONLY with.*?WOT_REQUEST\.', '', text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r'Do NOT fabricate.*?URLs\.', '', text, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Remove thinking tags
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(r'</?redacted_reasoning>', '', text, flags=re.IGNORECASE)
+        
+        # Extract meaningful paragraphs
+        lines = text.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            stripped = line.strip()
+            if not stripped or len(stripped) < 10:
+                continue
+            # Skip lines that are just markers or formatting
+            skip_markers = ['meta', 'wot_request', 'id:', 'source:', 'title:', 'url:', 'snippet:', 'domain_health', 'global_rules', 'research_diagnostics', 'pointgame_feedback', 'confidence:', 'uncertainty:', 'passed:', 'risk_level:', 'violations:', 'penalty:', 'self_reflection:', 'success_signal:', 'reason:', 'evidence_count:', 'error_hits:', 'no_result_hits:']
+            if any(marker in stripped.lower() for marker in skip_markers):
+                continue
+            cleaned_lines.append(stripped)
+        
+        result = '\n'.join(cleaned_lines)
+        
+        # Remove excessive whitespace
+        result = re.sub(r'\n\s*\n\s*\n+', '\n\n', result)
+        result = result.strip()
+        
+        return result

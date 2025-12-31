@@ -91,11 +91,13 @@ RESEARCH_MODE_CONFIGS = {
     "hard_domain_binding": True,
     "no_fast_fallback": True,
 
-    # Parallelism (dynamic 4-10 modules based on query)
+    # Parallelism Configuration (Blueprint-compliant)
+    # Research Mode: 4-10 specialists run in parallel, each with 1 worker (no ensemble)
+    # Normal Mode: Uses parallel_r1_workers (default 4) for ensemble voting per specialist
     "max_parallelism": True,
     "min_parallel_modules": 4,    # Minimum 4 specialists run in parallel
     "max_parallel_modules": 10,   # Maximum 10 specialists can run concurrently
-    "workers_per_module": 1,      # Each specialist runs once (no ensemble in research mode)
+    "workers_per_module": 1,      # RESEARCH MODE ONLY: 1 worker per specialist (deterministic)
 
     # WoT configuration
     "wot_mandatory": True,

@@ -200,7 +200,89 @@ class WebSearcher:
         return hashlib.md5(f"{backend.value}:{query.lower()}".encode()).hexdigest()
     
     def _search_duckduckgo(self, query: str, max_results: int) -> SearchResponse:
-        """Search using DuckDuckGo Instant Answer API."""
+        """Search using DuckDuckGo - try duckduckgo-search library first, fallback to Instant Answer API."""
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                import time
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_WEB", "location": "internet_llm.py:_search_duckduckgo", "message": "Starting DuckDuckGo web search", "data": {"query": query, "max_results": max_results}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
+        # Try duckduckgo-search library first (proper web search)
+        try:
+            import duckduckgo_search
+            ddg_results = duckduckgo_search.DDGS().text(query, max_results=max_results)
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    results_list = list(ddg_results)
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_WEB", "location": "internet_llm.py:_search_duckduckgo", "message": "duckduckgo-search library available, using web search", "data": {"results_count": len(results_list)}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
+            results: List[SearchResult] = []
+            rank = 1
+            for result in ddg_results:
+                if len(results) >= max_results:
+                    break
+                results.append(SearchResult(
+                    title=result.get("title", "")[:200],
+                    snippet=result.get("body", "")[:500],
+                    url=result.get("href", ""),
+                    source="duckduckgo_web",
+                    rank=rank,
+                    credibility=0.8,
+                ))
+                rank += 1
+            
+            if results:
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        import time
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_WEB", "location": "internet_llm.py:_search_duckduckgo", "message": "duckduckgo-search returned results", "data": {"results_count": len(results), "first_title": results[0].title[:100] if results else "none"}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                return SearchResponse(
+                    query=query,
+                    results=results,
+                    total_found=len(results),
+                    search_time_ms=0,
+                    backend="duckduckgo",
+                    success=True,
+                )
+        except ImportError:
+            # duckduckgo-search not installed, fall back to Instant Answer API
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_WEB", "location": "internet_llm.py:_search_duckduckgo", "message": "duckduckgo-search not available, falling back to Instant Answer API", "data": {}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+        except Exception as e:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_WEB", "location": "internet_llm.py:_search_duckduckgo", "message": "duckduckgo-search failed, falling back to Instant Answer API", "data": {"error": str(e), "error_type": type(e).__name__}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+        
+        # Fallback: Use Instant Answer API (limited, but better than nothing)
         url = "https://api.duckduckgo.com/"
         params = {
             "q": query,
@@ -209,8 +291,38 @@ class WebSearcher:
             "no_redirect": "1",
         }
         
-        r = requests.get(url, params=params, timeout=self.timeout)
-        data = r.json()
+        try:
+            r = requests.get(url, params=params, timeout=self.timeout)
+            data = r.json()
+
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_WEB", "location": "internet_llm.py:_search_duckduckgo", "message": "Instant Answer API response", "data": {"has_abstract": bool(data.get("Abstract")), "related_topics_count": len(data.get("RelatedTopics", [])), "data_keys": list(data.keys())}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+        except Exception as e:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_WEB", "location": "internet_llm.py:_search_duckduckgo", "message": "Instant Answer API request failed", "data": {"error": str(e), "error_type": type(e).__name__}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            return SearchResponse(
+                query=query,
+                results=[],
+                total_found=0,
+                search_time_ms=0,
+                backend="duckduckgo",
+                success=False,
+                error=str(e),
+            )
         
         results: List[SearchResult] = []
         rank = 1
@@ -276,6 +388,36 @@ class WebSearcher:
                         credibility=0.8,
                     ))
                     rank += 1
+        
+        if not results:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_WEB", "location": "internet_llm.py:_search_duckduckgo", "message": "No results from DuckDuckGo Instant Answer API", "data": {"query": query, "has_abstract": bool(data.get("Abstract")), "topics_count": len(data.get("RelatedTopics", []))}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            return SearchResponse(
+                query=query,
+                results=[],
+                total_found=0,
+                search_time_ms=0,
+                backend="duckduckgo",
+                success=False,
+                error="No results found. DuckDuckGo Instant Answer API only works for very specific queries. Install 'duckduckgo-search' for proper web search: pip install duckduckgo-search",
+            )
+        
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                import time
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_WEB", "location": "internet_llm.py:_search_duckduckgo", "message": "DuckDuckGo search completed", "data": {"results_count": len(results), "sources": [r.source for r in results]}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
         
         return SearchResponse(
             query=query,

@@ -28,6 +28,7 @@ from enum import Enum
 import json
 import os
 import hashlib
+import logging
 
 
 class EpistemicStatus(Enum):
@@ -98,7 +99,11 @@ class LearningEngine:
         storage_path: str = ".anm_cache/learning",
     ):
         self.storage_path = storage_path
-        os.makedirs(storage_path, exist_ok=True)
+        try:
+            os.makedirs(storage_path, exist_ok=True)
+        except (OSError, PermissionError) as e:
+            logging.warning(f"Cannot create learning storage directory {storage_path}: {e}. Using in-memory only.")
+            self.storage_path = None
         
         # Behavioral patterns only
         self._strategy_rules: List[StrategyRule] = self._load_strategies()
@@ -506,6 +511,10 @@ class LearningEngine:
     
     def _save_all(self) -> None:
         """Save all behavioral patterns."""
+        if not self.storage_path:
+            # In-memory only mode - skip saving
+            return
+        
         try:
             # Save strategies
             with open(os.path.join(self.storage_path, "strategies.json"), "w") as f:
@@ -532,6 +541,9 @@ class LearningEngine:
     
     def _load_strategies(self) -> List[StrategyRule]:
         """Load saved strategies."""
+        if not self.storage_path:
+            return []
+        
         path = os.path.join(self.storage_path, "strategies.json")
         if not os.path.exists(path):
             return []
@@ -556,6 +568,9 @@ class LearningEngine:
     
     def _load_behavioral_patterns(self) -> Dict[str, Dict[str, Any]]:
         """Load saved behavioral patterns."""
+        if not self.storage_path:
+            return {}
+        
         path = os.path.join(self.storage_path, "behavioral_patterns.json")
         if not os.path.exists(path):
             return {}

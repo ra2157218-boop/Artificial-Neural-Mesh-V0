@@ -7,6 +7,10 @@
 from __future__ import annotations
 import sys
 import os
+
+# Fix tokenizers parallelism warning (must be set before any tokenizer imports)
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
 import argparse
 from typing import Optional
 
@@ -163,7 +167,7 @@ def run_query(query: str, verbose: bool = False, skip_sanity: bool = False, quic
     if verbose:
         print(f"[INFO] Processing query: {query[:100]}...")
     
-    result = anm.query(query)
+    result = anm.query(query, progress_callback=progress_callback)
     return result
 
 
@@ -241,7 +245,28 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
             
             # Research mode toggle command
             if user_input.lower() == "research":
+                # #region agent log
+                try:
+                    import time
+                    import json
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_UI", "location": "run.py:interactive_mode", "message": "Research keyword detected", "data": {"current_research_mode_before": current_research_mode}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 current_research_mode = not current_research_mode
+                
+                # #region agent log
+                try:
+                    import time
+                    import json
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_UI", "location": "run.py:interactive_mode", "message": "Research mode toggled", "data": {"current_research_mode_after": current_research_mode}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 # Reinitialize ANM with new research mode
                 config = ANMConfig(
                     skip_sanity_check=skip_sanity,
@@ -251,7 +276,28 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
                     optimize_prompts=optimize_prompts,
                     research_mode=current_research_mode,
                 )
+                
+                # #region agent log
+                try:
+                    import time
+                    import json
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_UI", "location": "run.py:interactive_mode", "message": "Creating ANM with research mode", "data": {"config_research_mode": config.research_mode}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
                 anm = ANM(config)
+                
+                # #region agent log
+                try:
+                    import time
+                    import json
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_UI", "location": "run.py:interactive_mode", "message": "ANM created", "data": {"anm_research_mode": anm.anm_config.research_mode}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
                 
                 if current_research_mode:
                     ui.print_success("🔬 Research Mode Activated!")
@@ -335,14 +381,49 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
                 )
                 anm = ANM(config)
             
-            progress = ui.create_progress()
-            if progress:
+            # Use stage-based progress for better UX
+            stages = ["Memory", "Routing", "WoT Reasoning", "Refining", "Verifying"]
+            progress, stage_tasks = ui.create_stage_progress(stages) if hasattr(ui, 'create_stage_progress') else (None, {})
+            
+            if progress and stage_tasks:
+                def progress_callback(stage_name: str, percentage: float):
+                    """Update progress based on stage."""
+                    # Map stage names to our task IDs
+                    stage_mapping = {
+                        "Loading Memory": "Memory",
+                        "Domain Detection": "Routing",
+                        "Web-of-Thought Reasoning": "WoT Reasoning",
+                        "Refining Response": "Refining",
+                        "Verifying Quality": "Verifying",
+                        "Meta-cognition Audit": "WoT Reasoning",  # Part of WoT stage
+                        "Completing": "Verifying",  # Final stage
+                    }
+                    mapped_stage = stage_mapping.get(stage_name, "WoT Reasoning")
+                    if mapped_stage in stage_tasks:
+                        task_id = stage_tasks[mapped_stage]
+                        # Update the current stage to show progress
+                        progress.update(task_id, completed=int(percentage))
+                        # Mark previous stages as complete
+                        for prev_stage in stages:
+                            if prev_stage != mapped_stage and stages.index(prev_stage) < stages.index(mapped_stage):
+                                if prev_stage in stage_tasks:
+                                    progress.update(stage_tasks[prev_stage], completed=100)
+                
                 with progress:
-                    task = progress.add_task("[cyan]Processing...", total=None)
-                    result = anm.query(user_input)
-                    progress.update(task, completed=True)
+                    result = anm.query(user_input, progress_callback=progress_callback)
+                    # Mark all stages as complete
+                    for task_id in stage_tasks.values():
+                        progress.update(task_id, completed=100)
             else:
-                result = anm.query(user_input)
+                # Fallback to simple progress
+                progress = ui.create_progress()
+                if progress:
+                    with progress:
+                        task = progress.add_task("[cyan]Processing...", total=None)
+                        result = anm.query(user_input)
+                        progress.update(task, completed=True)
+                else:
+                    result = anm.query(user_input)
             
             # Show optimization info if prompt was optimized
             if result.get("optimized_query") and result.get("original_query"):
@@ -352,7 +433,7 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
                 )
             
             # Print result
-            ui.print_result(result)
+            ui.print_result(result, user_query=user_input)
             
         except KeyboardInterrupt:
             ui.print_warning("Interrupted. Type 'exit' to quit.")
@@ -478,7 +559,39 @@ Examples:
     
     ui.print_processing(query)
     
-    progress = ui.create_progress()
+    # Use stage-based progress for better UX
+    stages = ["Memory", "Routing", "WoT Reasoning", "Refining", "Verifying"]
+    progress, stage_tasks = ui.create_stage_progress(stages) if hasattr(ui, 'create_stage_progress') else (None, {})
+    
+    if progress and stage_tasks:
+        def progress_callback(stage_name: str, percentage: float):
+            """Update progress based on stage."""
+            stage_mapping = {
+                "Loading Memory": "Memory",
+                "Domain Detection": "Routing",
+                "Web-of-Thought Reasoning": "WoT Reasoning",
+                "Refining Response": "Refining",
+                "Verifying Quality": "Verifying",
+                "Meta-cognition Audit": "WoT Reasoning",
+                "Completing": "Verifying",
+            }
+            mapped_stage = stage_mapping.get(stage_name, "WoT Reasoning")
+            if mapped_stage in stage_tasks:
+                task_id = stage_tasks[mapped_stage]
+                progress.update(task_id, completed=int(percentage))
+                for prev_stage in stages:
+                    if prev_stage != mapped_stage and stages.index(prev_stage) < stages.index(mapped_stage):
+                        if prev_stage in stage_tasks:
+                            progress.update(stage_tasks[prev_stage], completed=100)
+        
+        with progress:
+            # Need to pass progress_callback through run_query
+            result = run_query(query, verbose=args.verbose, skip_sanity=args.skip_sanity, quick_mode=args.quick, auto_mode=args.auto, optimize_prompts=args.optimize, research_mode=args.research, progress_callback=progress_callback)
+            for task_id in stage_tasks.values():
+                progress.update(task_id, completed=100)
+    else:
+        # Fallback to simple progress
+        progress = ui.create_progress()
     if progress:
         with progress:
             task = progress.add_task("[cyan]Processing...", total=None)
@@ -495,7 +608,7 @@ Examples:
         )
     
     # Print result
-    ui.print_result(result)
+    ui.print_result(result, user_query=query)
 
 
 if __name__ == "__main__":

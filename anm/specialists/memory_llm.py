@@ -17,6 +17,7 @@ Capabilities:
 from __future__ import annotations
 from typing import List, Dict, Any, Optional
 import re
+import logging
 from anm.utils.debug_logger import log_debug
 
 from anm.specialists.base import (

@@ -59,31 +59,46 @@ class VectorStore:
             from chromadb.config import Settings
 
             # Import embedding cache from utils (decoupled from expansion module)
-            from anm.utils.embeddings import EmbeddingCache
+            try:
+                from anm.utils.embeddings import EmbeddingCache
+            except ImportError:
+                logger.warning("EmbeddingCache not available. Vector search disabled.")
+                self._available = False
+                return
 
             # Create persist directory
-            self.persist_directory.mkdir(parents=True, exist_ok=True)
+            try:
+                self.persist_directory.mkdir(parents=True, exist_ok=True)
+            except (OSError, PermissionError) as e:
+                logger.warning(f"Cannot create persist directory {self.persist_directory}: {e}")
+                self._available = False
+                return
 
             # Initialize ChromaDB client
-            self._client = chromadb.PersistentClient(
-                path=str(self.persist_directory),
-                settings=Settings(
-                    anonymized_telemetry=False,
-                    allow_reset=True,
+            try:
+                self._client = chromadb.PersistentClient(
+                    path=str(self.persist_directory),
+                    settings=Settings(
+                        anonymized_telemetry=False,
+                        allow_reset=True,
+                    )
                 )
-            )
 
-            # Get or create collection
-            self._collection = self._client.get_or_create_collection(
-                name=self.collection_name,
-                metadata={"hnsw:space": "cosine"},  # Cosine similarity
-            )
+                # Get or create collection
+                self._collection = self._client.get_or_create_collection(
+                    name=self.collection_name,
+                    metadata={"hnsw:space": "cosine"},  # Cosine similarity
+                )
 
-            # Initialize embedding cache (reuse existing infrastructure)
-            self._embedding_cache = EmbeddingCache()
+                # Initialize embedding cache (reuse existing infrastructure)
+                self._embedding_cache = EmbeddingCache()
 
-            self._available = True
-            logger.info(f"VectorStore initialized: collection={self.collection_name}, persist={self.persist_directory}")
+                self._available = True
+                logger.info(f"VectorStore initialized: collection={self.collection_name}, persist={self.persist_directory}")
+
+            except Exception as e:
+                logger.warning(f"ChromaDB initialization failed: {e}. Vector search disabled.")
+                self._available = False
 
         except ImportError as e:
             logger.warning(f"ChromaDB not available: {e}. Vector search disabled.")
@@ -121,7 +136,7 @@ class VectorStore:
             embedding = model.encode(text, convert_to_numpy=True).tolist()
 
             # Cache it
-            self._embedding_cache.put(text, embedding)
+            self._embedding_cache.set(text, embedding)
 
             return embedding
 

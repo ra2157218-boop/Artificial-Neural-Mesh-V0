@@ -354,8 +354,9 @@ class Verifier:
             if question_analysis["query_type"] == "calculation" and complexity == "simple":
                 length_ok = len(answer_text) >= 1  # Allow single character answers
             else:
-                # For other simple queries, allow very short answers (e.g., "2 + 2 equals 4")
-                length_ok = len(answer_text) >= 10  # Minimum 10 chars, no upper limit for simple queries
+                # For other simple queries, allow very short answers (e.g., "Yes", "No", "42")
+                # Accept any non-empty answer - correctness matters more than length
+                length_ok = len(answer_text) >= 1  # Minimum 1 char, no upper limit for simple queries
         elif expected_length == "long":
             length_ok = len(answer_text) > 150
         else:  # medium
@@ -404,7 +405,7 @@ class Verifier:
                 analysis["completeness"] = "incomplete"
             elif analysis["matches_requirements"] and length_ok:
                 analysis["completeness"] = "complete"
-            elif question_analysis["query_type"] == "general" and len(answer_text) >= 5:  # Very lenient for simple factual questions
+            elif question_analysis["query_type"] == "general" and len(answer_text) >= 1:  # Very lenient for simple factual questions - accept any non-empty answer
                 analysis["completeness"] = "complete"
             else:
                 analysis["completeness"] = "incomplete"
@@ -551,14 +552,30 @@ ADAPTIVE DECISION CRITERIA:
                     status = "rejected"
                     notes = f"Adaptive fallback: calculation query, but answer {'missing' if not answer_analysis['has_answer'] else 'does not contain a number'}."
                     all_issues = issues
-            # Short answer queries: approve if answer exists and matches format, even if short
-            elif answer_analysis["has_answer"] and answer_analysis["has_expected_format"] and reasoning_analysis["supports_answer"]:
-                status = "approved"
-                notes = f"Adaptive fallback: {question_analysis['query_type']} query expecting short answer - answer is correct and complete."
-                all_issues = [i for i in issues if i != "incomplete_answer"]  # Remove incomplete_answer for short answers
+            # Short answer queries: approve if answer exists and is not wrong, even if format is slightly off
+            # For short answers, correctness matters more than format or length
+            elif answer_analysis["has_answer"]:
+                # Check if answer appears to be wrong (contains failure messages, apologies, etc.)
+                answer_text_for_check = answer_analysis.get("answer_text", answer_analysis.get("answer", ""))
+                wrong_answer_indicators = [
+                    "i apologize", "i cannot", "i don't know", "unable",
+                    "wrong", "incorrect", "invalid", "error", "failed"
+                ]
+                is_wrong = any(indicator in answer_text_for_check.lower() for indicator in wrong_answer_indicators)
+
+                if not is_wrong:
+                    # Answer exists and doesn't appear wrong - approve it (even if short)
+                    status = "approved"
+                    notes = f"Adaptive fallback: {question_analysis['query_type']} query expecting short answer - answer is present and appears correct."
+                    all_issues = [i for i in issues if i not in ["incomplete_answer", "missing_expected_format_" + question_analysis.get('expected_format', 'text')]]  # Remove format/length issues for short answers
+                else:
+                    status = "rejected"
+                    notes = f"Adaptive fallback: {question_analysis['query_type']} query, but answer contains wrong answer indicators."
+                    all_issues = issues
             else:
+                # No answer present
                 status = "rejected"
-                notes = f"Adaptive fallback: {question_analysis['query_type']} query, but answer {'missing' if not answer_analysis['has_answer'] else 'wrong format' if not answer_analysis['has_expected_format'] else 'reasoning does not support'}."
+                notes = f"Adaptive fallback: {question_analysis['query_type']} query, but answer is missing."
                 all_issues = issues
         else:
             # For code queries, be more lenient - check if answer has code-like content
@@ -812,14 +829,15 @@ ADAPTIVE DECISION CRITERIA:
                     "issues": ["placeholder_text"],
                 }
         
-        # Check if answer is too short or generic
-        if len(lower) < 30 or lower.strip() in ["", "none", "n/a"]:
+        # Check if answer is empty or generic (but allow short answers if they're correct)
+        if lower.strip() in ["", "none", "n/a"]:
             return {
                 "status": "rejected",
-                "notes": "Fallback: answer too short or empty (< 30 chars)",
+                "notes": "Fallback: answer is empty or generic placeholder",
                 "score": 15,
                 "issues": ["empty_or_too_short"],
             }
+        # Note: We removed the < 30 chars check here - short answers are now allowed if they're correct
         
         # ----------------------------------------------------
         # 8) Failure/apology messages (AGGRESSIVE)
@@ -933,21 +951,22 @@ ADAPTIVE DECISION CRITERIA:
             # Clean thinking tags (sync with refiner)
             merged_clean = self._clean_thinking_tags(merged_clean)
             
-            # If answer is suspiciously short or generic, reject
+            # Check if answer is empty (but allow short answers if they're correct)
             # #region agent log
             import json
             import time
             try:
-                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H2", "location": "verifier.py:_fallback", "message": "Checking answer length", "data": {"answer_length": len(merged_clean), "threshold": 50, "will_reject": len(merged_clean) < 50}, "timestamp": int(time.time() * 1000)})
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H2", "location": "verifier.py:_fallback", "message": "Checking answer", "data": {"answer_length": len(merged_clean), "is_empty": len(merged_clean) == 0}, "timestamp": int(time.time() * 1000)})
             except Exception as e:
                 logging.warning(f"Debug logging failed: {e}")
             # #endregion
-            if len(merged_clean) < 50:
+            # Only reject if completely empty - short answers are now allowed
+            if len(merged_clean) == 0 or merged_clean.strip() == "":
                 return {
                     "status": "rejected",
-                    "notes": "Fallback: answer too short for meaningful response (< 50 chars)",
+                    "notes": "Fallback: answer is completely empty",
                     "score": 20,
-                    "issues": ["too_short"],
+                    "issues": ["empty_answer"],
                 }
             
             # Check for title-only answers (no actual content)

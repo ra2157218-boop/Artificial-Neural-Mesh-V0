@@ -3,8 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyc
 .Python
 venv/
+venv*/
 env/
 ENV/
 .venv
@@ -12,6 +14,7 @@ ENV/
 # IDE
 .vscode/
 .idea/
+.cursor/
 *.swp
 *.swo
 *~
@@ -37,6 +40,15 @@ logs/
 training_output/
 processed_data/
 
-# PDFs (optional - remove if you want to track them)
-# *.pdf
+# Research outputs (generated files)
+research_outputs/
+
+# Diary (user-specific memory)
+anm_diary.txt
+
+# Debug files
+debug.log
+
+# Plan files (Claude Code)
+.claude/
 

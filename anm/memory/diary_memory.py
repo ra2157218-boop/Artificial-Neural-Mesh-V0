@@ -123,11 +123,18 @@ class DiaryMemory:
 
     def _ensure_header(self) -> None:
         """Ensure header exists; create file if missing."""
-        if not self.diary_path.exists() or self.diary_path.stat().st_size == 0:
-            self.diary_path.parent.mkdir(parents=True, exist_ok=True)
-            with self.diary_path.open("w", encoding="utf-8") as f:
-                f.write(DIARY_HEADER.strip() + "\n\n")
-                f.write(f"# Diary created (UTC): {self._now_iso()}\n\n")
+        try:
+            if not self.diary_path.exists() or self.diary_path.stat().st_size == 0:
+                self.diary_path.parent.mkdir(parents=True, exist_ok=True)
+                with self.diary_path.open("w", encoding="utf-8") as f:
+                    f.write(DIARY_HEADER.strip() + "\n\n")
+                    f.write(f"# Diary created (UTC): {self._now_iso()}\n\n")
+        except (OSError, PermissionError) as e:
+            logger.error(f"Failed to create diary file {self.diary_path}: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error creating diary header: {e}")
+            raise
 
     @staticmethod
     def _now_iso() -> str:

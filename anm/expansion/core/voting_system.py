@@ -245,6 +245,12 @@ RESPONSE FORMAT (JSON):
             # Call specialist's run method
             if hasattr(specialist, 'run'):
                 response = specialist.run(voting_packet)
+                # CRITICAL: Ensure no empty output
+                if not response or not response.strip() or response.strip() in ["", "None", "N/A"]:
+                    import logging
+                    logging.warning(f"Voting: {domain_name} specialist returned empty output")
+                    # Provide fallback response
+                    response = f"[{domain_name.upper()} specialist encountered an issue during voting]\nThe {domain_name} domain was called but produced no output. Abstaining from vote.\nWOT_REQUEST: NONE"
             else:
                 # Fallback for adapters
                 response = str(specialist)

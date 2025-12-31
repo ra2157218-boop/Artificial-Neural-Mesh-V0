@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional
 
 from anm.system.inference import run_model
 from anm.utils.debug_logger import log_debug
+from anm.utils.prompts import ROUTER_PROMPT
 
 
 # ============================================================
@@ -65,10 +66,10 @@ class PlannerLLM:
         system_prompt: Optional[str] = None,
     ) -> None:
         self.model_name = model_name
+        # Use ROUTER_PROMPT from centralized prompts.py
         self.system_prompt = system_prompt or (
-            "You are PlannerLLM V0-OpenSource MAX inside ANM V0-OpenSource Router.\n"
-            "YOUR JOB: Design a safe, multi-domain reasoning plan. Output STRICT JSON ONLY.\n"
-            "Do NOT answer the user. Do NOT use markdown.\n"
+            f"{ROUTER_PROMPT}\n\n"
+            "You are PlannerLLM. Output STRICT JSON ONLY. Do NOT use markdown.\n"
         )
 
     # --------------------------------------------------------

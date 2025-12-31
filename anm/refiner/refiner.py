@@ -197,8 +197,37 @@ class Refiner:
         # Quality improvements
         refined = self._improve_quality(refined, style)
         
-        # Add verification marker
-        refined = self._ensure_verifier_ready(refined)
+        # CRITICAL: Block empty output BEFORE adding verifier marker
+        # If refined is empty or just [VERIFIER_READY], use fallback
+        if not refined or not refined.strip() or refined.strip() in ["", "None", "N/A"] or (len(refined.strip()) <= 20 and "[VERIFIER_READY]" in refined):
+            logging.error("Refiner produced empty output - using emergency fallback")
+            user_query = packet.get("user_query", "your query")
+            # Try to extract any content from domain outputs
+            domain_outputs = self._extract_domain_outputs(packet)
+            fallback_content = []
+            for domain, output in domain_outputs.items():
+                if output and output.strip() and "[produced no output]" not in output.lower():
+                    # Clean and extract first meaningful sentence
+                    cleaned = self._clean_output(output)
+                    if cleaned and len(cleaned.strip()) > 20:
+                        # Get first sentence
+                        sentences = re.split(r'[.!?]\s+', cleaned)
+                        for sent in sentences:
+                            if len(sent.strip()) > 20 and not self._is_instruction_text(sent):
+                                fallback_content.append(f"**{domain.title()}**: {sent.strip()}")
+                                break
+                        if fallback_content:
+                            break
+            
+            if fallback_content:
+                refined = "\n\n".join(fallback_content[:3])
+            else:
+                # Last resort: provide helpful error message
+                refined = f"I apologize, but I encountered an issue while processing your query: '{user_query}'. The system was unable to generate a proper response. Please try rephrasing your question or check if all required models are loaded correctly."
+        
+        # Add verification marker (only if we have actual content)
+        if refined and refined.strip() and len(refined.strip()) > 20:
+            refined = self._ensure_verifier_ready(refined)
         
         return refined
     
@@ -627,6 +656,18 @@ class Refiner:
         if answer is None:
             answer = ""
         
+        # CRITICAL: Check if answer is just [VERIFIER_READY] or empty after cleaning
+        if not answer or answer.strip() in ["", "[VERIFIER_READY]", "None", "N/A"] or len(answer.strip()) < 20:
+            # #region agent log
+            try:
+                import json
+                import time
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R1", "location": "refiner.py:_compose_answer", "message": "Answer too short or empty after cleaning, using fallback", "data": {"answer_length": len(answer) if answer else 0, "answer_preview": answer[:100] if answer else "EMPTY"}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
+            answer = self._fallback_compose(extracted, style, packet)
+        
         # If LLM failed, use fallback composition
         # Check for thinking tags only (common R1 model issue)
         is_thinking_tags_only = (
@@ -828,6 +869,16 @@ ANSWER (write directly, no CoT, no thinking tags):
                         para = raw.split("\n\n")[0][:200]
                         if para and len(para.strip()) > 10:
                             parts.append(f"**{domain.title()}**: {para}")
+        
+        # Build answer from parts (FIXED: this was unreachable code before)
+        if parts:
+            answer = "\n\n".join(parts)
+        else:
+            # No usable content - provide helpful error
+            user_query = packet.get("user_query", "your query") if packet else "your query"
+            answer = f"I apologize, but I was unable to generate a proper answer. The domain specialists did not produce usable output for your query: '{user_query}'. This may indicate that the models need to be loaded or the query needs to be rephrased."
+        
+        return answer
     
     def _clean_malformed_instructions(self, text: str) -> str:
         """Remove repetitive instruction text from malformed specialist output."""
@@ -858,15 +909,6 @@ ANSWER (write directly, no CoT, no thinking tags):
                 unique_sentences.append(sent.strip())
         
         return '. '.join(unique_sentences)
-        
-        if parts:
-            answer = "\n\n".join(parts)
-        else:
-            # No usable content - provide helpful error
-            user_query = packet.get("user_query", "your query") if packet else "your query"
-            answer = f"I apologize, but I was unable to generate a proper answer. The domain specialists did not produce usable output for your query: '{user_query}'. This may indicate that the models need to be loaded or the query needs to be rephrased."
-        
-        return answer
     
     # --------------------------------------------------------
     #  QUALITY IMPROVEMENTS
@@ -1094,7 +1136,9 @@ ANSWER (write directly, no CoT, no thinking tags):
     
     def _ensure_verifier_ready(self, answer: str) -> str:
         """Ensure answer has single [VERIFIER_READY] at end."""
-        if not answer:
+        # CRITICAL: Never allow completely empty answer
+        if not answer or not answer.strip() or answer.strip() in ["", "None", "N/A"]:
+            # Return minimal placeholder that will be caught by refine() validation
             return "[VERIFIER_READY]"
         
         # Remove any existing markers
@@ -1107,10 +1151,11 @@ ANSWER (write directly, no CoT, no thinking tags):
         answer = re.sub(r'\s*\.\s*$', '', answer)  # Remove trailing period if it's the only thing
         answer = answer.strip()
         
+        # CRITICAL: If after cleaning answer is empty, return placeholder
+        if not answer or answer.strip() == "":
+            return "[VERIFIER_READY]"
+
         # Add single marker at end
-        if answer:
-            answer = answer + "\n\n[VERIFIER_READY]"
-        else:
-            answer = "[VERIFIER_READY]"
-        
+        answer = answer + "\n\n[VERIFIER_READY]"
+
         return answer

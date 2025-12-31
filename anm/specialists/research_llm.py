@@ -88,6 +88,80 @@ class DuckDuckGoBackend(BaseResearchBackend):
     API_URL = "https://api.duckduckgo.com/"
 
     def search(self, query: str, max_results: int = 5) -> List[ResearchHit]:
+        # #region agent log
+        try:
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                import time
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_SEARCH", "location": "research_llm.py:DuckDuckGoBackend.search", "message": "Starting DuckDuckGo search", "data": {"query": query, "max_results": max_results}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
+        # Try duckduckgo-search library first (proper web search)
+        try:
+            import duckduckgo_search
+            ddg_results = duckduckgo_search.DDGS().text(query, max_results=max_results)
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_SEARCH", "location": "research_llm.py:DuckDuckGoBackend.search", "message": "duckduckgo-search library available, using web search", "data": {"results_count": len(list(ddg_results)) if ddg_results else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
+            hits: List[ResearchHit] = []
+            for result in ddg_results:
+                if len(hits) >= max_results:
+                    break
+                hits.append(
+                    ResearchHit(
+                        id=str(uuid.uuid4()),
+                        title=result.get("title", "")[:260],
+                        snippet=result.get("body", "")[:500],
+                        url=result.get("href"),
+                        score=1.0,
+                        source="duckduckgo_web",
+                    )
+                )
+            
+            if hits:
+                # #region agent log
+                try:
+                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                        import json
+                        import time
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_SEARCH", "location": "research_llm.py:DuckDuckGoBackend.search", "message": "duckduckgo-search returned results", "data": {"hits_count": len(hits), "first_title": hits[0].title[:100] if hits else "none"}, "timestamp": int(time.time() * 1000)}) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                return hits
+        except ImportError:
+            # duckduckgo-search not installed, fall back to Instant Answer API
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_SEARCH", "location": "research_llm.py:DuckDuckGoBackend.search", "message": "duckduckgo-search not available, falling back to Instant Answer API", "data": {}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+        except Exception as e:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_SEARCH", "location": "research_llm.py:DuckDuckGoBackend.search", "message": "duckduckgo-search failed, falling back to Instant Answer API", "data": {"error": str(e), "error_type": type(e).__name__}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
+        
+        # Fallback: Use Instant Answer API (limited, but better than nothing)
         params = {
             "q": query,
             "format": "json",
@@ -98,12 +172,31 @@ class DuckDuckGoBackend(BaseResearchBackend):
         try:
             r = requests.get(self.API_URL, params=params, timeout=6)
             data = r.json()
+            
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_SEARCH", "location": "research_llm.py:DuckDuckGoBackend.search", "message": "Instant Answer API response", "data": {"has_abstract": bool(data.get("Abstract")), "related_topics_count": len(data.get("RelatedTopics", [])), "data_keys": list(data.keys())}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
         except Exception as e:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_SEARCH", "location": "research_llm.py:DuckDuckGoBackend.search", "message": "Instant Answer API request failed", "data": {"error": str(e), "error_type": type(e).__name__}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
             return [
                 ResearchHit(
                     id=str(uuid.uuid4()),
                     title="DuckDuckGo Error",
-                    snippet=str(e),
+                    snippet=f"Search failed: {str(e)}",
                     url=None,
                     score=0.0,
                     source="duckduckgo",
@@ -111,6 +204,20 @@ class DuckDuckGoBackend(BaseResearchBackend):
             ]
 
         hits: List[ResearchHit] = []
+        
+        # Check for Abstract (instant answer)
+        if data.get("Abstract"):
+            hits.append(
+                ResearchHit(
+                    id=str(uuid.uuid4()),
+                    title=data.get("Heading", "DuckDuckGo Answer")[:260],
+                    snippet=data["Abstract"][:500],
+                    url=data.get("AbstractURL"),
+                    score=0.9,
+                    source="duckduckgo_instant",
+                )
+            )
+        
         topics = data.get("RelatedTopics", []) or []
 
         for t in topics:
@@ -152,16 +259,35 @@ class DuckDuckGoBackend(BaseResearchBackend):
                     return hits
 
         if not hits:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_SEARCH", "location": "research_llm.py:DuckDuckGoBackend.search", "message": "No results from DuckDuckGo", "data": {"query": query, "has_abstract": bool(data.get("Abstract")), "topics_count": len(topics)}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
             hits.append(
                 ResearchHit(
                     id=str(uuid.uuid4()),
                     title="No Results",
-                    snippet="DuckDuckGo returned no related topics.",
+                    snippet=f"DuckDuckGo returned no results for: {query}. The Instant Answer API only works for very specific queries. Consider installing 'duckduckgo-search' library for proper web search: pip install duckduckgo-search",
                     url=None,
                     score=0.0,
                     source="duckduckgo",
                 )
             )
+        else:
+            # #region agent log
+            try:
+                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                    import json
+                    import time
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "DUCKDUCKGO_SEARCH", "location": "research_llm.py:DuckDuckGoBackend.search", "message": "DuckDuckGo search completed", "data": {"hits_count": len(hits), "sources": [h.source for h in hits]}, "timestamp": int(time.time() * 1000)}) + "\n")
+            except Exception:
+                pass
+            # #endregion
 
         return hits
 
@@ -265,8 +391,27 @@ class ResearchLLM:
                 # Non-critical, continue without past research
                 pass
 
+        # Research Mode: Fetch 50-200 results for comprehensive research (per user requirement)
+        # Use 100 as default for balanced coverage (min 50, max 200)
+        # Adjust based on query complexity
+        query_length = len(query)
+        if query_length > 200:  # Complex queries get more results
+            max_results = min(200, max(50, query_length // 2))
+        else:
+            max_results = 100  # Default for standard queries
+        
+        # #region agent log
         try:
-            hits = self.backend.search(query, max_results=6)
+            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
+                import json
+                import time
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "RESEARCH_RESULTS", "location": "research_llm.py:run", "message": "Fetching comprehensive research results", "data": {"max_results": max_results, "query_length": query_length}, "timestamp": int(time.time() * 1000)}) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
+        try:
+            hits = self.backend.search(query, max_results=max_results)
         except Exception as e:
             hits = [
                 ResearchHit(

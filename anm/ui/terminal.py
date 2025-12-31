@@ -246,15 +246,50 @@ class TerminalUI:
                 return False
         return False
     
-    def print_result(self, result: Dict[str, Any], show_metadata: bool = True) -> None:
-        """Print query result beautifully - only shows verified refiner response with separate code boxes."""
+    def print_result(self, result: Dict[str, Any], show_metadata: bool = True, user_query: str = "") -> None:
+        """Print query result beautifully - clean user-friendly display."""
         if not RICH_AVAILABLE:
-            self._print_result_fallback(result)
+            self._print_result_fallback(result, user_query)
             return
         
-        # Check verification status
-        verification = result.get("verification", {})
-        status = verification.get("status", "unknown")
+        # Extract metadata for display
+        router_plan = result.get("router_plan", {})
+        mode = router_plan.get("mode", "normal")
+        if result.get("mode") == "research":
+            mode = "Research"
+        elif mode == "quick":
+            mode = "Quick"
+        elif mode == "auto":
+            mode = "Auto"
+        else:
+            mode = "Normal"
+        
+        # Get modules used
+        modules = router_plan.get("active_domains", [])
+        if not modules:
+            modules = [router_plan.get("entry_specialist", "general")]
+        
+        # Get WoT steps
+        wot_steps = result.get("wot_steps", 0)
+        if isinstance(wot_steps, list):
+            wot_steps = len(wot_steps)
+        
+        # Get model information
+        model_name = "Unknown"
+        try:
+            from anm.system.inference import get_inference_engine
+            engine = get_inference_engine()
+            if engine and engine.is_loaded:
+                info = engine.get_info()
+                model_path = info.get("model_path", "")
+                if model_path:
+                    # Extract model name from path
+                    import os
+                    model_filename = os.path.basename(str(model_path))
+                    # Clean up filename
+                    model_name = model_filename.replace(".gguf", "").replace("_", " ").title()
+        except Exception:
+            pass
         
         # Get the result text (may be None or empty)
         result_text = result.get("result", "")
@@ -268,6 +303,10 @@ class TerminalUI:
             result_text = re.sub(r'\[/VERIFIER_ready\]', '', result_text, flags=re.IGNORECASE)
             result_text = re.sub(r'\[VERIFIER_ready\]', '', result_text, flags=re.IGNORECASE)
             result_text = result_text.strip()
+        
+        # Check verification status
+        verification = result.get("verification", {})
+        status = verification.get("status", "unknown")
         
         # Handle different verification statuses
         if status == "error":
@@ -374,6 +413,41 @@ class TerminalUI:
         clean_text = re.sub(r'\n\s*\n\s*\n', '\n\n', clean_text)  # Remove multiple blank lines
         clean_text = clean_text.strip()
         
+        # Display user query if provided
+        if user_query:
+            query_panel = Panel(
+                user_query,
+                title="[bold cyan]Your Query[/bold cyan]",
+                border_style="cyan",
+                box=box.ROUNDED,
+                padding=(1, 2),
+            )
+            self.console.print(query_panel)
+            self.console.print()
+        
+        # Display metadata in a clean table
+        metadata_table = Table(show_header=False, box=None, padding=(0, 1))
+        metadata_table.add_column(style="dim", width=15)
+        metadata_table.add_column(style="white")
+        
+        metadata_table.add_row("Model:", f"[cyan]{model_name}[/cyan]")
+        metadata_table.add_row("Mode:", f"[yellow]{mode}[/yellow]")
+        metadata_table.add_row("WoT Steps:", f"[green]{wot_steps}[/green]")
+        modules_str = ", ".join([m.title() for m in modules[:5]])
+        if len(modules) > 5:
+            modules_str += f" (+{len(modules) - 5} more)"
+        metadata_table.add_row("Modules Used:", f"[magenta]{modules_str}[/magenta]")
+        
+        metadata_panel = Panel(
+            metadata_table,
+            title="[dim]Processing Info[/dim]",
+            border_style="dim",
+            box=box.ROUNDED,
+            padding=(0, 1),
+        )
+        self.console.print(metadata_panel)
+        self.console.print()
+        
         # Display text content (if any)
         if clean_text:
             result_panel = Panel(
@@ -478,8 +552,46 @@ class TerminalUI:
 
             self.console.print()
 
-    def _print_result_fallback(self, result: Dict[str, Any]) -> None:
-        """Fallback result printing without Rich - only shows verified refiner response."""
+    def _print_result_fallback(self, result: Dict[str, Any], user_query: str = "") -> None:
+        """Fallback result printing without Rich - clean user-friendly display."""
+        # Extract metadata
+        router_plan = result.get("router_plan", {})
+        mode = router_plan.get("mode", "normal")
+        # Get modules from result (Research Mode) or router_plan (normal mode)
+        modules = result.get("selected_domains", [])
+        if not modules:
+            # Fallback to router_plan for normal mode
+            modules = router_plan.get("active_domains", [])
+        if not modules:
+            # Last resort: extract from domain_cots or authority_assignments
+            domain_cots = result.get("domain_cots", {})
+            if domain_cots:
+                modules = list(domain_cots.keys())
+            else:
+                authority_assignments = result.get("authority_assignments", {})
+                if authority_assignments:
+                    modules = list(authority_assignments.keys())
+                else:
+                    modules = [router_plan.get("entry_specialist", "general")]
+        wot_steps = result.get("wot_steps", 0)
+        if isinstance(wot_steps, list):
+            wot_steps = len(wot_steps)
+        
+        # Get model information
+        model_name = "Unknown"
+        try:
+            from anm.system.inference import get_inference_engine
+            engine = get_inference_engine()
+            if engine and engine.is_loaded:
+                info = engine.get_info()
+                model_path = info.get("model_path", "")
+                if model_path:
+                    import os
+                    model_filename = os.path.basename(str(model_path))
+                    model_name = model_filename.replace(".gguf", "").replace("_", " ").title()
+        except Exception:
+            pass
+        
         # Check verification status
         verification = result.get("verification", {})
         status = verification.get("status", "unknown")
@@ -495,6 +607,25 @@ class TerminalUI:
             result_text = re.sub(r'\[/VERIFIER_ready\]', '', result_text, flags=re.IGNORECASE)
             result_text = re.sub(r'\[VERIFIER_ready\]', '', result_text, flags=re.IGNORECASE)
             result_text = result_text.strip()
+        
+        # Display user query
+        if user_query:
+            print("\n" + "=" * 60)
+            print("YOUR QUERY")
+            print("=" * 60)
+            print(user_query)
+            print("=" * 60)
+            print()
+        
+        # Display metadata
+        print("\n[PROCESSING INFO]")
+        print(f"  Model: {model_name}")
+        print(f"  Mode: {mode.title()}")
+        print(f"  WoT Steps: {wot_steps}")
+        print(f"  Modules: {', '.join([m.title() for m in modules[:5]])}")
+        if len(modules) > 5:
+            print(f"    (+{len(modules) - 5} more)")
+        print()
         
         # Handle different verification statuses
         if status == "error":
@@ -684,6 +815,39 @@ class TerminalUI:
             TimeElapsedColumn(),
             console=self.console,
         )
+    
+    def create_stage_progress(self, stages: List[str]) -> Tuple[Progress, Dict[str, int]]:
+        """
+        Create a progress bar with multiple stages.
+        
+        Args:
+            stages: List of stage names (e.g., ["Memory", "Routing", "WoT", "Refining", "Verifying"])
+        
+        Returns:
+            Tuple of (Progress instance, stage_task_ids dict)
+        """
+        if not RICH_AVAILABLE:
+            return None, {}
+        
+        progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeElapsedColumn(),
+            console=self.console,
+        )
+        
+        stage_task_ids = {}
+        for i, stage in enumerate(stages):
+            task_id = progress.add_task(
+                f"[cyan]{stage}...",
+                total=100,
+                completed=0
+            )
+            stage_task_ids[stage] = task_id
+        
+        return progress, stage_task_ids
     
     def print_optimization_info(self, original: str, optimized: str) -> None:
         """Print prompt optimization information."""

@@ -100,17 +100,45 @@ class MemoryHub:
         insights_path: str = ".anm_cache/behavioral_insights.json",
     ):
         # Core diary (backbone for all persistent memory)
-        self.diary = DiaryMemory(diary_path)
+        try:
+            self.diary = DiaryMemory(diary_path)
+        except Exception as e:
+            logging.error(f"Failed to initialize DiaryMemory: {e}")
+            raise
         
-        # Memory layers
-        self.working = WorkingMemory(max_items=128)
-        self.episodic = EpisodicMemory(self.diary)
-        self.semantic = SemanticMemory(self.diary)
-        self.meta = MetaMemory(self.diary)
+        # Memory layers with error handling
+        try:
+            self.working = WorkingMemory(max_items=128)
+        except Exception as e:
+            logging.error(f"Failed to initialize WorkingMemory: {e}")
+            raise
         
-        # Behavioral insights storage
+        try:
+            self.episodic = EpisodicMemory(self.diary)
+        except Exception as e:
+            logging.error(f"Failed to initialize EpisodicMemory: {e}")
+            raise
+
+        try:
+            self.semantic = SemanticMemory(self.diary)
+        except Exception as e:
+            logging.error(f"Failed to initialize SemanticMemory: {e}")
+            raise
+
+        try:
+            self.meta = MetaMemory(self.diary)
+        except Exception as e:
+            logging.error(f"Failed to initialize MetaMemory: {e}")
+            raise
+
+        # Behavioral insights storage with directory creation
         self.insights_path = insights_path
-        os.makedirs(os.path.dirname(insights_path), exist_ok=True)
+        try:
+            os.makedirs(os.path.dirname(insights_path), exist_ok=True)
+        except (OSError, PermissionError) as e:
+            logging.warning(f"Cannot create insights directory: {e}. Using in-memory only.")
+            self.insights_path = None
+        
         self._insights: List[BehavioralInsight] = self._load_insights()
         
         # Session tracking (OBJECTIVE metrics)
@@ -539,7 +567,7 @@ class MemoryHub:
     
     def _load_insights(self) -> List[BehavioralInsight]:
         """Load behavioral insights from disk."""
-        if not os.path.exists(self.insights_path):
+        if not self.insights_path or not os.path.exists(self.insights_path):
             return []
         
         try:
@@ -554,6 +582,10 @@ class MemoryHub:
     
     def _save_insights(self) -> None:
         """Save behavioral insights to disk."""
+        if not self.insights_path:
+            # In-memory only mode - skip saving
+            return
+        
         try:
             data = [
                 {
