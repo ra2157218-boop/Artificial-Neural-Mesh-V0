@@ -21,6 +21,7 @@ import platform
 import os
 import subprocess
 import json
+import logging
 
 from anm.system.platform import get_platform, Platform
 
@@ -160,8 +161,8 @@ def get_cpu_info() -> CPUInfo:
     try:
         info.cores = os.cpu_count() or 1
         info.threads = info.cores  # Default to same as cores
-    except Exception:
-        pass
+    except Exception as e:
+        logging.warning(f"Failed to get CPU count: {e}")
     
     if plat == Platform.MACOS:
         info = _get_macos_cpu_info(info)
@@ -199,10 +200,10 @@ def _get_macos_cpu_info(info: CPUInfo) -> CPUInfo:
         )
         if result.returncode == 0:
             info.threads = int(result.stdout.strip())
-            
-    except Exception:
-        pass
-    
+
+    except Exception as e:
+        logging.warning(f"Failed to get macOS CPU info: {e}")
+
     return info
 
 
@@ -228,10 +229,10 @@ def _get_linux_cpu_info(info: CPUInfo) -> CPUInfo:
             
             # Count threads
             info.threads = cpuinfo.count("processor")
-            
-    except Exception:
-        pass
-    
+
+    except Exception as e:
+        logging.warning(f"Failed to get Linux CPU info: {e}")
+
     return info
 
 
@@ -267,10 +268,10 @@ def _get_windows_cpu_info(info: CPUInfo) -> CPUInfo:
             lines = result.stdout.strip().split("\n")
             if len(lines) > 1:
                 info.threads = int(lines[1].strip())
-                
-    except Exception:
-        pass
-    
+
+    except Exception as e:
+        logging.warning(f"Failed to get Windows CPU info: {e}")
+
     return info
 
 
@@ -333,12 +334,12 @@ def _get_macos_gpu_info(info: GPUInfo) -> GPUInfo:
                                 info.memory_mb = int(value * 1024)
                             elif unit == "MB":
                                 info.memory_mb = int(value)
-                    except Exception:
-                        pass
-                        
-    except Exception:
-        pass
-    
+                    except Exception as e:
+                        logging.debug(f"Failed to parse VRAM: {e}")
+
+    except Exception as e:
+        logging.warning(f"Failed to get macOS GPU info: {e}")
+
     return info
 
 
@@ -368,10 +369,10 @@ def _get_linux_gpu_info(info: GPUInfo) -> GPUInfo:
         # Check for ROCm (AMD)
         if os.path.exists("/opt/rocm"):
             info.rocm_available = True
-            
-    except Exception:
-        pass
-    
+
+    except Exception as e:
+        logging.warning(f"Failed to get Linux GPU info: {e}")
+
     return info
 
 
@@ -395,10 +396,10 @@ def _get_windows_gpu_info(info: GPUInfo) -> GPUInfo:
                     info.vendor = GPUVendor.AMD
                 elif "intel" in name_lower:
                     info.vendor = GPUVendor.INTEL
-                    
-    except Exception:
-        pass
-    
+
+    except Exception as e:
+        logging.warning(f"Failed to get Windows GPU info: {e}")
+
     return info
 
 
@@ -421,10 +422,10 @@ def _check_cuda(info: GPUInfo) -> GPUInfo:
             )
             if result.returncode == 0:
                 info.cuda_version = result.stdout.strip()
-                
-    except Exception:
-        pass
-    
+
+    except Exception as e:
+        logging.debug(f"CUDA not available: {e}")
+
     return info
 
 
@@ -475,10 +476,10 @@ def get_memory_info() -> MemoryInfo:
                 lines = result.stdout.strip().split("\n")
                 if len(lines) > 1:
                     info.total_mb = int(lines[1].strip()) // 1024
-                    
-    except Exception:
-        pass
-    
+
+    except Exception as e:
+        logging.warning(f"Failed to get memory info: {e}")
+
     if info.total_mb > 0 and info.available_mb > 0:
         info.used_mb = info.total_mb - info.available_mb
         info.percent_used = (info.used_mb / info.total_mb) * 100

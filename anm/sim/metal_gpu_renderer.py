@@ -92,7 +92,7 @@ class MetalGPURenderer:
                     # Try direct call
                     try:
                         self.device = Metal.MTLCreateSystemDefaultDevice()
-                    except:
+                    except Exception:
                         self.device = None
                 
                 if self.device is None:
@@ -213,10 +213,10 @@ class MetalGPURenderer:
             if os.path.exists(output_path):
                 try:
                     os.remove(output_path)
-                except:
+                except Exception:
                     pass
             return None
-    
+
     def _render_frame_gpu(
         self,
         frame: SimulationFrame,
@@ -627,7 +627,7 @@ class MetalGPURenderer:
             lab = cv2.cvtColor(buffer, cv2.COLOR_RGB2LAB)
             lab[:, :, 0] = np.clip(lab[:, :, 0] * 1.1, 0, 255)
             buffer = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
-        except:
+        except Exception:
             pass
         
         if len(buffer.shape) == 3 and buffer.shape[2] >= 3:

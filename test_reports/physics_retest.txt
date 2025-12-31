@@ -1,0 +1,27 @@
+[2025-12-30 23:12:02] [INFO] ============================================================
+[2025-12-30 23:12:02] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 23:12:02] [INFO] ============================================================
+[2025-12-30 23:12:02] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 23:12:02] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 23:12:02] [INFO] Starting test run...
+============================= test session starts ==============================
+platform darwin -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- /opt/homebrew/opt/python@3.14/bin/python3.14
+cachedir: .pytest_cache
+metadata: {'Python': '3.14.0', 'Platform': 'macOS-26.2-arm64-arm-64bit-Mach-O', 'Packages': {'pytest': '9.0.2', 'pluggy': '1.6.0'}, 'Plugins': {'anyio': '4.12.0', 'html': '4.1.1', 'timeout': '2.4.0', 'metadata': '3.1.1'}}
+rootdir: /Users/syedabdurrehman/ANM V0-OpenSource/tests
+configfile: pytest.ini
+plugins: anyio-4.12.0, html-4.1.1, timeout-2.4.0, metadata-3.1.1
+timeout: 180.0s
+timeout method: thread
+timeout func_only: False
+collecting ... collected 1 item
+
+tests/integration/test_anm_entry.py::TestANMQuery::test_anm_query_physics [2025-12-30 23:12:40] [INFO] PASSED: test_anm_query_physics (37831.4ms)
+PASSED [100%][2025-12-30 23:12:40] [INFO] ============================================================
+[2025-12-30 23:12:40] [INFO] TEST RUN COMPLETE
+[2025-12-30 23:12:40] [INFO] Total: 1 | Passed: 1 | Failed: 0
+[2025-12-30 23:12:40] [INFO] Success rate: 100.0%
+[2025-12-30 23:12:40] [INFO] ============================================================
+
+
+============================== 1 passed in 37.91s ==============================

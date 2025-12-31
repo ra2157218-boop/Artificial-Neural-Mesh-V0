@@ -289,6 +289,8 @@ class ANMComponent(ABC):
     
     def shutdown(self) -> None:
         """Clean shutdown of the component."""
+        # TODO: Implement shutdown logic in subclasses if resource cleanup needed
+        # Default: no cleanup required
         pass
 
 

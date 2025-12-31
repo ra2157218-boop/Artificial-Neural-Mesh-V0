@@ -18,20 +18,27 @@ Supports:
 - Verifier v7
 - Cloud Diary Memory (DiaryMemory + MemoryLLM)
 - Expansion engine (future)
+
+Environment Variables:
+- All settings can be overridden via environment variables
+- Format: ANM_<SETTING_NAME> (e.g., ANM_MODEL_GENERAL, ANM_WOT_MAX_STEPS)
+- Paths can use ~ for home directory expansion
 """
+
+import os
 
 # ============================================================
 #  True Web-of-Thought (WoT) Controls
 # ============================================================
 
 # Maximum dynamic specialist hops (TrueWoT v6)
-WOT_MAX_STEPS = 20        # previously 12, now 20 for polymath mode
+WOT_MAX_STEPS = int(os.getenv("ANM_WOT_MAX_STEPS", "20"))
 
 # Enable Polymath TrueWoT engine
-ENABLE_TRUE_WOT = True
+ENABLE_TRUE_WOT = os.getenv("ANM_ENABLE_TRUE_WOT", "true").lower() in ("true", "1", "yes")
 
 # Legacy WoT rounds (router history compatibility)
-WOT_ROUNDS = 1            # for JSON compatibility only
+WOT_ROUNDS = int(os.getenv("ANM_WOT_ROUNDS", "1"))
 
 
 # ============================================================
@@ -41,26 +48,26 @@ WOT_ROUNDS = 1            # for JSON compatibility only
 # Core specialists
 # NOTE: MODEL_CODE uses Stable-Code-3B (domain-specific model) instead of DeepSeek-R1-1.5B
 # NOTE: MODEL_MATH, MODEL_PHYSICS, MODEL_CHEMISTRY, MODEL_BIOLOGY use Nanbeige4-3B for better science/math reasoning
-MODEL_GENERAL      = "deepseek-r1:1.5b"
-MODEL_MATH         = "nanbeige4-3b"  # Uses Nanbeige4-3B for superior mathematical reasoning
-MODEL_PHYSICS      = "nanbeige4-3b"  # Uses Nanbeige4-3B for superior scientific understanding
-MODEL_CODE         = "stable-code-3b"  # Uses Stable-Code-3B for better code generation
-MODEL_CHEMISTRY    = "nanbeige4-3b"  # Uses Nanbeige4-3B for superior scientific understanding
-MODEL_BIOLOGY      = "nanbeige4-3b"  # Uses Nanbeige4-3B for superior scientific understanding
+MODEL_GENERAL      = os.getenv("ANM_MODEL_GENERAL", "deepseek-r1:1.5b")
+MODEL_MATH         = os.getenv("ANM_MODEL_MATH", "nanbeige4-3b")
+MODEL_PHYSICS      = os.getenv("ANM_MODEL_PHYSICS", "nanbeige4-3b")
+MODEL_CODE         = os.getenv("ANM_MODEL_CODE", "stable-code-3b")
+MODEL_CHEMISTRY    = os.getenv("ANM_MODEL_CHEMISTRY", "nanbeige4-3b")
+MODEL_BIOLOGY      = os.getenv("ANM_MODEL_BIOLOGY", "nanbeige4-3b")
 
 # Memory specialist
-MODEL_MEMORY       = "deepseek-r1:1.5b"
+MODEL_MEMORY       = os.getenv("ANM_MODEL_MEMORY", "deepseek-r1:1.5b")
 
 # Meta-specialists
-MODEL_RESEARCH     = "deepseek-r1:1.5b"
-MODEL_FACTS        = "deepseek-r1:1.5b"
-MODEL_RESEARCH_INTERNET = "qwen2.5-3b-instruct"  # Internet research authority
+MODEL_RESEARCH     = os.getenv("ANM_MODEL_RESEARCH", "deepseek-r1:1.5b")
+MODEL_FACTS        = os.getenv("ANM_MODEL_FACTS", "deepseek-r1:1.5b")
+MODEL_RESEARCH_INTERNET = os.getenv("ANM_MODEL_RESEARCH_INTERNET", "qwen2.5-3b-instruct")
 
 # Executive modules
-MODEL_REFINER      = "deepseek-r1:1.5b"
-MODEL_VERIFIER     = "deepseek-r1:1.5b"
-MODEL_ROUTER       = "deepseek-r1:1.5b"
-MODEL_EXPANSION    = "deepseek-r1:1.5b"  # Future creative engine
+MODEL_REFINER      = os.getenv("ANM_MODEL_REFINER", "deepseek-r1:1.5b")
+MODEL_VERIFIER     = os.getenv("ANM_MODEL_VERIFIER", "deepseek-r1:1.5b")
+MODEL_ROUTER       = os.getenv("ANM_MODEL_ROUTER", "deepseek-r1:1.5b")
+MODEL_EXPANSION    = os.getenv("ANM_MODEL_EXPANSION", "deepseek-r1:1.5b")
 
 
 # ============================================================
@@ -110,29 +117,29 @@ RESEARCH_MODE_CONFIGS = {
 #  Cloud Diary Memory Settings (DiaryMemory V0-OpenSource)
 # ============================================================
 
-MEMORY_ENABLED            = True
-DIARY_FILE                = "anm_diary.txt"
+MEMORY_ENABLED            = os.getenv("ANM_MEMORY_ENABLED", "true").lower() in ("true", "1", "yes")
+DIARY_FILE                = os.path.expanduser(os.getenv("ANM_DIARY_FILE", "anm_diary.txt"))
 
 # How many diary blocks MemoryLLM loads
-MEMORY_MAX_BLOCKS         = 10
+MEMORY_MAX_BLOCKS         = int(os.getenv("ANM_MEMORY_MAX_BLOCKS", "10"))
 
 # Fallback: tail of diary for missing data
-MEMORY_TAIL_CHARS         = 7000
+MEMORY_TAIL_CHARS         = int(os.getenv("ANM_MEMORY_TAIL_CHARS", "7000"))
 
 # Strict: treat memory as PAST ONLY (never truth)
-MEMORY_ENFORCE_HISTORICAL = True
+MEMORY_ENFORCE_HISTORICAL = os.getenv("ANM_MEMORY_ENFORCE_HISTORICAL", "true").lower() in ("true", "1", "yes")
 
 
 # ============================================================
 #  Logging Configuration (Behaviour Logger v5)
 # ============================================================
 
-LOG_DIR                = "logs"
-LOG_JSONL              = True
-LOG_TIMESTAMP          = True
-LOG_MAX_FILES          = 5000   # ANM V0-OpenSource is very verbose
-LOG_STORE_PACKETS      = True
-LOG_STORE_WOT_GRAPH    = True
+LOG_DIR                = os.path.expanduser(os.getenv("ANM_LOG_DIR", "logs"))
+LOG_JSONL              = os.getenv("ANM_LOG_JSONL", "true").lower() in ("true", "1", "yes")
+LOG_TIMESTAMP          = os.getenv("ANM_LOG_TIMESTAMP", "true").lower() in ("true", "1", "yes")
+LOG_MAX_FILES          = int(os.getenv("ANM_LOG_MAX_FILES", "5000"))
+LOG_STORE_PACKETS      = os.getenv("ANM_LOG_STORE_PACKETS", "true").lower() in ("true", "1", "yes")
+LOG_STORE_WOT_GRAPH    = os.getenv("ANM_LOG_STORE_WOT_GRAPH", "true").lower() in ("true", "1", "yes")
 
 
 # ============================================================
@@ -181,6 +188,26 @@ SAFETY_CHECKS = {
     "memory_past_only": True,
     "factual_alignment": True
 }
+
+
+# ============================================================
+#  Vector Store & RAG Configuration
+# ============================================================
+
+# Enable vector search for semantic memory
+VECTOR_SEARCH_ENABLED = os.getenv("ANM_VECTOR_SEARCH_ENABLED", "true").lower() in ("true", "1", "yes")
+
+# Vector database directory
+VECTOR_DB_DIR = os.path.expanduser(os.getenv("ANM_VECTOR_DB_DIR", ".anm_cache/chroma"))
+
+# Embedding model (sentence-transformers)
+EMBEDDING_MODEL = os.getenv("ANM_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+
+# Chunk size for long documents
+CHUNK_SIZE = int(os.getenv("ANM_CHUNK_SIZE", "512"))
+
+# Enable Research Knowledge Base
+RESEARCH_KB_ENABLED = os.getenv("ANM_RESEARCH_KB_ENABLED", "true").lower() in ("true", "1", "yes")
 
 
 # ============================================================
@@ -244,4 +271,11 @@ def get_config() -> dict:
 
         # Safety filters
         "safety_checks": SAFETY_CHECKS,
+
+        # Vector Store & RAG settings
+        "vector_search_enabled": VECTOR_SEARCH_ENABLED,
+        "vector_db_dir": VECTOR_DB_DIR,
+        "embedding_model": EMBEDDING_MODEL,
+        "chunk_size": CHUNK_SIZE,
+        "research_kb_enabled": RESEARCH_KB_ENABLED,
     }

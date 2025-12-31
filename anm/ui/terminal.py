@@ -640,6 +640,9 @@ class TerminalUI:
         
         commands = [
             ("<query>", "Process a query through ANM"),
+            ("research", "Toggle Research Mode (max quality, PDF output)"),
+            ("normal", "Exit Research Mode (or type 'research' again)"),
+            ("exit research", "Exit Research Mode (alternative)"),
             ("expand <domain>", "Test expansion for a domain"),
             ("sanity", "Run sanity check (no auto-fix)"),
             ("sanity fix", "Run sanity check with auto-fix"),
@@ -658,6 +661,9 @@ class TerminalUI:
         """Fallback help without Rich."""
         print("\n[COMMANDS]")
         print("  <query>       - Process a query through ANM")
+        print("  research      - Toggle Research Mode (max quality, PDF output)")
+        print("  normal        - Exit Research Mode (or type 'research' again)")
+        print("  exit research - Exit Research Mode (alternative)")
         print("  expand <dom>  - Test expansion for a domain")
         print("  sanity        - Run sanity check (no auto-fix)")
         print("  sanity fix    - Run sanity check with auto-fix")

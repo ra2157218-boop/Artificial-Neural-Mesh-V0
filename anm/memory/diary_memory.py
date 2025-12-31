@@ -9,12 +9,16 @@
 # ============================================================
 
 from __future__ import annotations
+from anm.utils.debug_logger import log_debug
 
+import logging
 import textwrap
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Dict, Any
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================
@@ -77,9 +81,41 @@ class DiaryMemory:
     Never treated as truth; always "In the past, ANM..."
     """
 
-    def __init__(self, diary_path: str | Path = "anm_diary.txt") -> None:
+    def __init__(
+        self,
+        diary_path: str | Path = "anm_diary.txt",
+        enable_vector_search: bool = True,
+    ) -> None:
         self.diary_path = Path(diary_path)
         self._ensure_header()
+
+        # Vector search support (optional, graceful fallback)
+        self._vector_enabled = enable_vector_search
+        self._vector_store = None
+        if enable_vector_search:
+            self._init_vector_store()
+
+    # --------------------------------------------------------
+    #  Vector Store Initialization
+    # --------------------------------------------------------
+
+    def _init_vector_store(self) -> None:
+        """Initialize vector store for semantic search (graceful fallback)."""
+        try:
+            from anm.memory.vector_store import VectorStore
+
+            collection_name = f"diary_{self.diary_path.stem}"
+            self._vector_store = VectorStore(collection_name=collection_name)
+
+            if self._vector_store.is_available():
+                logger.info(f"Vector search enabled for diary: {self.diary_path}")
+            else:
+                logger.warning("Vector store unavailable, falling back to keyword search")
+                self._vector_enabled = False
+
+        except Exception as e:
+            logger.warning(f"Failed to initialize vector store: {e}. Using keyword search only.")
+            self._vector_enabled = False
 
     # --------------------------------------------------------
     #  Initial Diary Header
@@ -120,10 +156,10 @@ class DiaryMemory:
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M3", "location": "diary_memory.py:log_interaction", "message": "log_interaction called", "data": {"diary_path": str(self.diary_path), "user_query": user_query[:100], "assistant_reply_length": len(assistant_reply)}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M3", "location": "diary_memory.py:log_interaction", "message": "log_interaction called", "data": {"diary_path": str(self.diary_path), "user_query": user_query[:100], "assistant_reply_length": len(assistant_reply)}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         entry = DiaryEntry(
             timestamp=self._now_iso(),
             kind="interaction",
@@ -247,34 +283,72 @@ class DiaryMemory:
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M4", "location": "diary_memory.py:_append_entry", "message": "_append_entry called", "data": {"diary_path": str(self.diary_path), "entry_kind": entry.kind, "entry_timestamp": entry.timestamp}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M4", "location": "diary_memory.py:_append_entry", "message": "_append_entry called", "data": {"diary_path": str(self.diary_path), "entry_kind": entry.kind, "entry_timestamp": entry.timestamp}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         block = self._render_entry(entry)
         try:
             with self.diary_path.open("a", encoding="utf-8") as f:
                 f.write(DIARY_SEPARATOR + "\n")
                 f.write(block)
                 f.write("\n\n")
+
+            # Index in vector store (non-blocking)
+            if self._vector_enabled and self._vector_store:
+                self._index_entry_in_vector_store(entry, block)
+
             # #region agent log
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M4", "location": "diary_memory.py:_append_entry", "message": "_append_entry succeeded", "data": {"diary_path": str(self.diary_path), "file_size_after": self.diary_path.stat().st_size if self.diary_path.exists() else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M4", "location": "diary_memory.py:_append_entry", "message": "_append_entry succeeded", "data": {"diary_path": str(self.diary_path), "file_size_after": self.diary_path.stat().st_size if self.diary_path.exists() else 0}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
         except Exception as e:
             # #region agent log
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M4", "location": "diary_memory.py:_append_entry", "message": "_append_entry failed", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200], "diary_path": str(self.diary_path)}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M4", "location": "diary_memory.py:_append_entry", "message": "_append_entry failed", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200], "diary_path": str(self.diary_path)}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             raise
+
+    def _index_entry_in_vector_store(self, entry: DiaryEntry, block: str) -> None:
+        """
+        Index diary entry in vector store (non-blocking, graceful fallback).
+
+        Args:
+            entry: DiaryEntry object
+            block: Rendered text block
+        """
+        try:
+            # Prepare metadata for vector store
+            metadata = {
+                "kind": entry.kind or "",
+                "specialist": entry.specialist or "",
+                "timestamp": entry.timestamp or "",
+                "tags": ",".join(entry.tags) if entry.tags else "",
+                "title": entry.title or "",
+            }
+
+            # Add optional fields
+            if entry.run_id:
+                metadata["run_id"] = entry.run_id
+
+            # Add to vector store
+            self._vector_store.add(
+                text=block,
+                metadata=metadata,
+                chunk_size=512,  # Chunk large entries
+            )
+
+        except Exception as e:
+            # Non-critical, log and continue
+            logger.debug(f"Failed to index entry in vector store: {e}")
 
     def _render_entry(self, e: DiaryEntry) -> str:
         lines: List[str] = []
@@ -412,8 +486,75 @@ class DiaryMemory:
         any_tags: Optional[List[str]] = None,
         all_tags: Optional[List[str]] = None,
         limit: int = 10,
+        use_semantic: bool = True,
+        semantic_weight: float = 0.5,
     ) -> List[Dict[str, Any]]:
-        """Advanced metadata search."""
+        """
+        Advanced metadata search with optional semantic enhancement.
+
+        Args:
+            text_query: Text query string
+            kinds: Filter by entry kinds
+            specialists: Filter by specialists
+            any_tags: Match any of these tags
+            all_tags: Match all of these tags
+            limit: Maximum results
+            use_semantic: Enable semantic search (hybrid with keyword)
+            semantic_weight: Weight for semantic results (0.0-1.0)
+
+        Returns:
+            List of matching diary entries with metadata
+        """
+        # ALWAYS perform keyword search (backward compatibility)
+        keyword_results = self._keyword_search_blocks(
+            text_query=text_query,
+            kinds=kinds,
+            specialists=specialists,
+            any_tags=any_tags,
+            all_tags=all_tags,
+            limit=limit * 2,  # Get more candidates for merging
+        )
+
+        # Semantic enhancement if enabled and available
+        if use_semantic and self._vector_enabled and self._vector_store and text_query:
+            try:
+                semantic_results = self._semantic_search_blocks(
+                    text_query=text_query,
+                    kinds=kinds,
+                    specialists=specialists,
+                    any_tags=any_tags,
+                    all_tags=all_tags,
+                    limit=limit * 2,
+                )
+
+                # Merge using hybrid search
+                merged_results = self._merge_search_results(
+                    keyword_results=keyword_results,
+                    semantic_results=semantic_results,
+                    semantic_weight=semantic_weight,
+                )
+
+                return merged_results[:limit]
+
+            except Exception as e:
+                logger.warning(f"Semantic search failed, falling back to keyword: {e}")
+                # Fallback to keyword results
+                return keyword_results[:limit]
+
+        # Return keyword results only
+        return keyword_results[:limit]
+
+    def _keyword_search_blocks(
+        self,
+        *,
+        text_query: Optional[str] = None,
+        kinds: Optional[List[str]] = None,
+        specialists: Optional[List[str]] = None,
+        any_tags: Optional[List[str]] = None,
+        all_tags: Optional[List[str]] = None,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """Original keyword-based search (kept for backward compatibility)."""
         blocks = self._split_blocks()
         out: List[Dict[str, Any]] = []
 
@@ -445,6 +586,123 @@ class DiaryMemory:
                 break
 
         return out
+
+    def _semantic_search_blocks(
+        self,
+        *,
+        text_query: str,
+        kinds: Optional[List[str]] = None,
+        specialists: Optional[List[str]] = None,
+        any_tags: Optional[List[str]] = None,
+        all_tags: Optional[List[str]] = None,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """Semantic search using vector store."""
+        if not self._vector_store:
+            return []
+
+        # Build metadata filter for ChromaDB
+        metadata_filter = {}
+        if kinds:
+            metadata_filter["kind"] = {"$in": kinds}
+        if specialists:
+            metadata_filter["specialist"] = {"$in": specialists}
+
+        # Note: ChromaDB metadata filtering has limitations
+        # Tag filtering is done post-retrieval
+
+        # Perform semantic search
+        results = self._vector_store.search(
+            query=text_query,
+            limit=limit * 2,  # Get more for tag filtering
+            metadata_filter=metadata_filter if metadata_filter else None,
+        )
+
+        # Post-filter by tags
+        filtered_results = []
+        for result in results:
+            metadata = result.get("metadata", {})
+
+            # Parse tags from metadata
+            tags_str = metadata.get("tags", "")
+            result_tags = {t.strip().lower() for t in tags_str.split(",") if t.strip()}
+
+            # Apply tag filters
+            if any_tags:
+                any_tags_set = {t.lower() for t in any_tags}
+                if not (result_tags & any_tags_set):
+                    continue
+
+            if all_tags:
+                all_tags_set = {t.lower() for t in all_tags}
+                if not all_tags_set.issubset(result_tags):
+                    continue
+
+            # Convert to diary format
+            filtered_results.append({
+                "timestamp": metadata.get("timestamp"),
+                "kind": metadata.get("kind"),
+                "specialist": metadata.get("specialist"),
+                "tags": list(result_tags),
+                "title": metadata.get("title"),
+                "raw": result.get("text", ""),
+                "similarity": result.get("similarity", 0.0),
+            })
+
+            if len(filtered_results) >= limit:
+                break
+
+        return filtered_results
+
+    def _merge_search_results(
+        self,
+        keyword_results: List[Dict[str, Any]],
+        semantic_results: List[Dict[str, Any]],
+        semantic_weight: float = 0.5,
+    ) -> List[Dict[str, Any]]:
+        """
+        Merge keyword and semantic results using Reciprocal Rank Fusion.
+
+        Args:
+            keyword_results: Results from keyword search
+            semantic_results: Results from semantic search
+            semantic_weight: Weight for semantic results (0.0-1.0)
+
+        Returns:
+            Merged and re-ranked results
+        """
+        from collections import defaultdict
+
+        keyword_weight = 1.0 - semantic_weight
+        scores = defaultdict(float)
+        result_map = {}
+        k = 60  # RRF constant
+
+        # Score keyword results
+        for rank, result in enumerate(keyword_results, start=1):
+            result_id = result.get("timestamp", "") + result.get("raw", "")[:50]
+            scores[result_id] += keyword_weight * (1.0 / (k + rank))
+            if result_id not in result_map:
+                result_map[result_id] = result
+
+        # Score semantic results
+        for rank, result in enumerate(semantic_results, start=1):
+            result_id = result.get("timestamp", "") + result.get("raw", "")[:50]
+            scores[result_id] += semantic_weight * (1.0 / (k + rank))
+            if result_id not in result_map:
+                result_map[result_id] = result
+
+        # Sort by score
+        ranked_ids = sorted(scores.keys(), key=lambda x: scores[x], reverse=True)
+
+        # Build final results
+        merged_results = []
+        for result_id in ranked_ids:
+            result = result_map[result_id].copy()
+            result["rrf_score"] = scores[result_id]
+            merged_results.append(result)
+
+        return merged_results
 
 
     def recent_blocks(self, limit: int = 10) -> List[Dict[str, Any]]:

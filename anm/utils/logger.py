@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Union
 
 
@@ -71,7 +71,7 @@ class ANMLogger:
     # --------------------------------------------------------
     def _timestamp(self) -> Dict[str, float]:
         return {
-            "iso": datetime.utcnow().isoformat(),
+            "iso": datetime.now(timezone.utc).isoformat(),
             "epoch": time.time(),
         }
 

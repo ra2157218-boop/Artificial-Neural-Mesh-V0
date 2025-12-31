@@ -16,12 +16,14 @@ All specialists inherit from BaseSpecialist which provides:
 """
 
 from __future__ import annotations
+import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 import time
 import re
+from anm.utils.debug_logger import log_debug
 
 # Import the new inference engine
 from anm.system.inference import run_model
@@ -188,10 +190,10 @@ WOT ROUTING:
         # #region agent log
         import json
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "base.py:run", "message": "Prompt built", "data": {"domain": self.domain_name, "prompt_length": prompt_length, "prompt_preview": prompt[:300] if prompt else "EMPTY", "wot_packet_length": len(wot_packet) if wot_packet else 0}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "base.py:run", "message": "Prompt built", "data": {"domain": self.domain_name, "prompt_length": prompt_length, "wot_packet_length": len(wot_packet) if wot_packet else 0}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         
         # Run LLM using direct model loading
         raw_output = run_model(prompt, max_tokens=self.config.max_tokens)
@@ -199,20 +201,20 @@ WOT ROUTING:
         # #region agent log
         import json
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "base.py:run", "message": "Raw output from model", "data": {"domain": self.domain_name, "raw_output_length": len(raw_output) if raw_output else 0, "raw_output_preview": raw_output[:100] if raw_output else "EMPTY", "is_empty": not raw_output or not raw_output.strip()}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "base.py:run", "message": "Raw output from model", "data": {"domain": self.domain_name, "raw_output_length": len(raw_output) if raw_output else 0, "raw_output_preview": raw_output[:100] if raw_output else "EMPTY", "is_empty": not raw_output or not raw_output.strip()}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         
         # Clean output
         cleaned = self._clean_output(raw_output)
         
         # #region agent log
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "base.py:run", "message": "Cleaned output", "data": {"domain": self.domain_name, "cleaned_length": len(cleaned) if cleaned else 0, "cleaned_preview": cleaned[:100] if cleaned else "EMPTY", "has_no_output_marker": "[produced no output]" in cleaned if cleaned else False}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "base.py:run", "message": "Cleaned output", "data": {"domain": self.domain_name, "cleaned_length": len(cleaned) if cleaned else 0, "cleaned_preview": cleaned[:100] if cleaned else "EMPTY", "has_no_output_marker": "[produced no output]" in cleaned if cleaned else False}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         
         # Ensure WOT_REQUEST
         cleaned = self._ensure_wot_request(cleaned)

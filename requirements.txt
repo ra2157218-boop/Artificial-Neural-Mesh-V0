@@ -1,0 +1,86 @@
+# ANM V0-OpenSource Requirements
+# Complete dependency list for all features
+
+# ============================================================
+# CORE DEPENDENCIES (Required)
+# ============================================================
+
+# Vector Store & RAG (Memory System)
+chromadb>=0.4.0,<2.0.0
+sentence-transformers>=2.2.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# LLM Inference Engine
+llama-cpp-python>=0.2.0
+
+# Network & Web
+requests>=2.28.0
+
+# Numerical Computing
+numpy>=1.22.0
+
+# ============================================================
+# OPTIONAL DEPENDENCIES (Enhanced Features)
+# ============================================================
+
+# Terminal UI (Rich formatting)
+rich>=13.0.0
+
+# PDF Generation (Research Mode)
+reportlab>=4.0.0
+
+# Deep Learning Framework (Audio/Simulation)
+torch>=2.0.0
+
+# ============================================================
+# AUDIO PROCESSING (Voice Features)
+# ============================================================
+
+# Speech-to-Text (Choose one)
+# openai-whisper>=20230314
+# faster-whisper>=0.9.0
+
+# Text-to-Speech (Choose one)
+# piper-tts>=1.0.0
+# coqui-tts>=0.15.0
+
+# Audio I/O
+# sounddevice>=0.4.0
+
+# ============================================================
+# COMPUTER VISION (Simulation Features)
+# ============================================================
+
+# Video Encoding & Image Processing
+# opencv-python>=4.8.0
+# Pillow>=10.0.0
+
+# ============================================================
+# TESTING & DEVELOPMENT
+# ============================================================
+
+# pytest>=7.0.0
+
+# ============================================================
+# NOTES
+# ============================================================
+#
+# Installation Guide:
+#
+# 1. Core features only (minimal):
+#    pip install chromadb sentence-transformers pydantic pydantic-settings llama-cpp-python requests numpy
+#
+# 2. Full installation (all features):
+#    pip install -r requirements.txt
+#
+# 3. Python Version Compatibility:
+#    - Recommended: Python 3.9 - 3.12
+#    - Python 3.14: Not yet supported (onnxruntime unavailable)
+#    - Python 3.8: May work but not tested
+#
+# 4. Platform-specific notes:
+#    - macOS (Apple Silicon): Metal GPU acceleration available
+#    - Windows: Some audio features may need additional setup
+#    - Linux: Full compatibility
+#

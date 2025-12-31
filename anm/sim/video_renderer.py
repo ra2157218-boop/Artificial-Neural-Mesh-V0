@@ -121,7 +121,7 @@ class VideoRenderer:
             if os.path.exists(output_path):
                 try:
                     os.remove(output_path)
-                except:
+                except Exception:
                     pass
             return None
     

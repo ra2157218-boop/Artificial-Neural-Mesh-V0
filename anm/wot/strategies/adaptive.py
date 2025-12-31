@@ -31,7 +31,7 @@ class AdaptiveStrategy(WoTExecutionStrategy):
         prev_domain: Optional[str] = None
         
         packet = self._build_wot_packet(query)
-        out = specialists[current].run(packet)
+        out = self._run_specialist(current, packet, specialists)
         self._record(current, out)
         
         steps = 0
@@ -58,7 +58,7 @@ class AdaptiveStrategy(WoTExecutionStrategy):
             if wot_request == "MEMORY" and self.engine.memory_llm:
                 self.engine._refresh_memory(query, out)
                 packet = self._build_full_context_packet(query)
-                out = specialists[current].run(packet)
+                out = self._run_specialist(current, packet, specialists)
                 self._record(current, out)
                 continue
             
@@ -85,7 +85,7 @@ class AdaptiveStrategy(WoTExecutionStrategy):
             prev_domain = current
             current = wot_request
             packet = self._build_full_context_packet(query)
-            out = specialists[current].run(packet)
+            out = self._run_specialist(current, packet, specialists)
             self._record(current, out)
             
             self._update_stability_flags()

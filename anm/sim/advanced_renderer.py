@@ -208,7 +208,7 @@ class AdvancedRenderer:
             if os.path.exists(output_path):
                 try:
                     os.remove(output_path)
-                except:
+                except Exception:
                     pass
             warnings.warn(f"AdvancedRenderer: Rendering failed: {e}", RuntimeWarning)
             return None

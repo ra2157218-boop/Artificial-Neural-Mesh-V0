@@ -14,7 +14,45 @@ from dataclasses import dataclass
 
 from anm.system.model_downloader import ModelDownloader, DEFAULT_MODELS
 
-__all__ = ["QuickModeSanityCheck", "QuickModeCheckResult"]
+__all__ = ["QuickModeSanityCheck", "QuickModeCheckResult", "check_all_models"]
+
+
+def _safe_yes_no_prompt(prompt: str, default: bool = False, max_attempts: int = 5) -> bool:
+    """
+    Safely prompt user for yes/no input with timeout protection.
+
+    Args:
+        prompt: Question to ask user
+        default: Default value if non-interactive or max attempts reached
+        max_attempts: Maximum number of invalid input attempts
+
+    Returns:
+        bool: True for yes, False for no
+    """
+    import sys
+
+    # Security: Detect non-interactive environment to prevent infinite loops
+    if not sys.stdin.isatty():
+        print(f"[Non-interactive mode detected - defaulting to {'yes' if default else 'no'}]")
+        return default
+
+    # Add max attempts to prevent infinite loops
+    for attempt in range(max_attempts):
+        try:
+            response = input(prompt).strip().lower()
+            if response in ["yes", "y"]:
+                return True
+            elif response in ["no", "n"]:
+                return False
+            else:
+                print("Please enter 'yes' or 'no'")
+        except (EOFError, KeyboardInterrupt):
+            print(f"\n[Input interrupted - defaulting to {'yes' if default else 'no'}]")
+            return default
+
+    # If max attempts reached, use default
+    print(f"[Max attempts ({max_attempts}) reached - defaulting to {'yes' if default else 'no'}]")
+    return default
 
 
 @dataclass
@@ -174,15 +212,8 @@ class QuickModeSanityCheck:
         print("Quick Mode requires these models to be downloaded.")
         print("This may take several minutes depending on your internet speed.")
         print()
-        
-        while True:
-            response = input("Download missing models now? (yes/no): ").strip().lower()
-            if response in ["yes", "y"]:
-                return True
-            elif response in ["no", "n"]:
-                return False
-            else:
-                print("Please enter 'yes' or 'no'")
+
+        return _safe_yes_no_prompt("Download missing models now? (yes/no): ", default=False)
     
     def check_both_models(self, ask_permission: bool = False, auto_download: bool = True) -> QuickModeCheckResult:
         """
@@ -333,13 +364,130 @@ class QuickModeSanityCheck:
         print("Auto Mode requires both models to be downloaded.")
         print("This may take several minutes depending on your internet speed.")
         print()
+
+        return _safe_yes_no_prompt("Download missing models now? (yes/no): ", default=False)
+
+
+def check_all_models(ask_permission: bool = False, auto_download: bool = True, verbose: bool = True) -> QuickModeCheckResult:
+    """
+    Check and download ALL required models from DEFAULT_MODELS.
+    
+    This checks all models (base models + domain-specific models) and downloads
+    any that are missing.
+    
+    Args:
+        ask_permission: If True, ask user before downloading missing models
+        auto_download: If True, automatically download missing models without asking
+        verbose: If True, print progress messages
         
-        while True:
-            response = input("Download missing models now? (yes/no): ").strip().lower()
-            if response in ["yes", "y"]:
-                return True
-            elif response in ["no", "n"]:
-                return False
-            else:
-                print("Please enter 'yes' or 'no'")
+    Returns:
+        QuickModeCheckResult with check status
+    """
+    downloader = ModelDownloader()
+    missing = []
+    messages = []
+    
+    if verbose:
+        print("Checking all required models...")
+    
+    # Check all models in DEFAULT_MODELS
+    for model_name, model_info in DEFAULT_MODELS.items():
+        cached = downloader.get_cached_path(
+            repo_id=model_info["repo_id"],
+            filename=model_info["filename"],
+        )
+        
+        if not cached:
+            missing.append({
+                "name": model_name,
+                "repo_id": model_info["repo_id"],
+                "filename": model_info["filename"],
+                "size_gb": model_info["size_gb"],
+            })
+            if verbose:
+                messages.append(f"Missing: {model_info['filename']} ({model_info['size_gb']:.1f} GB)")
+        else:
+            if verbose:
+                messages.append(f"✓ Found: {model_info['filename']}")
+    
+    total_size = sum(m["size_gb"] for m in missing)
+    
+    if not missing:
+        if verbose:
+            messages.append("All required models are available")
+        return QuickModeCheckResult(
+            passed=True,
+            missing_models=[],
+            total_size_gb=0.0,
+            messages=messages,
+        )
+    
+    # If models are missing, download them
+    if missing:
+        should_download = False
+        
+        if auto_download:
+            should_download = True
+            if total_size > 0 and verbose:
+                print(f"\n📥 Auto-downloading missing models ({total_size:.1f} GB total)...")
+        elif ask_permission:
+            print("\n" + "=" * 60)
+            print("MODEL CHECK")
+            print("=" * 60)
+            print(f"\nMissing {len(missing)} model(s) ({total_size:.1f} GB total):")
+            for model in missing:
+                print(f"  • {model['name']}: {model['filename']}")
+            print()
+
+            should_download = _safe_yes_no_prompt("Download missing models now? (yes/no): ", default=False)
+        
+        if should_download:
+            # Download missing models
+            for model in missing:
+                try:
+                    if verbose:
+                        messages.append(f"Downloading {model['filename']}...")
+                        print(f"  Downloading {model['name']} ({model['size_gb']:.1f} GB)...")
+                    downloader.download(
+                        repo_id=model["repo_id"],
+                        filename=model["filename"],
+                    )
+                    if verbose:
+                        messages.append(f"✓ Downloaded: {model['filename']}")
+                        print(f"  ✓ Downloaded: {model['name']}")
+                except Exception as e:
+                    error_msg = f"✗ Failed to download {model['filename']}: {e}"
+                    messages.append(error_msg)
+                    if verbose:
+                        print(f"  {error_msg}")
+                    return QuickModeCheckResult(
+                        passed=False,
+                        missing_models=missing,
+                        total_size_gb=total_size,
+                        messages=messages,
+                    )
+            
+            if verbose:
+                print("✓ All model downloads complete!\n")
+            return QuickModeCheckResult(
+                passed=True,
+                missing_models=[],
+                total_size_gb=0.0,
+                messages=messages,
+            )
+        else:
+            messages.append("Download cancelled by user")
+            return QuickModeCheckResult(
+                passed=False,
+                missing_models=missing,
+                total_size_gb=total_size,
+                messages=messages,
+            )
+    
+    return QuickModeCheckResult(
+        passed=False,
+        missing_models=missing,
+        total_size_gb=total_size,
+        messages=messages,
+    )
 

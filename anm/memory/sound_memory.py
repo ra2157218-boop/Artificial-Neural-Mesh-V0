@@ -56,6 +56,8 @@ class SoundMemory:
     )
 
     def __init__(self):
+        # TODO: Initialize sound memory state/cache if needed for audio processing
+        # Currently stateless - no initialization required
         pass
 
     # ---------------------------------------------------------

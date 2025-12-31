@@ -140,9 +140,10 @@ class EpisodicMemory:
         *,
         limit_blocks: int = 6,
         use_recent_fallback: bool = True,
+        use_semantic: bool = True,
     ) -> Dict[str, Any]:
         """
-        Retrieve episodic PAST-ONLY context related to the user’s new query.
+        Retrieve episodic PAST-ONLY context related to the user's new query.
 
         Returns:
             {
@@ -155,13 +156,20 @@ class EpisodicMemory:
           1) Match by text_query over INTERACTIONS + LEARNING + IDEAS
           2) If no hits → fallback to recent blocks
           3) Never fabricate memory
+
+        Args:
+            user_query: Query text
+            limit_blocks: Maximum results
+            use_recent_fallback: Fallback to recent if no results
+            use_semantic: Enable semantic search (hybrid with keyword)
         """
 
-        # Primary search (high signal)
+        # Primary search (high signal) with optional semantic enhancement
         blocks = self.diary.search_blocks(
             text_query=user_query,
             kinds=["interaction", "learning", "idea"],
             limit=limit_blocks,
+            use_semantic=use_semantic,
         )
 
         # Fallback for sparse memory

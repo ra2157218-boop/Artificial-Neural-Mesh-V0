@@ -6,8 +6,10 @@
 # ============================================================
 
 from __future__ import annotations
+import logging
 import re
 from typing import Dict, Any
+from anm.utils.debug_logger import log_debug
 
 # Import the shared inference engine
 from anm.system.inference import run_model
@@ -90,10 +92,10 @@ class Verifier:
         import json
         import time
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H3", "location": "verifier.py:run", "message": "After LLM call", "data": {"is_format_error": self._is_format_error(parsed), "parsed_status": parsed.get("status"), "query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity")}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H3", "location": "verifier.py:run", "message": "After LLM call", "data": {"is_format_error": self._is_format_error(parsed), "parsed_status": parsed.get("status"), "query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity")}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
+            # #endregion
 
         # If format is broken → retry once
         if self._is_format_error(parsed):
@@ -107,19 +109,19 @@ class Verifier:
                 try:
                     import json
                     import time
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "verifier.py:run", "message": "Using adaptive fallback due to format error", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "raw2_output": raw2[:200] if 'raw2' in locals() else "N/A"}, "timestamp": int(time.time() * 1000)}) + "\n")
-                except: pass
-                # #endregion
+                    log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "verifier.py:run", "message": "Using adaptive fallback due to format error", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "raw2_output": raw2[:200] if 'raw2' in locals() else "N/A"}, "timestamp": int(time.time() * 1000)})
+                except Exception as e:
+                    logging.warning(f"Debug logging failed: {e}")
+            # #endregion
                 parsed = self._adaptive_fallback(packet, question_analysis, reasoning_analysis, answer_analysis)
                 # #region agent log
                 try:
                     import json
                     import time
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "verifier.py:run", "message": "After adaptive fallback", "data": {"status": parsed.get("status"), "score": parsed.get("score"), "issues": parsed.get("issues", [])}, "timestamp": int(time.time() * 1000)}) + "\n")
-                except: pass
-                # #endregion
+                    log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "verifier.py:run", "message": "After adaptive fallback", "data": {"status": parsed.get("status"), "score": parsed.get("score"), "issues": parsed.get("issues", [])}, "timestamp": int(time.time() * 1000)})
+                except Exception as e:
+                    logging.warning(f"Debug logging failed: {e}")
+            # #endregion
 
         # NEW: Include adaptive analysis in verification result for LFM learning
         parsed["adaptive_analysis"] = {
@@ -485,10 +487,10 @@ ADAPTIVE DECISION CRITERIA:
         import json
         import time
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H1", "location": "verifier.py:_adaptive_fallback", "message": "Adaptive fallback called", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "answer_length": answer_analysis.get("answer_length"), "expected_length": question_analysis.get("expected_length")}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H1", "location": "verifier.py:_adaptive_fallback", "message": "Adaptive fallback called", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "answer_length": answer_analysis.get("answer_length"), "expected_length": question_analysis.get("expected_length")}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         # Use analysis to make informed decision
         issues = []
         score = 100
@@ -529,10 +531,10 @@ ADAPTIVE DECISION CRITERIA:
         
         # #region agent log
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "verifier.py:_adaptive_fallback", "message": "Before calling _fallback", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "expected_length": question_analysis.get("expected_length"), "answer_length": answer_analysis.get("answer_length"), "expects_short_answer": expects_short_answer, "current_score": score, "current_issues": issues}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "verifier.py:_adaptive_fallback", "message": "Before calling _fallback", "data": {"query_type": question_analysis.get("query_type"), "complexity": question_analysis.get("complexity"), "expected_length": question_analysis.get("expected_length"), "answer_length": answer_analysis.get("answer_length"), "expects_short_answer": expects_short_answer, "current_score": score, "current_issues": issues}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         
         # For queries expecting short answers, make decision based on adaptive analysis
         if expects_short_answer:
@@ -586,10 +588,10 @@ ADAPTIVE DECISION CRITERIA:
                 original_fallback = self._fallback(packet)
                 # #region agent log
                 try:
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "verifier.py:_adaptive_fallback", "message": "After calling _fallback", "data": {"original_status": original_fallback.get("status"), "original_notes": original_fallback.get("notes", "")[:100], "original_issues": original_fallback.get("issues", [])}, "timestamp": int(time.time() * 1000)}) + "\n")
-                except: pass
-                # #endregion
+                    log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "verifier.py:_adaptive_fallback", "message": "After calling _fallback", "data": {"original_status": original_fallback.get("status"), "original_notes": original_fallback.get("notes", "")[:100], "original_issues": original_fallback.get("issues", [])}, "timestamp": int(time.time() * 1000)})
+                except Exception as e:
+                    logging.warning(f"Debug logging failed: {e}")
+            # #endregion
                 
                 # Combine issues (but filter out "too_short" for queries expecting short answers)
                 fallback_issues = original_fallback.get("issues", [])
@@ -877,6 +879,10 @@ ADAPTIVE DECISION CRITERIA:
         # Check if query asks for code but answer has no code
         if merged_match:
             merged_text = merged_match.group(1).strip()
+            # Define merged_clean before use
+            merged_clean = merged_text.replace("[VERIFIER_READY]", "").strip()
+            merged_clean = self._clean_thinking_tags(merged_clean)
+            
             query_match = re.search(r"user query:\s*['\"](.*?)['\"]", packet, re.IGNORECASE)
             if query_match:
                 user_query = query_match.group(1).lower()
@@ -932,9 +938,9 @@ ADAPTIVE DECISION CRITERIA:
             import json
             import time
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H2", "location": "verifier.py:_fallback", "message": "Checking answer length", "data": {"answer_length": len(merged_clean), "threshold": 50, "will_reject": len(merged_clean) < 50}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H2", "location": "verifier.py:_fallback", "message": "Checking answer length", "data": {"answer_length": len(merged_clean), "threshold": 50, "will_reject": len(merged_clean) < 50}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             if len(merged_clean) < 50:
                 return {
@@ -957,10 +963,10 @@ ADAPTIVE DECISION CRITERIA:
         import json
         import time
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "verifier.py:_fallback", "message": "Fallback approval (aggressive mode)", "data": {"packet_length": len(packet) if packet else 0, "packet_preview": packet[:200] if packet else "EMPTY"}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "verifier.py:_fallback", "message": "Fallback approval (aggressive mode)", "data": {"packet_length": len(packet) if packet else 0, "packet_preview": packet[:200] if packet else "EMPTY"}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         
         # Only approve if we've passed all aggressive checks
         return {

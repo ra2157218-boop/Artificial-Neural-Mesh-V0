@@ -57,6 +57,7 @@ VERSION: 0.1.0-opensource (Aurora)
 from __future__ import annotations
 from typing import Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
+from anm.utils.debug_logger import log_debug
 
 __version__ = "0.1.0-opensource"
 __codename__ = "Aurora"
@@ -532,14 +533,16 @@ class ANM:
                 "status": "error",
                 "result": "Invalid query: query must be a non-empty string",
                 "error": "Invalid input",
+                "router_plan": None,  # Always include router_plan key
             }
-        
+
         user_query = user_query.strip()
         if not user_query:
             return {
                 "status": "error",
                 "result": "Invalid query: query cannot be empty",
                 "error": "Empty input",
+                "router_plan": None,  # Always include router_plan key
             }
         
         self._ensure_initialized()
@@ -644,10 +647,10 @@ class ANM:
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H2", "location": "anm/__init__.py:_learn_from_result", "message": "Entering _learn_from_result", "data": {"has_router_plan_key": "router_plan" in result, "result_keys": list(result.keys())[:10]}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H2", "location": "anm/__init__.py:_learn_from_result", "message": "Entering _learn_from_result", "data": {"has_router_plan_key": "router_plan" in result, "result_keys": list(result.keys())[:10]}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         try:
             # Extract info from result
             domains = result.get("router_plan", {}).get("active_domains", [])
@@ -1400,7 +1403,7 @@ try:
     WoTMode = _lazy_import('anm.wot.wot_engine_v15', 'WoTMode')
     WoTResult = _lazy_import('anm.wot.wot_engine_v15', 'WoTResult')
     TrueWoT = TrueWoTMax  # Alias
-except:
+except Exception:
     TrueWoTMax = _lazy_import('anm.wot.wot_engine', 'TrueWoT')
     TrueWoT = TrueWoTMax
     WoTConfig = None

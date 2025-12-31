@@ -37,7 +37,7 @@ class HuggingFaceSource(DataSourceBase):
             try:
                 from anm.expansion.discovery.huggingface_downloader import HuggingFaceDatasetDownloader
                 self.downloader = HuggingFaceDatasetDownloader()
-            except:
+            except Exception:
                 pass
     
     def _check_hf_availability(self) -> bool:
@@ -82,10 +82,10 @@ class HuggingFaceSource(DataSourceBase):
                             "author": ds.get("author"),
                         },
                     ))
-                
+
                 if datasets:
                     return datasets
-            except:
+            except Exception:
                 pass
         
         # Fallback to REST API
@@ -194,7 +194,7 @@ class KaggleSource(DataSourceBase):
                         "usability": item.usabilityRating,
                     },
                 ))
-        except:
+        except Exception:
             return self._simulated_search(domain, query, max_results)
         
         return datasets
@@ -277,7 +277,7 @@ class GitHubSource(DataSourceBase):
                             "language": item.get("language"),
                         },
                     ))
-        except:
+        except Exception:
             pass
         
         return datasets
@@ -335,7 +335,7 @@ class ArxivSource(DataSourceBase):
                             format="pdf",
                             metadata={"type": "paper"},
                         ))
-        except:
+        except Exception:
             pass
         
         return datasets
@@ -373,7 +373,7 @@ class WebSearchSource(DataSourceBase):
                     format="unknown",
                     metadata={},
                 ))
-            
+
             return datasets
-        except:
+        except Exception:
             return []

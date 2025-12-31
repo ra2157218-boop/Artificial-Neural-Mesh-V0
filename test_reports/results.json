@@ -1,0 +1,10 @@
+[
+  {
+    "test_name": "test_anm_query_physics",
+    "passed": true,
+    "duration_ms": 52272.73787499996,
+    "timestamp": "2025-12-31T17:30:18.124001",
+    "error": null,
+    "details": {}
+  }
+]

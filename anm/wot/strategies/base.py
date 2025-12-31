@@ -52,7 +52,9 @@ class WoTExecutionStrategy(ABC):
         Returns:
             WoTResult with execution results
         """
-        pass
+        # TODO: Implement in concrete strategy classes (Sequential, Parallel, Adaptive)
+        # This is an abstract method that must be overridden
+        raise NotImplementedError("Subclasses must implement execute()")
     
     # ========================================================
     #  CONVENIENCE ACCESSORS (delegate to engine)
@@ -145,8 +147,17 @@ class WoTExecutionStrategy(ABC):
     def _get_parallel_candidates(self, entry: str, specialists: Dict[str, Any]) -> list:
         """Get independent domains for parallel execution."""
         return self.engine._get_parallel_candidates(entry, specialists)
-    
+
     def _select_best_domain(self, domains: list) -> str:
         """Select best domain based on output quality."""
         return self.engine._select_best_domain(domains)
+
+    def _run_specialist(
+        self,
+        domain: str,
+        packet: str,
+        specialists: Dict[str, Any],
+    ) -> str:
+        """Run specialist with caching optimization."""
+        return self.engine._run_specialist_cached(domain, packet, specialists)
 

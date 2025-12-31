@@ -290,5 +290,5 @@ class ExpansionMetrics:
                         error=data.get("error"),
                     )
                     self.run_history.append(run)
-                except:
+                except Exception:
                     pass

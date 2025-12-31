@@ -25,6 +25,8 @@ class ConsistencyChecker:
     """
 
     def __init__(self):
+        # TODO: Initialize consistency checker state if needed
+        # Currently stateless - no initialization required
         pass
 
     # ------------------------------------------------------------

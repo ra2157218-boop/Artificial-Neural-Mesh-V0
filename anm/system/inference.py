@@ -22,6 +22,7 @@ from threading import Lock
 import os
 import time
 import logging
+from anm.utils.debug_logger import log_debug
 
 # Memory optimization
 from anm.core.memory_optimizer import CleanupHook, MemoryContext
@@ -303,6 +304,63 @@ class InferenceEngine:
         """Context manager exit - unload model."""
         self.unload_model()
     
+    def _format_chat_prompt(self, prompt: str) -> str:
+        """
+        Format prompt for TinyLLaMa chat model.
+        
+        TinyLLaMa-1.1B-Chat uses a specific chat template:
+        <|system|>
+        {system_prompt}
+        <|user|>
+        {user_content}
+        <|assistant|>
+        """
+        if not self.config.quick_mode:
+            # Not using TinyLLaMa, return as-is
+            return prompt
+        
+        # For TinyLLaMa, we need to format with chat tokens
+        # Try to separate system prompt from user content
+        # Look for common separators that indicate user content starts
+        separators = [
+            "\n\n--- WoT PACKET",
+            "\n\nUSER QUERY:",
+            "\n\nUSER_QUERY:",
+            "\n\n---",
+        ]
+        
+        system_part = prompt
+        user_part = ""
+        
+        # Try to find where user content begins
+        for sep in separators:
+            if sep in prompt:
+                parts = prompt.split(sep, 1)
+                if len(parts) == 2:
+                    system_part = parts[0].strip()
+                    user_part = sep + parts[1].strip()
+                    break
+        
+        # If no separator found, treat entire prompt as system (fallback)
+        if not user_part:
+            system_part = prompt
+            user_part = ""
+        
+        # Format with TinyLLaMa chat template
+        # TinyLLaMa-1.1B-Chat expects: <|system|>...<|user|>...<|assistant|>
+        if user_part:
+            formatted = f"""<|system|>
+{system_part}<|user|>
+{user_part}<|assistant|>
+"""
+        else:
+            # No user part detected, format entire prompt as system
+            formatted = f"""<|system|>
+{system_part}<|user|>
+<|assistant|>
+"""
+        return formatted
+    
     def generate(
         self,
         prompt: str,
@@ -347,9 +405,9 @@ class InferenceEngine:
         # #region agent log
         import json
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "Generate called", "data": {"model_loaded": self._model is not None, "llama_available": self._llama_available, "prompt_length": len(prompt) if prompt else 0, "prompt_preview": prompt[:200] if prompt else "EMPTY", "max_tokens": max_tokens}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "Generate called", "data": {"model_loaded": self._model is not None, "llama_available": self._llama_available, "prompt_length": len(prompt) if prompt else 0, "max_tokens": max_tokens}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
         # #endregion
         
         if not self._llama_available:
@@ -387,8 +445,11 @@ class InferenceEngine:
                         time_ms=0,
                         tokens_per_second=0,
                         success=False,
-                        error="Failed to reload model",
-                    )
+                    error="Failed to reload model",
+                )
+        
+        # Format prompt for chat model if using TinyLLaMa
+        prompt = self._format_chat_prompt(prompt)
         
         # Use defaults based on mode
         if self.config.quick_mode:
@@ -422,9 +483,9 @@ class InferenceEngine:
                     estimated_prompt_tokens = max_prompt_tokens
                     # #region agent log
                     try:
-                        with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "Prompt truncated", "data": {"original_length": original_prompt_length, "truncated_length": len(prompt), "reason": "Prompt exceeded 80% of context window"}, "timestamp": int(time.time() * 1000)}) + "\n")
-                    except: pass
+                        log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "Prompt truncated", "data": {"original_length": original_prompt_length, "truncated_length": len(prompt), "reason": "Prompt exceeded 80% of context window"}, "timestamp": int(time.time() * 1000)})
+                    except Exception as e:
+                        logging.warning(f"Debug logging failed: {e}")
                     # #endregion
                 
                 # Calculate max generation tokens: context - prompt - safety margin
@@ -443,9 +504,9 @@ class InferenceEngine:
                 
                 # #region agent log
                 try:
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "Capping max_tokens", "data": {"requested_max_tokens": max_tokens, "context_length": ctx_length, "estimated_prompt_tokens": estimated_prompt_tokens, "available_for_generation": available_for_generation, "capped_max_tokens": max_generation_tokens, "prompt_length": len(prompt)}, "timestamp": int(time.time() * 1000)}) + "\n")
-                except: pass
+                    log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "Capping max_tokens", "data": {"requested_max_tokens": max_tokens, "context_length": ctx_length, "estimated_prompt_tokens": estimated_prompt_tokens, "available_for_generation": available_for_generation, "capped_max_tokens": max_generation_tokens, "prompt_length": len(prompt)}, "timestamp": int(time.time() * 1000)})
+                except Exception as e:
+                    logging.warning(f"Debug logging failed: {e}")
                 # #endregion
                 
                 output = self._model(
@@ -465,13 +526,12 @@ class InferenceEngine:
                 # #region agent log
                 try:
                     choices_data = output.get("choices", [])
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "Raw output structure", "data": {"choices_count": len(choices_data), "first_choice_keys": list(choices_data[0].keys()) if choices_data else "NO_CHOICES", "first_choice_text_preview": str(choices_data[0].get("text", "NO_TEXT"))[:200] if choices_data and choices_data[0].get("text") else "EMPTY_OR_MISSING", "usage": output.get("usage", {}), "max_tokens_requested": max_tokens}, "timestamp": int(time.time() * 1000)}) + "\n")
+                    log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "Raw output structure", "data": {"choices_count": len(choices_data), "first_choice_keys": list(choices_data[0].keys()) if choices_data else "NO_CHOICES", "first_choice_text_preview": str(choices_data[0].get("text", "NO_TEXT"))[:200] if choices_data and choices_data[0].get("text") else "EMPTY_OR_MISSING", "usage": output.get("usage", {}), "max_tokens_requested": max_tokens}, "timestamp": int(time.time() * 1000)})
                 except Exception as e:
                     try:
-                        with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "Error extracting output", "data": {"error": str(e), "output_type": type(output).__name__}, "timestamp": int(time.time() * 1000)}) + "\n")
-                    except: pass
+                        log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "Error extracting output", "data": {"error": str(e), "output_type": type(output).__name__}, "timestamp": int(time.time() * 1000)})
+                    except Exception as e:
+                        logging.warning(f"Debug logging failed: {e}")
                 # #endregion
                 
                 text = output["choices"][0]["text"]
@@ -479,9 +539,9 @@ class InferenceEngine:
                 
                 # #region agent log
                 try:
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "After model inference", "data": {"text_length": len(text) if text else 0, "text_preview": text[:200] if text else "EMPTY", "tokens": tokens, "is_empty": not text or not text.strip(), "max_tokens_requested": max_tokens}, "timestamp": int(time.time() * 1000)}) + "\n")
-                except: pass
+                    log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "inference.py:generate_full", "message": "After model inference", "data": {"text_length": len(text) if text else 0, "text_preview": text[:200] if text else "EMPTY", "tokens": tokens, "is_empty": not text or not text.strip(), "max_tokens_requested": max_tokens}, "timestamp": int(time.time() * 1000)})
+                except Exception as e:
+                    logging.warning(f"Debug logging failed: {e}")
                 # #endregion
                 
                 # Calculate tokens per second
@@ -586,9 +646,9 @@ def run_model(prompt: str, max_tokens: int = 2048) -> str:
     # #region agent log
     import json
     try:
-        with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:run_model", "message": "run_model called", "data": {"prompt_length": len(prompt) if prompt else 0, "max_tokens": max_tokens}, "timestamp": int(time.time() * 1000)}) + "\n")
-    except: pass
+        log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:run_model", "message": "run_model called", "data": {"prompt_length": len(prompt) if prompt else 0, "max_tokens": max_tokens}, "timestamp": int(time.time() * 1000)})
+    except Exception as e:
+        logging.warning(f"Debug logging failed: {e}")
     # #endregion
     
     engine = get_inference_engine()
@@ -596,9 +656,9 @@ def run_model(prompt: str, max_tokens: int = 2048) -> str:
     
     # #region agent log
     try:
-        with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:run_model", "message": "run_model returning", "data": {"result_length": len(result) if result else 0, "result_preview": result[:200] if result else "EMPTY", "is_empty": not result or not result.strip()}, "timestamp": int(time.time() * 1000)}) + "\n")
-    except: pass
+        log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "inference.py:run_model", "message": "run_model returning", "data": {"result_length": len(result) if result else 0, "result_preview": result[:200] if result else "EMPTY", "is_empty": not result or not result.strip()}, "timestamp": int(time.time() * 1000)})
+    except Exception as e:
+        logging.warning(f"Debug logging failed: {e}")
     # #endregion
     
     return result

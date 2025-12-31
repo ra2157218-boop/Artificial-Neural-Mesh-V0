@@ -49,16 +49,6 @@ DEFAULT_MODELS = {
         "filename": "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf",
         "size_gb": 1.0,
     },
-    "deepseek-r1-7b": {
-        "repo_id": "bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF",
-        "filename": "DeepSeek-R1-Distill-Qwen-7B-Q4_K_M.gguf",
-        "size_gb": 4.4,
-    },
-    "deepseek-r1-14b": {
-        "repo_id": "bartowski/DeepSeek-R1-Distill-Qwen-14B-GGUF",
-        "filename": "DeepSeek-R1-Distill-Qwen-14B-Q4_K_M.gguf",
-        "size_gb": 8.7,
-    },
     "qwen2.5-1.5b": {
         "repo_id": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
         "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",

@@ -1,0 +1,53 @@
+[2025-12-30 22:07:20] [INFO] ============================================================
+[2025-12-30 22:07:20] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 22:07:20] [INFO] ============================================================
+[2025-12-30 22:07:20] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 22:07:20] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 22:07:20] [INFO] Starting test run...
+============================= test session starts ==============================
+platform darwin -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- /opt/homebrew/opt/python@3.14/bin/python3.14
+cachedir: .pytest_cache
+metadata: {'Python': '3.14.0', 'Platform': 'macOS-26.2-arm64-arm-64bit-Mach-O', 'Packages': {'pytest': '9.0.2', 'pluggy': '1.6.0'}, 'Plugins': {'anyio': '4.12.0', 'html': '4.1.1', 'timeout': '2.4.0', 'metadata': '3.1.1'}}
+rootdir: /Users/syedabdurrehman/ANM V0-OpenSource/tests
+configfile: pytest.ini
+plugins: anyio-4.12.0, html-4.1.1, timeout-2.4.0, metadata-3.1.1
+timeout: 180.0s
+timeout method: thread
+timeout func_only: False
+collecting ... collected 11 items
+
+tests/integration/test_router.py::TestRouterInstantiation::test_router_instantiation [2025-12-30 22:07:20] [INFO] PASSED: test_router_instantiation (48.5ms)
+PASSED [  9%]
+tests/integration/test_router.py::TestRouterInstantiation::test_router_with_config [2025-12-30 22:07:20] [INFO] PASSED: test_router_with_config (0.6ms)
+PASSED [ 18%]
+tests/integration/test_router.py::TestRouterHandle::test_router_handle_simple_query [2025-12-30 22:07:47] [INFO] PASSED: test_router_handle_simple_query (26780.2ms)
+PASSED [ 27%]
+tests/integration/test_router.py::TestRouterHandle::test_router_handle_quick_mode [2025-12-30 22:08:52] [INFO] PASSED: test_router_handle_quick_mode (64880.7ms)
+PASSED [ 36%]
+tests/integration/test_router.py::TestRouterHandle::test_router_handle_research_mode [2025-12-30 22:10:22] [INFO] PASSED: test_router_handle_research_mode (90691.3ms)
+PASSED [ 45%]
+tests/integration/test_router.py::TestRouterHandle::test_router_handle_empty_query [2025-12-30 22:10:22] [INFO] PASSED: test_router_handle_empty_query (2.4ms)
+PASSED [ 54%]
+tests/integration/test_router.py::TestRouterDomainClassification::test_math_domain_detection [2025-12-30 22:12:01] [INFO] PASSED: test_math_domain_detection (98482.6ms)
+PASSED [ 63%]
+tests/integration/test_router.py::TestRouterDomainClassification::test_code_domain_detection [2025-12-30 22:13:33] [INFO] PASSED: test_code_domain_detection (92439.7ms)
+PASSED [ 72%]
+tests/integration/test_router.py::TestRouterDomainClassification::test_physics_domain_detection [2025-12-30 22:14:35] [INFO] PASSED: test_physics_domain_detection (62190.5ms)
+PASSED [ 81%]
+tests/integration/test_router.py::TestRouterErrorHandling::test_router_handles_none_gracefully [2025-12-30 22:14:35] [INFO] PASSED: test_router_handles_none_gracefully (1.8ms)
+PASSED [ 90%]
+tests/integration/test_router.py::TestRouterErrorHandling::test_router_handles_special_characters [2025-12-30 22:15:21] [INFO] PASSED: test_router_handles_special_characters (45250.3ms)
+PASSED [100%][2025-12-30 22:15:21] [INFO] ============================================================
+[2025-12-30 22:15:21] [INFO] TEST RUN COMPLETE
+[2025-12-30 22:15:21] [INFO] Total: 11 | Passed: 11 | Failed: 0
+[2025-12-30 22:15:21] [INFO] Success rate: 100.0%
+[2025-12-30 22:15:21] [INFO] ============================================================
+
+
+=============================== warnings summary ===============================
+integration/test_router.py: 56 warnings
+  /Users/syedabdurrehman/ANM V0-OpenSource/anm/utils/logger.py:74: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "iso": datetime.utcnow().isoformat(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 11 passed, 56 warnings in 480.80s (0:08:00) ==================

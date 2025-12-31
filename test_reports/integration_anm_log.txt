@@ -1,0 +1,1703 @@
+[2025-12-30 22:03:25] [INFO] ============================================================
+[2025-12-30 22:03:25] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 22:03:25] [INFO] ============================================================
+[2025-12-30 22:03:25] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 22:03:25] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 22:03:25] [INFO] Starting test run...
+============================= test session starts ==============================
+platform darwin -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0 -- /opt/homebrew/opt/python@3.14/bin/python3.14
+cachedir: .pytest_cache
+metadata: {'Python': '3.14.0', 'Platform': 'macOS-26.2-arm64-arm-64bit-Mach-O', 'Packages': {'pytest': '9.0.2', 'pluggy': '1.6.0'}, 'Plugins': {'anyio': '4.12.0', 'html': '4.1.1', 'timeout': '2.4.0', 'metadata': '3.1.1'}}
+rootdir: /Users/syedabdurrehman/ANM V0-OpenSource/tests
+configfile: pytest.ini
+plugins: anyio-4.12.0, html-4.1.1, timeout-2.4.0, metadata-3.1.1
+timeout: 180.0s
+timeout method: thread
+timeout func_only: False
+collecting ... collected 12 items
+
+tests/integration/test_anm_entry.py::TestANMInstantiation::test_anm_instantiation_default [2025-12-30 22:03:26] [INFO] PASSED: test_anm_instantiation_default (18.9ms)
+PASSED [  8%]
+tests/integration/test_anm_entry.py::TestANMInstantiation::test_anm_instantiation_quick_mode [2025-12-30 22:03:26] [INFO] PASSED: test_anm_instantiation_quick_mode (0.3ms)
+PASSED [ 16%]
+tests/integration/test_anm_entry.py::TestANMQuery::test_anm_query_simple_greeting [2025-12-30 22:03:50] [INFO] PASSED: test_anm_query_simple_greeting (24111.7ms)
+PASSED [ 25%]
+tests/integration/test_anm_entry.py::TestANMQuery::test_anm_query_math [2025-12-30 22:04:35] [INFO] PASSED: test_anm_query_math (45420.6ms)
+PASSED [ 33%]
+tests/integration/test_anm_entry.py::TestANMQuery::test_anm_query_empty_string [2025-12-30 22:04:35] [INFO] PASSED: test_anm_query_empty_string (0.6ms)
+PASSED [ 41%]
+tests/integration/test_anm_entry.py::TestANMQuery::test_anm_query_whitespace_only [2025-12-30 22:04:35] [INFO] PASSED: test_anm_query_whitespace_only (0.5ms)
+PASSED [ 50%]
+tests/integration/test_anm_entry.py::TestANMQuery::test_anm_query_code [2025-12-30 22:05:11] [INFO] PASSED: test_anm_query_code (35861.7ms)
+PASSED [ 58%]
+tests/integration/test_anm_entry.py::TestANMQuery::test_anm_query_physics [2025-12-30 22:06:52] [ERROR] FAILED: test_anm_query_physics - 7 (of 8) futures unfinished
+FAILED [ 66%][2025-12-30 22:06:52] [INFO] ============================================================
+[2025-12-30 22:06:52] [INFO] TEST RUN COMPLETE
+[2025-12-30 22:06:52] [INFO] Total: 8 | Passed: 7 | Failed: 1
+[2025-12-30 22:06:52] [INFO] Success rate: 87.5%
+[2025-12-30 22:06:52] [INFO] ============================================================
+
+
+=================================== FAILURES ===================================
+_____________________ TestANMQuery.test_anm_query_physics ______________________
+
+self = <tests.integration.test_anm_entry.TestANMQuery object at 0x109517ac0>
+anm_instance = <anm.ANM object at 0x1097b0690>
+
+    @pytest.mark.integration
+    @pytest.mark.timeout(180)
+    def test_anm_query_physics(self, anm_instance):
+        """Test physics query."""
+        log_test("Testing ANM query: physics...")
+>       result = anm_instance.query("What is Newton's first law?")
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/integration/test_anm_entry.py:119: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anm.ANM object at 0x1097b0690>
+user_query = "What is Newton's first law?", use_memory = True
+
+    def query(self, user_query: str, use_memory: bool = True) -> Dict[str, Any]:
+        """
+        Process a user query through ANM with full feature utilization.
+    
+        Features used:
+        - Memory context retrieval
+        - Strategy recommendations
+        - Post-processing learning
+        - Pattern recognition
+        - Auto mode: automatically chooses quick/normal based on query complexity
+    
+        Args:
+            user_query: The user's question or request
+            use_memory: Whether to use memory context
+    
+        Returns:
+            Dict containing the result and metadata
+        """
+        # Input validation
+        if not user_query or not isinstance(user_query, str):
+            return {
+                "status": "error",
+                "result": "Invalid query: query must be a non-empty string",
+                "error": "Invalid input",
+            }
+    
+        user_query = user_query.strip()
+        if not user_query:
+            return {
+                "status": "error",
+                "result": "Invalid query: query cannot be empty",
+                "error": "Empty input",
+            }
+    
+        self._ensure_initialized()
+        self._session_count += 1
+    
+        # Optimize prompt if enabled
+        optimized_query = user_query
+        if self.anm_config.optimize_prompts and self._prompt_optimizer is not None:
+            try:
+                optimized_query = self._prompt_optimizer.optimize(user_query)
+                if optimized_query != user_query and self.anm_config.verbose:
+                    print(f"[PROMPT_OPTIMIZER] Refined query for better processing")
+            except (AttributeError, ImportError, TypeError, ValueError) as e:
+                # If optimization fails, use original query
+                if self.anm_config.verbose:
+                    print(f"[PROMPT_OPTIMIZER] Optimization failed ({type(e).__name__}), using original query: {e}")
+                optimized_query = user_query
+    
+        # Research mode: Always use normal mode (no quick, no auto)
+        if self.anm_config.research_mode:
+            use_quick = False
+            if self.anm_config.verbose:
+                print("[RESEARCH_MODE] Using full reasoning pipeline with maximum quality")
+        else:
+            # Auto mode: Check domain first to avoid overriding specialist models
+            # For STEM queries (math, physics, chemistry, biology, code), specialists have their own models
+            # and should NOT be overridden by Auto Mode
+    
+            # Quick coarse domain classification to check if this is a STEM query
+            from anm.router.router import Router
+            coarse_domain = self._router._coarse_domain_guess(optimized_query) if hasattr(self._router, '_coarse_domain_guess') else "general"
+    
+            # Domain specialists that should use their own models
+            domain_specialists = {"math", "physics", "chemistry", "biology", "code"}
+    
+            # Only use Auto Mode for general queries
+            # STEM specialists have Nanbeige4-3B (math/physics/chemistry/biology) and Stable-Code-3B (code)
+            if coarse_domain in domain_specialists:
+                # Skip Auto Mode - let specialist use its configured model
+                use_quick = False
+                if self.anm_config.verbose:
+                    print(f"[AUTO_MODE] Bypassed for {coarse_domain} specialist (using domain model)")
+            else:
+                # Use Auto Mode for general queries
+                use_quick = self._should_use_quick_mode(optimized_query)
+                if self.anm_config.verbose:
+                    mode_str = "QUICK (TinyLLama)" if use_quick else "NORMAL (DeepSeek-R1)"
+                    print(f"[AUTO_MODE] Query complexity analysis: {mode_str}")
+    
+        from anm.system.inference import InferenceConfig, get_inference_engine
+        inference_config = InferenceConfig(quick_mode=use_quick)
+        get_inference_engine(inference_config)  # This will update the singleton's config
+    
+        # Get memory context and strategy recommendations
+        memory_context = None
+        strategy = None
+    
+        if use_memory:
+            memory_context = self._memory_hub.get_context(optimized_query)
+    
+            # Get strategy recommendation based on learned patterns
+            strategy = self._learning_engine.get_strategy(
+                optimized_query,
+                domains=[],  # Will be determined by Router
+            )
+    
+        # Process the query (use optimized version)
+        # Pass quick_mode flag to router based on actual decision
+        # For auto mode, pass the per-query decision; for explicit quick mode, pass True
+>       result = self._router.handle(optimized_query, quick_mode=use_quick, research_mode=self.anm_config.research_mode)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+anm/__init__.py:613: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anm.router.router.Router object at 0x1096a3e00>
+user_query = "What is Newton's first law?", quick_mode = False
+research_mode = False
+
+    def handle(self, user_query: str, quick_mode: bool = False, research_mode: bool = False) -> Dict[str, Any]:
+        """
+        Main entry point for processing a user query.
+    
+        Args:
+            user_query: The user's query
+            quick_mode: Whether to use quick mode (simplified pipeline)
+            research_mode: Whether to use research mode (maximum quality, deterministic routing)
+    
+        Returns:
+            Dict containing result, verification, metadata, and metrics
+        """
+        # Input validation
+        if not user_query or not isinstance(user_query, str):
+            self._logger.error(f"Invalid query type: {type(user_query)}")
+            return {
+                "status": "error",
+                "result": "Invalid query: must be a non-empty string",
+                "error": "Invalid input",
+            }
+    
+        user_query = user_query.strip()
+        if not user_query:
+            self._logger.warning("Empty query received")
+            return {
+                "status": "error",
+                "result": "Invalid query: query cannot be empty",
+                "error": "Empty input",
+            }
+    
+        import time
+        handle_start_time = time.time()
+        self._logger.debug(f"Processing query (quick_mode={quick_mode}, research_mode={research_mode}): {user_query[:100]}...")
+    
+        # Research mode: deterministic routing
+        self.research_mode_active = research_mode
+        if research_mode:
+            return self._handle_research_mode(user_query)
+    
+        # Quick mode: simplified path
+        if quick_mode:
+            return self._handle_quick_mode(user_query)
+    
+        # Normal mode: full pipeline
+    
+        # 0) Snapshot PointGame state BEFORE this run (PAST-ONLY for Refiner)
+        pg_stats_before = self.point_game.stats()
+    
+        # 1) Start log run
+        self.logger.new_run(user_query)
+    
+        # 2) Load memory brief at start (global context, PAST-ONLY)
+        memory_info = build_memory_brief(self._memory_core, user_query)
+        memory_brief = memory_info["brief_text"]
+        self.logger.log_memory(memory_brief)
+    
+        # 3) AI-powered domain classification (using R1 model)
+        # This intelligently analyzes the query to determine the best specialist
+        coarse_entry = self._ai_domain_classifier(user_query)
+    
+        # 3.5) Novelty Detection - Check if query requires a new domain
+        novelty_result = self.novelty_handler.detect(user_query, memory_brief)
+        if novelty_result.get("requires_new_domain", False):
+            # Trigger specialists voting system
+>           voting_result = self.voting_handler.vote(
+                user_query=user_query,
+                detected_domain=novelty_result.get("detected_domain"),
+                novelty_reasoning=novelty_result.get("reasoning", ""),
+                memory_brief=memory_brief,
+            )
+
+anm/router/router.py:551: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anm.router.voting_handler.VotingHandler object at 0x1099c42f0>
+user_query = "What is Newton's first law?", detected_domain = 'law'
+novelty_reasoning = 'Keyword match: law (0.17); Semantic distance: 1.00'
+memory_brief = '[CLOUD_DIARY_BRIEF]\nNOTE: This is PAST context ONLY — NOT guaranteed current truth.\n\nPAST HIGHLIGHTS:\n- [ENTRY @ ...ession Episode\n\nUSER:\n  What is the sum of\n\nSUMMARY (compressed PAST context):\nFound 3 relevant memory block(s).'
+
+    def vote(
+        self,
+        user_query: str,
+        detected_domain: Optional[str],
+        novelty_reasoning: str,
+        memory_brief: str,
+    ) -> Dict[str, Any]:
+        """
+        Conduct voting among specialists.
+    
+        Uses V2 VotingSystemV2 for parallel async voting with weighted consensus.
+        Falls back to simple heuristic voting if unavailable.
+    
+        Args:
+            user_query: The user's query
+            detected_domain: Domain detected by novelty handler
+            novelty_reasoning: Reasoning from novelty detection
+            memory_brief: Memory context brief
+    
+        Returns:
+            Dict with voting results and consensus level
+        """
+        if not detected_domain:
+            return {"majority_yes": False, "votes": {}, "reasoning": "No domain detected"}
+    
+        # Try to use V2 Voting System (parallel, weighted)
+        try:
+            from anm.expansion.core.voting_system import VotingSystemV2
+    
+            voting_system = VotingSystemV2(timeout_seconds=30.0)
+    
+>           result = voting_system.conduct_vote(
+                query=user_query,
+                detected_domain=detected_domain,
+                novelty_reasoning=novelty_reasoning,
+                specialists=self.specialists,
+                memory_brief=memory_brief,
+            )
+
+anm/router/voting_handler.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anm.expansion.core.voting_system.VotingSystemV2 object at 0x10a5b2660>
+query = "What is Newton's first law?", detected_domain = 'law'
+novelty_reasoning = 'Keyword match: law (0.17); Semantic distance: 1.00'
+specialists = {'biology': <anm.router.router.ParallelSpecialistAdapter object at 0x1098dbad0>, 'chemistry': <anm.router.router.Paral...alistAdapter object at 0x1098c1e00>, 'facts': <anm.router.router.ParallelSpecialistAdapter object at 0x109907240>, ...}
+memory_brief = '[CLOUD_DIARY_BRIEF]\nNOTE: This is PAST context ONLY — NOT guaranteed current truth.\n\nPAST HIGHLIGHTS:\n- [ENTRY @ ...ession Episode\n\nUSER:\n  What is the sum of\n\nSUMMARY (compressed PAST context):\nFound 3 relevant memory block(s).'
+
+    def conduct_vote(
+        self,
+        query: str,
+        detected_domain: str,
+        novelty_reasoning: str,
+        specialists: Dict[str, Any],
+        memory_brief: str = "",
+    ) -> VotingResult:
+        """
+        Conduct parallel voting across all specialists.
+    
+        Returns comprehensive VotingResult with consensus analysis.
+        """
+        start_time = time.time()
+    
+        # Check cache
+        cache_key = self._get_cache_key(query, detected_domain)
+        if cache_key in self.vote_cache:
+            cached = self.vote_cache[cache_key]
+            cached.reasoning = f"[CACHED] {cached.reasoning}"
+            return cached
+    
+        # Prepare voting packet
+        voting_packet = self._create_voting_packet(
+            query, detected_domain, novelty_reasoning, memory_brief
+        )
+    
+        # Collect votes in parallel
+>       votes = self._collect_votes_parallel(
+            voting_packet, specialists, detected_domain
+        )
+
+anm/expansion/core/voting_system.py:134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <anm.expansion.core.voting_system.VotingSystemV2 object at 0x10a5b2660>
+voting_packet = '[EXPANSION VOTING REQUEST]\n\nThe ANM Router has detected a potential need for a new specialist domain.\n\nQUERY: Wha...n  "can_partially_handle": true/false,\n  "suggested_collaboration": ["domain1", "domain2"]\n}\n\n[END VOTING REQUEST]'
+specialists = {'biology': <anm.router.router.ParallelSpecialistAdapter object at 0x1098dbad0>, 'chemistry': <anm.router.router.Paral...alistAdapter object at 0x1098c1e00>, 'facts': <anm.router.router.ParallelSpecialistAdapter object at 0x109907240>, ...}
+detected_domain = 'law'
+
+    def _collect_votes_parallel(
+        self,
+        voting_packet: str,
+        specialists: Dict[str, Any],
+        detected_domain: str,
+    ) -> List[Vote]:
+        """Collect votes from all specialists in parallel."""
+        votes: List[Vote] = []
+    
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = {}
+    
+            for domain_name, specialist in specialists.items():
+                future = executor.submit(
+                    self._get_specialist_vote,
+                    domain_name,
+                    specialist,
+                    voting_packet,
+                    detected_domain,
+                )
+                futures[future] = domain_name
+    
+>           for future in as_completed(futures, timeout=self.timeout):
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+anm/expansion/core/voting_system.py:207: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+fs = {<Future at 0x10ae29a90 state=finished returned Vote>, <Future at 0x117568290 state=finished returned Vote>, <Future a...Vote>, <Future at 0x10ae4d370 state=finished returned Vote>, <Future at 0x10adee780 state=finished returned Vote>, ...}
+timeout = 30.0
+
+    def as_completed(fs, timeout=None):
+        """An iterator over the given futures that yields each as it completes.
+    
+        Args:
+            fs: The sequence of Futures (possibly created by different Executors) to
+                iterate over.
+            timeout: The maximum number of seconds to wait. If None, then there
+                is no limit on the wait time.
+    
+        Returns:
+            An iterator that yields the given Futures as they complete (finished or
+            cancelled). If any given Futures are duplicated, they will be returned
+            once.
+    
+        Raises:
+            TimeoutError: If the entire result iterator could not be generated
+                before the given timeout.
+        """
+        if timeout is not None:
+            end_time = timeout + time.monotonic()
+    
+        fs = set(fs)
+        total_futures = len(fs)
+        with _AcquireFutures(fs):
+            finished = set(
+                    f for f in fs
+                    if f._state in [CANCELLED_AND_NOTIFIED, FINISHED])
+            pending = fs - finished
+            waiter = _create_and_install_waiters(fs, _AS_COMPLETED)
+        finished = list(finished)
+        try:
+            yield from _yield_finished_futures(finished, waiter,
+                                               ref_collect=(fs,))
+    
+            while pending:
+                if timeout is None:
+                    wait_timeout = None
+                else:
+                    wait_timeout = end_time - time.monotonic()
+                    if wait_timeout < 0:
+>                       raise TimeoutError(
+                                '%d (of %d) futures unfinished' % (
+                                len(pending), total_futures))
+E                               TimeoutError: 7 (of 8) futures unfinished
+
+/opt/homebrew/Cellar/python@3.14/3.14.0/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/_base.py:233: TimeoutError
+---------------------------- Captured stdout setup -----------------------------
+[2025-12-30 22:05:11] [INFO] STARTING: test_anm_query_physics
+----------------------------- Captured stdout call -----------------------------
+[2025-12-30 22:05:11] [INFO] Testing ANM query: physics...
+[ModelDownloader] Using cached model: /Users/syedabdurrehman/.cache/huggingface/hub/models--TheBloke--TinyLlama-1.1B-Chat-v1.0-GGUF/snapshots/52e7645ba7c309695bec7ac98f4f005b139cf465/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
+[InferenceEngine] GPU detected, offloading all layers
+[InferenceEngine] Loading model: tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
+[InferenceEngine] Model loaded in 0.59s
+[AUTO_MODE] Bypassed for physics specialist (using domain model)
+[ModelDownloader] Using cached model: /Users/syedabdurrehman/.cache/huggingface/hub/models--bartowski--DeepSeek-R1-Distill-Qwen-1.5B-GGUF/snapshots/9cc28b17e86fa2415fcb070f8ee5ec27c965aa61/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+[InferenceEngine] GPU detected, offloading all layers
+[InferenceEngine] Loading model: DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+[InferenceEngine] Model loaded in 0.56s
+[ModelDownloader] Using cached model: /Users/syedabdurrehman/.cache/huggingface/hub/models--bartowski--DeepSeek-R1-Distill-Qwen-1.5B-GGUF/snapshots/9cc28b17e86fa2415fcb070f8ee5ec27c965aa61/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+[ModelDownloader] Using cached model: /Users/syedabdurrehman/.cache/huggingface/hub/models--bartowski--DeepSeek-R1-Distill-Qwen-1.5B-GGUF/snapshots/9cc28b17e86fa2415fcb070f8ee5ec27c965aa61/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+[ModelDownloader] Using cached model: /Users/syedabdurrehman/.cache/huggingface/hub/models--bartowski--DeepSeek-R1-Distill-Qwen-1.5B-GGUF/snapshots/9cc28b17e86fa2415fcb070f8ee5ec27c965aa61/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+[ModelDownloader] Using cached model: /Users/syedabdurrehman/.cache/huggingface/hub/models--bartowski--DeepSeek-R1-Distill-Qwen-1.5B-GGUF/snapshots/9cc28b17e86fa2415fcb070f8ee5ec27c965aa61/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+[ModelDownloader] Using cached model: /Users/syedabdurrehman/.cache/huggingface/hub/models--bartowski--DeepSeek-R1-Distill-Qwen-1.5B-GGUF/snapshots/9cc28b17e86fa2415fcb070f8ee5ec27c965aa61/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+[ModelDownloader] Using cached model: /Users/syedabdurrehman/.cache/huggingface/hub/models--bartowski--DeepSeek-R1-Distill-Qwen-1.5B-GGUF/snapshots/9cc28b17e86fa2415fcb070f8ee5ec27c965aa61/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+[ModelDownloader] Using cached model: /Users/syedabdurrehman/.cache/huggingface/hub/models--bartowski--DeepSeek-R1-Distill-Qwen-1.5B-GGUF/snapshots/9cc28b17e86fa2415fcb070f8ee5ec27c965aa61/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+[ModelDownloader] Using cached model: /Users/syedabdurrehman/.cache/huggingface/hub/models--bartowski--DeepSeek-R1-Distill-Qwen-1.5B-GGUF/snapshots/9cc28b17e86fa2415fcb070f8ee5ec27c965aa61/DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf
+----------------------------- Captured stderr call -----------------------------
+ggml_metal_init: skipping kernel_get_rows_bf16                     (not supported)
+ggml_metal_init: skipping kernel_set_rows_bf16                     (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32                   (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32_c4                (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32_1row              (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32_l4                (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_bf16                  (not supported)
+ggml_metal_init: skipping kernel_mul_mv_id_bf16_f32                (not supported)
+ggml_metal_init: skipping kernel_mul_mm_bf16_f32                   (not supported)
+ggml_metal_init: skipping kernel_mul_mm_id_bf16_f16                (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h64           (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h80           (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h96           (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h112          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h128          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h192          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_hk192_hv128   (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h256          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_hk576_hv512   (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h64       (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h96       (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h128      (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h192      (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_hk192_hv128 (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h256      (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_hk576_hv512 (not supported)
+ggml_metal_init: skipping kernel_cpy_f32_bf16                      (not supported)
+ggml_metal_init: skipping kernel_cpy_bf16_f32                      (not supported)
+ggml_metal_init: skipping kernel_cpy_bf16_bf16                     (not supported)
+llama_context: n_ctx_per_seq (4096) < n_ctx_train (131072) -- the full capacity of the model will not be utilized
+ggml_metal_init: skipping kernel_get_rows_bf16                     (not supported)
+ggml_metal_init: skipping kernel_set_rows_bf16                     (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32                   (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32_c4                (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32_1row              (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_f32_l4                (not supported)
+ggml_metal_init: skipping kernel_mul_mv_bf16_bf16                  (not supported)
+ggml_metal_init: skipping kernel_mul_mv_id_bf16_f32                (not supported)
+ggml_metal_init: skipping kernel_mul_mm_bf16_f32                   (not supported)
+ggml_metal_init: skipping kernel_mul_mm_id_bf16_f16                (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h64           (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h80           (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h96           (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h112          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h128          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h192          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_hk192_hv128   (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_h256          (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_bf16_hk576_hv512   (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h64       (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h96       (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h128      (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h192      (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_hk192_hv128 (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_h256      (not supported)
+ggml_metal_init: skipping kernel_flash_attn_ext_vec_bf16_hk576_hv512 (not supported)
+ggml_metal_init: skipping kernel_cpy_f32_bf16                      (not supported)
+ggml_metal_init: skipping kernel_cpy_bf16_f32                      (not supported)
+ggml_metal_init: skipping kernel_cpy_bf16_bf16                     (not supported)
+------------------------------ Captured log call -------------------------------
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Generate called",
+  "data": {
+    "model_loaded": false,
+    "llama_available": true,
+    "prompt_length": 632,
+    "prompt_preview": "You are a prompt optimizer for ANM (Artificial Neural Mesh), a multi-agent AI system.\n\nYour task: Refine the user's prompt to make it clearer, more specific, and better suited for ANM's multi-domain r",
+    "max_tokens": 256
+  },
+  "timestamp": 1767112511472
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Capping max_tokens",
+  "data": {
+    "requested_max_tokens": 256,
+    "context_length": 2048,
+    "estimated_prompt_tokens": 190,
+    "available_for_generation": 1758,
+    "capped_max_tokens": 256,
+    "prompt_length": 666
+  },
+  "timestamp": 1767112512230
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Raw output structure",
+  "data": {
+    "choices_count": 1,
+    "first_choice_keys": [
+      "text",
+      "index",
+      "logprobs",
+      "finish_reason"
+    ],
+    "first_choice_text_preview": "Newton's first law states that for every action, there is an equal and opposite reaction.",
+    "usage": {
+      "prompt_tokens": 200,
+      "completion_tokens": 20,
+      "total_tokens": 220
+    },
+    "max_tokens_requested": 256
+  },
+  "timestamp": 1767112512723
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "After model inference",
+  "data": {
+    "text_length": 89,
+    "text_preview": "Newton's first law states that for every action, there is an equal and opposite reaction.",
+    "tokens": 20,
+    "is_empty": false,
+    "max_tokens_requested": 256
+  },
+  "timestamp": 1767112512723
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Generate called",
+  "data": {
+    "model_loaded": false,
+    "llama_available": true,
+    "prompt_length": 1386,
+    "prompt_preview": "You are an expert query classifier for a multi-specialist AI system.\n\nYour job is to analyze the user's query and determine which specialist should handle it.\n\nAvailable specialists:\n- math: Mathemati",
+    "max_tokens": 20
+  },
+  "timestamp": 1767112512756
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Capping max_tokens",
+  "data": {
+    "requested_max_tokens": 20,
+    "context_length": 4096,
+    "estimated_prompt_tokens": 396,
+    "available_for_generation": 3600,
+    "capped_max_tokens": 20,
+    "prompt_length": 1386
+  },
+  "timestamp": 1767112513544
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Raw output structure",
+  "data": {
+    "choices_count": 1,
+    "first_choice_keys": [
+      "text",
+      "index",
+      "logprobs",
+      "finish_reason"
+    ],
+    "first_choice_text_preview": " ______\n</think>\n\nmath",
+    "usage": {
+      "prompt_tokens": 315,
+      "completion_tokens": 5,
+      "total_tokens": 320
+    },
+    "max_tokens_requested": 20
+  },
+  "timestamp": 1767112514130
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "After model inference",
+  "data": {
+    "text_length": 22,
+    "text_preview": " ______\n</think>\n\nmath",
+    "tokens": 5,
+    "is_empty": false,
+    "max_tokens_requested": 20
+  },
+  "timestamp": 1767112514130
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "C",
+  "location": "base.py:run",
+  "message": "Prompt built",
+  "data": {
+    "domain": "general",
+    "prompt_length": 4333,
+    "prompt_preview": "You are the GENERAL SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide high-level conceptual reasoning. Do NOT write the final answer - that's the Refiner's job.\n\nIDENTITY:\n- Internal specialist only - you work inside the Web-of-Thought system.\n- Your reasoning is used by other specialists and the ",
+    "wot_packet_length": 1160
+  },
+  "timestamp": 1767112514135
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "C",
+  "location": "base.py:run",
+  "message": "Prompt built",
+  "data": {
+    "domain": "math",
+    "prompt_length": 4182,
+    "prompt_preview": "You are the MATH SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide mathematical reasoning, equations, and derivations. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your reasoning is used by the Refiner.\n- You work inside the Web-of-Thought system.\n\nWHAT TO DO:\n- Perform a",
+    "wot_packet_length": 1160
+  },
+  "timestamp": 1767112514135
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model called",
+  "data": {
+    "prompt_length": 4182,
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514135
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "C",
+  "location": "base.py:run",
+  "message": "Prompt built",
+  "data": {
+    "domain": "physics",
+    "prompt_length": 4473,
+    "prompt_preview": "You are the PHYSICS SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide physics reasoning and analysis. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your reasoning is used by the Refiner.\n- You must be STRICT about physical consistency and units.\n\nDOMAIN:\n- Classical mechan",
+    "wot_packet_length": 1160
+  },
+  "timestamp": 1767112514135
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model called",
+  "data": {
+    "prompt_length": 4473,
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514135
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Generate called",
+  "data": {
+    "model_loaded": true,
+    "llama_available": true,
+    "prompt_length": 4473,
+    "prompt_preview": "You are the PHYSICS SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide physics reasoning and analysis. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your reasoning is used by",
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514136
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "C",
+  "location": "base.py:run",
+  "message": "Prompt built",
+  "data": {
+    "domain": "code",
+    "prompt_length": 4383,
+    "prompt_preview": "You are the CODE SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide code reasoning, algorithms, and implementation ideas. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your reasoning is used by the Refiner.\n- You produce pseudocode, algorithms, and implementation strategies",
+    "wot_packet_length": 1160
+  },
+  "timestamp": 1767112514135
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model called",
+  "data": {
+    "prompt_length": 4383,
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514136
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Generate called",
+  "data": {
+    "model_loaded": true,
+    "llama_available": true,
+    "prompt_length": 4383,
+    "prompt_preview": "You are the CODE SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide code reasoning, algorithms, and implementation ideas. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your r",
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514136
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Generate called",
+  "data": {
+    "model_loaded": true,
+    "llama_available": true,
+    "prompt_length": 4182,
+    "prompt_preview": "You are the MATH SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide mathematical reasoning, equations, and derivations. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your rea",
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514135
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model called",
+  "data": {
+    "prompt_length": 4333,
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514135
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Generate called",
+  "data": {
+    "model_loaded": true,
+    "llama_available": true,
+    "prompt_length": 4333,
+    "prompt_preview": "You are the GENERAL SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide high-level conceptual reasoning. Do NOT write the final answer - that's the Refiner's job.\n\nIDENTITY:\n- Internal specialist only",
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514136
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "C",
+  "location": "base.py:run",
+  "message": "Prompt built",
+  "data": {
+    "domain": "chemistry",
+    "prompt_length": 5290,
+    "prompt_preview": "\nYou are the CHEMISTRY SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide chemical reasoning and reaction mechanisms. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your reasoning is used by the Refiner.\n- Keep chemical reasoning realistic and coherent.\n\nDOMAIN:\n- Atomic str",
+    "wot_packet_length": 1160
+  },
+  "timestamp": 1767112514135
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model called",
+  "data": {
+    "prompt_length": 5290,
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514136
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Generate called",
+  "data": {
+    "model_loaded": true,
+    "llama_available": true,
+    "prompt_length": 5290,
+    "prompt_preview": "\nYou are the CHEMISTRY SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide chemical reasoning and reaction mechanisms. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your reaso",
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514136
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model called",
+  "data": {
+    "prompt_length": 3923,
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514136
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Generate called",
+  "data": {
+    "model_loaded": true,
+    "llama_available": true,
+    "prompt_length": 3923,
+    "prompt_preview": "You are the RESEARCH SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Combine external search results with reasoning. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your research is",
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514137
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "C",
+  "location": "base.py:run",
+  "message": "Prompt built",
+  "data": {
+    "domain": "biology",
+    "prompt_length": 5374,
+    "prompt_preview": "\nYou are the BIOLOGY SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide biological reasoning and analysis. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your reasoning is used by the Refiner.\n- Bound by realistic biological constraints (unless explicitly fictional).\n\nDOMAIN",
+    "wot_packet_length": 1160
+  },
+  "timestamp": 1767112514136
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "C",
+  "location": "base.py:run",
+  "message": "Prompt built",
+  "data": {
+    "domain": "facts",
+    "prompt_length": 3757,
+    "prompt_preview": "You are the FACTS SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Validate reasoning and detect contradictions. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your validation is used by the Refiner.\n- You work with given reasoning (plus optional ResearchLLM outputs).\n\nROLE:\n- Det",
+    "wot_packet_length": 1160
+  },
+  "timestamp": 1767112514136
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model called",
+  "data": {
+    "prompt_length": 3757,
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514137
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Generate called",
+  "data": {
+    "model_loaded": true,
+    "llama_available": true,
+    "prompt_length": 3757,
+    "prompt_preview": "You are the FACTS SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Validate reasoning and detect contradictions. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your validation is us",
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514137
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Capping max_tokens",
+  "data": {
+    "requested_max_tokens": 2048,
+    "context_length": 4096,
+    "estimated_prompt_tokens": 1278,
+    "available_for_generation": 2718,
+    "capped_max_tokens": 2048,
+    "prompt_length": 4473
+  },
+  "timestamp": 1767112514137
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model called",
+  "data": {
+    "prompt_length": 5374,
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514137
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Generate called",
+  "data": {
+    "model_loaded": true,
+    "llama_available": true,
+    "prompt_length": 5374,
+    "prompt_preview": "\nYou are the BIOLOGY SPECIALIST of ANM V0-OpenSource.\n\nYOUR JOB: Provide biological reasoning and analysis. Do NOT write the final answer.\n\nIDENTITY:\n- Internal specialist only - your reasoning is use",
+    "max_tokens": 2048
+  },
+  "timestamp": 1767112514137
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Raw output structure",
+  "data": {
+    "choices_count": 1,
+    "first_choice_keys": [
+      "text",
+      "index",
+      "logprobs",
+      "finish_reason"
+    ],
+    "first_choice_text_preview": " Make sure your reasoning is physics-consistent and tracks units.\n</think>\n\nWOT_REQUEST: LAW  \n\nconfidence: HIGH  \nreasoning: Newton's first law describes the relationship between an object's mass and",
+    "usage": {
+      "prompt_tokens": 1178,
+      "completion_tokens": 137,
+      "total_tokens": 1315
+    },
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112518988
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "After model inference",
+  "data": {
+    "text_length": 742,
+    "text_preview": " Make sure your reasoning is physics-consistent and tracks units.\n</think>\n\nWOT_REQUEST: LAW  \n\nconfidence: HIGH  \nreasoning: Newton's first law describes the relationship between an object's mass and",
+    "tokens": 137,
+    "is_empty": false,
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112518989
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model returning",
+  "data": {
+    "result_length": 741,
+    "result_preview": "Make sure your reasoning is physics-consistent and tracks units.\n</think>\n\nWOT_REQUEST: LAW  \n\nconfidence: HIGH  \nreasoning: Newton's first law describes the relationship between an object's mass and ",
+    "is_empty": false
+  },
+  "timestamp": 1767112518989
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Raw output from model",
+  "data": {
+    "domain": "physics",
+    "raw_output_length": 741,
+    "raw_output_preview": "Make sure your reasoning is physics-consistent and tracks units.\n</think>\n\nWOT_REQUEST: LAW  \n\nconfi",
+    "is_empty": false
+  },
+  "timestamp": 1767112518990
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Capping max_tokens",
+  "data": {
+    "requested_max_tokens": 2048,
+    "context_length": 4096,
+    "estimated_prompt_tokens": 1252,
+    "available_for_generation": 2744,
+    "capped_max_tokens": 2048,
+    "prompt_length": 4383
+  },
+  "timestamp": 1767112518989
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Cleaned output",
+  "data": {
+    "domain": "physics",
+    "cleaned_length": 738,
+    "cleaned_preview": "Make sure your reasoning is physics-consistent and tracks units.\n</think>\n\nWOT_REQUEST: LAW \n\nconfid",
+    "has_no_output_marker": false
+  },
+  "timestamp": 1767112518990
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Raw output structure",
+  "data": {
+    "choices_count": 1,
+    "first_choice_keys": [
+      "text",
+      "index",
+      "logprobs",
+      "finish_reason"
+    ],
+    "first_choice_text_preview": " \n\n---\n\nNow, I'll start by understanding the query: What is Newton's first law?\n\nFirst, I need to recall what Newton's laws are and specifically the first one.\n\nNewton's laws of motion are three in nu",
+    "usage": {
+      "prompt_tokens": 1145,
+      "completion_tokens": 1336,
+      "total_tokens": 2481
+    },
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112551794
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "After model inference",
+  "data": {
+    "text_length": 6525,
+    "text_preview": " \n\n---\n\nNow, I'll start by understanding the query: What is Newton's first law?\n\nFirst, I need to recall what Newton's laws are and specifically the first one.\n\nNewton's laws of motion are three in nu",
+    "tokens": 1336,
+    "is_empty": false,
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112551794
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model returning",
+  "data": {
+    "result_length": 6522,
+    "result_preview": "---\n\nNow, I'll start by understanding the query: What is Newton's first law?\n\nFirst, I need to recall what Newton's laws are and specifically the first one.\n\nNewton's laws of motion are three in numbe",
+    "is_empty": false
+  },
+  "timestamp": 1767112551794
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Raw output from model",
+  "data": {
+    "domain": "code",
+    "raw_output_length": 6522,
+    "raw_output_preview": "---\n\nNow, I'll start by understanding the query: What is Newton's first law?\n\nFirst, I need to recal",
+    "is_empty": false
+  },
+  "timestamp": 1767112551795
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Cleaned output",
+  "data": {
+    "domain": "code",
+    "cleaned_length": 6505,
+    "cleaned_preview": "---\n\nNow, I'll start by understanding the query: What is Newton's first law?\n\nFirst, I need to recal",
+    "has_no_output_marker": false
+  },
+  "timestamp": 1767112551795
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Capping max_tokens",
+  "data": {
+    "requested_max_tokens": 2048,
+    "context_length": 4096,
+    "estimated_prompt_tokens": 1120,
+    "available_for_generation": 2876,
+    "capped_max_tokens": 2048,
+    "prompt_length": 3923
+  },
+  "timestamp": 1767112551795
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Raw output structure",
+  "data": {
+    "choices_count": 1,
+    "first_choice_keys": [
+      "text",
+      "index",
+      "logprobs",
+      "finish_reason"
+    ],
+    "first_choice_text_preview": " Do not make any claims about the content of the sources. Just use the provided search results as factual.\n\nOkay, I'm trying to figure out whether ANM needs a new 'law' specialist module or if existin",
+    "usage": {
+      "prompt_tokens": 1112,
+      "completion_tokens": 425,
+      "total_tokens": 1537
+    },
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112564165
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "After model inference",
+  "data": {
+    "text_length": 2121,
+    "text_preview": " Do not make any claims about the content of the sources. Just use the provided search results as factual.\n\nOkay, I'm trying to figure out whether ANM needs a new 'law' specialist module or if existin",
+    "tokens": 425,
+    "is_empty": false,
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112564166
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model returning",
+  "data": {
+    "result_length": 2120,
+    "result_preview": "Do not make any claims about the content of the sources. Just use the provided search results as factual.\n\nOkay, I'm trying to figure out whether ANM needs a new 'law' specialist module or if existing",
+    "is_empty": false
+  },
+  "timestamp": 1767112564166
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Capping max_tokens",
+  "data": {
+    "requested_max_tokens": 2048,
+    "context_length": 4096,
+    "estimated_prompt_tokens": 1194,
+    "available_for_generation": 2802,
+    "capped_max_tokens": 2048,
+    "prompt_length": 4182
+  },
+  "timestamp": 1767112564166
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Raw output structure",
+  "data": {
+    "choices_count": 1,
+    "first_choice_keys": [
+      "text",
+      "index",
+      "logprobs",
+      "finish_reason"
+    ],
+    "first_choice_text_preview": " The confidence and reasoning should be concise.\n</think>\n\nWOT_REQUEST: LAW  \nCONSIDERING THE QUERY \"What is Newton's first law?\" THE CURRENT MATH SPECIALIST'S DOMAIN IS ALIGNED WITH PHYSICS. Newton's",
+    "usage": {
+      "prompt_tokens": 1109,
+      "completion_tokens": 244,
+      "total_tokens": 1353
+    },
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112571410
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "After model inference",
+  "data": {
+    "text_length": 1209,
+    "text_preview": " The confidence and reasoning should be concise.\n</think>\n\nWOT_REQUEST: LAW  \nCONSIDERING THE QUERY \"What is Newton's first law?\" THE CURRENT MATH SPECIALIST'S DOMAIN IS ALIGNED WITH PHYSICS. Newton's",
+    "tokens": 244,
+    "is_empty": false,
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112571410
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model returning",
+  "data": {
+    "result_length": 1208,
+    "result_preview": "The confidence and reasoning should be concise.\n</think>\n\nWOT_REQUEST: LAW  \nCONSIDERING THE QUERY \"What is Newton's first law?\" THE CURRENT MATH SPECIALIST'S DOMAIN IS ALIGNED WITH PHYSICS. Newton's ",
+    "is_empty": false
+  },
+  "timestamp": 1767112571410
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Raw output from model",
+  "data": {
+    "domain": "math",
+    "raw_output_length": 1208,
+    "raw_output_preview": "The confidence and reasoning should be concise.\n</think>\n\nWOT_REQUEST: LAW  \nCONSIDERING THE QUERY \"",
+    "is_empty": false
+  },
+  "timestamp": 1767112571411
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Cleaned output",
+  "data": {
+    "domain": "math",
+    "cleaned_length": 1205,
+    "cleaned_preview": "The confidence and reasoning should be concise.\n</think>\n\nWOT_REQUEST: LAW \nCONSIDERING THE QUERY \"W",
+    "has_no_output_marker": false
+  },
+  "timestamp": 1767112571411
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Capping max_tokens",
+  "data": {
+    "requested_max_tokens": 2048,
+    "context_length": 4096,
+    "estimated_prompt_tokens": 1238,
+    "available_for_generation": 2758,
+    "capped_max_tokens": 2048,
+    "prompt_length": 4333
+  },
+  "timestamp": 1767112571410
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Raw output structure",
+  "data": {
+    "choices_count": 1,
+    "first_choice_keys": [
+      "text",
+      "index",
+      "logprobs",
+      "finish_reason"
+    ],
+    "first_choice_text_preview": " Confidences and reasons.\n</think>\n\nTo determine whether ANM needs a new 'law' specialist module or if the existing specialists can handle this query adequately, we need to assess the nature of the re",
+    "usage": {
+      "prompt_tokens": 1149,
+      "completion_tokens": 201,
+      "total_tokens": 1350
+    },
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112577403
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "After model inference",
+  "data": {
+    "text_length": 1100,
+    "text_preview": " Confidences and reasons.\n</think>\n\nTo determine whether ANM needs a new 'law' specialist module or if the existing specialists can handle this query adequately, we need to assess the nature of the re",
+    "tokens": 201,
+    "is_empty": false,
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112577403
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model returning",
+  "data": {
+    "result_length": 1099,
+    "result_preview": "Confidences and reasons.\n</think>\n\nTo determine whether ANM needs a new 'law' specialist module or if the existing specialists can handle this query adequately, we need to assess the nature of the req",
+    "is_empty": false
+  },
+  "timestamp": 1767112577403
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Raw output from model",
+  "data": {
+    "domain": "general",
+    "raw_output_length": 1099,
+    "raw_output_preview": "Confidences and reasons.\n</think>\n\nTo determine whether ANM needs a new 'law' specialist module or i",
+    "is_empty": false
+  },
+  "timestamp": 1767112577403
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Cleaned output",
+  "data": {
+    "domain": "general",
+    "cleaned_length": 1099,
+    "cleaned_preview": "Confidences and reasons.\n</think>\n\nTo determine whether ANM needs a new 'law' specialist module or i",
+    "has_no_output_marker": false
+  },
+  "timestamp": 1767112577403
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Capping max_tokens",
+  "data": {
+    "requested_max_tokens": 2048,
+    "context_length": 4096,
+    "estimated_prompt_tokens": 1511,
+    "available_for_generation": 2485,
+    "capped_max_tokens": 2048,
+    "prompt_length": 5290
+  },
+  "timestamp": 1767112577403
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Raw output structure",
+  "data": {
+    "choices_count": 1,
+    "first_choice_keys": [
+      "text",
+      "index",
+      "logprobs",
+      "finish_reason"
+    ],
+    "first_choice_text_preview": " Confidence and reasonings must be concise.\n</think>\n\nWOT_REQUEST: DOMAIN\n\nConfidence: HIGH  \nReasoning: The domain of \"law\" is entirely separate from the scope of this query. Legal chemistry, fact ch",
+    "usage": {
+      "prompt_tokens": 1378,
+      "completion_tokens": 84,
+      "total_tokens": 1462
+    },
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112581359
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "After model inference",
+  "data": {
+    "text_length": 406,
+    "text_preview": " Confidence and reasonings must be concise.\n</think>\n\nWOT_REQUEST: DOMAIN\n\nConfidence: HIGH  \nReasoning: The domain of \"law\" is entirely separate from the scope of this query. Legal chemistry, fact ch",
+    "tokens": 84,
+    "is_empty": false,
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112581359
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model returning",
+  "data": {
+    "result_length": 405,
+    "result_preview": "Confidence and reasonings must be concise.\n</think>\n\nWOT_REQUEST: DOMAIN\n\nConfidence: HIGH  \nReasoning: The domain of \"law\" is entirely separate from the scope of this query. Legal chemistry, fact che",
+    "is_empty": false
+  },
+  "timestamp": 1767112581359
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Raw output from model",
+  "data": {
+    "domain": "chemistry",
+    "raw_output_length": 405,
+    "raw_output_preview": "Confidence and reasonings must be concise.\n</think>\n\nWOT_REQUEST: DOMAIN\n\nConfidence: HIGH  \nReasoni",
+    "is_empty": false
+  },
+  "timestamp": 1767112581359
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Cleaned output",
+  "data": {
+    "domain": "chemistry",
+    "cleaned_length": 403,
+    "cleaned_preview": "Confidence and reasonings must be concise.\n</think>\n\nWOT_REQUEST: DOMAIN\n\nConfidence: HIGH \nReasonin",
+    "has_no_output_marker": false
+  },
+  "timestamp": 1767112581359
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Capping max_tokens",
+  "data": {
+    "requested_max_tokens": 2048,
+    "context_length": 4096,
+    "estimated_prompt_tokens": 1073,
+    "available_for_generation": 2923,
+    "capped_max_tokens": 2048,
+    "prompt_length": 3757
+  },
+  "timestamp": 1767112581359
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Raw output structure",
+  "data": {
+    "choices_count": 1,
+    "first_choice_keys": [
+      "text",
+      "index",
+      "logprobs",
+      "finish_reason"
+    ],
+    "first_choice_text_preview": " Answer with the facts reasoning, and only\nWOT_REQUEST once.\n\nOkay, so I need to figure out whether ANM needs a new 'law' specialist module or if it can handle the question about Newton's first law. \n",
+    "usage": {
+      "prompt_tokens": 1024,
+      "completion_tokens": 515,
+      "total_tokens": 1539
+    },
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112594334
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "After model inference",
+  "data": {
+    "text_length": 2536,
+    "text_preview": " Answer with the facts reasoning, and only\nWOT_REQUEST once.\n\nOkay, so I need to figure out whether ANM needs a new 'law' specialist module or if it can handle the question about Newton's first law. \n",
+    "tokens": 515,
+    "is_empty": false,
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112594335
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model returning",
+  "data": {
+    "result_length": 2535,
+    "result_preview": "Answer with the facts reasoning, and only\nWOT_REQUEST once.\n\nOkay, so I need to figure out whether ANM needs a new 'law' specialist module or if it can handle the question about Newton's first law. \n\n",
+    "is_empty": false
+  },
+  "timestamp": 1767112594335
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Raw output from model",
+  "data": {
+    "domain": "facts",
+    "raw_output_length": 2535,
+    "raw_output_preview": "Answer with the facts reasoning, and only\nWOT_REQUEST once.\n\nOkay, so I need to figure out whether A",
+    "is_empty": false
+  },
+  "timestamp": 1767112594335
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Cleaned output",
+  "data": {
+    "domain": "facts",
+    "cleaned_length": 2530,
+    "cleaned_preview": "Answer with the facts reasoning, and only\nWOT_REQUEST once.\n\nOkay, so I need to figure out whether A",
+    "has_no_output_marker": false
+  },
+  "timestamp": 1767112594336
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Capping max_tokens",
+  "data": {
+    "requested_max_tokens": 2048,
+    "context_length": 4096,
+    "estimated_prompt_tokens": 1535,
+    "available_for_generation": 2461,
+    "capped_max_tokens": 2048,
+    "prompt_length": 5374
+  },
+  "timestamp": 1767112594335
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "Raw output structure",
+  "data": {
+    "choices_count": 1,
+    "first_choice_keys": [
+      "text",
+      "index",
+      "logprobs",
+      "finish_reason"
+    ],
+    "first_choice_text_preview": " I'll provide the domain-specific reasoning. If not confident, state ABSTAIN and reason.\n\nOkay, so I need to figure out how to answer this query about Newton's first law. Let me think through it step ",
+    "usage": {
+      "prompt_tokens": 1357,
+      "completion_tokens": 704,
+      "total_tokens": 2061
+    },
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112612364
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "A",
+  "location": "inference.py:generate_full",
+  "message": "After model inference",
+  "data": {
+    "text_length": 3736,
+    "text_preview": " I'll provide the domain-specific reasoning. If not confident, state ABSTAIN and reason.\n\nOkay, so I need to figure out how to answer this query about Newton's first law. Let me think through it step ",
+    "tokens": 704,
+    "is_empty": false,
+    "max_tokens_requested": 2048
+  },
+  "timestamp": 1767112612364
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "E",
+  "location": "inference.py:run_model",
+  "message": "run_model returning",
+  "data": {
+    "result_length": 3735,
+    "result_preview": "I'll provide the domain-specific reasoning. If not confident, state ABSTAIN and reason.\n\nOkay, so I need to figure out how to answer this query about Newton's first law. Let me think through it step b",
+    "is_empty": false
+  },
+  "timestamp": 1767112612364
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Raw output from model",
+  "data": {
+    "domain": "biology",
+    "raw_output_length": 3735,
+    "raw_output_preview": "I'll provide the domain-specific reasoning. If not confident, state ABSTAIN and reason.\n\nOkay, so I ",
+    "is_empty": false
+  },
+  "timestamp": 1767112612364
+}
+DEBUG    ANM_Debug:debug_logger.py:96 {
+  "sessionId": "debug-session",
+  "runId": "run1",
+  "hypothesisId": "B",
+  "location": "base.py:run",
+  "message": "Cleaned output",
+  "data": {
+    "domain": "biology",
+    "cleaned_length": 3730,
+    "cleaned_preview": "I'll provide the domain-specific reasoning. If not confident, state ABSTAIN and reason.\n\nOkay, so I ",
+    "has_no_output_marker": false
+  },
+  "timestamp": 1767112612364
+}
+--------------------------- Captured stdout teardown ---------------------------
+[2025-12-30 22:06:52] [INFO] Cleaning up ANM instance...
+=============================== warnings summary ===============================
+integration/test_anm_entry.py: 25 warnings
+  /Users/syedabdurrehman/ANM V0-OpenSource/anm/utils/logger.py:74: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "iso": datetime.utcnow().isoformat(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/integration/test_anm_entry.py::TestANMQuery::test_anm_query_physics - TimeoutError: 7 (of 8) futures unfinished
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+============= 1 failed, 7 passed, 25 warnings in 206.47s (0:03:26) =============

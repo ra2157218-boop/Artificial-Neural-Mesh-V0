@@ -490,12 +490,24 @@ class SanityChecker:
             try:
                 importlib.import_module(dep_name)
                 self.checks_passed += 1
-            except ImportError:
+            except Exception as e:
+                # Catch all exceptions (ImportError, slow imports, etc.)
+                # These are optional dependencies, so any failure is just informational
+                error_type = type(e).__name__
+                error_msg = str(e) if str(e) else error_type
+                
+                # For ImportError, use the original message format
+                if isinstance(e, ImportError):
+                    message = f"Optional dependency not installed: {dep_name} ({purpose})"
+                else:
+                    # For other exceptions (slow imports, etc.), include error details
+                    message = f"Optional dependency not available: {dep_name} ({purpose}) - {error_type}: {error_msg[:100]}"
+                
                 self._add_issue(
                     category=IssueCategory.DEPENDENCY,
                     severity=IssueSeverity.INFO,
                     module=dep_name,
-                    message=f"Optional dependency not installed: {dep_name} ({purpose})",
+                    message=message,
                     suggested_fix=f"pip install {dep_name}",
                     auto_fixable=False,
                 )

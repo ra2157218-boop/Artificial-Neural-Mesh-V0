@@ -5,6 +5,7 @@
 # ============================================================
 
 from __future__ import annotations
+from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Type
 from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -47,12 +48,14 @@ class DiscoveryResult:
     cached: bool = False
 
 
-class DataSourceBase:
+class DataSourceBase(ABC):
     """Base class for data sources."""
     name: str = "base"
-    
+
+    @abstractmethod
     def search(self, query: str, domain: str, max_results: int = 10) -> List[DiscoveredDataset]:
-        raise NotImplementedError
+        """Search for datasets. Must be implemented by subclasses."""
+        pass
 
 
 class MultiSourceDiscovery:
@@ -258,7 +261,7 @@ class MultiSourceDiscovery:
                 errors=data.get("errors", []),
                 search_time_ms=data.get("search_time_ms", 0),
             )
-        except:
+        except Exception:
             return None
     
     def _save_cache(self, cache_key: str, result: DiscoveryResult) -> None:

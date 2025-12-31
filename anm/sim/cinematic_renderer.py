@@ -157,7 +157,7 @@ class CinematicRenderer:
             if os.path.exists(output_path):
                 try:
                     os.remove(output_path)
-                except:
+                except Exception:
                     pass
             return None
     
@@ -581,7 +581,7 @@ class CinematicRenderer:
             lab = cv2.cvtColor(buffer, cv2.COLOR_RGB2LAB)
             lab[:, :, 0] = np.clip(lab[:, :, 0] * 1.1, 0, 255)  # Brightness
             buffer = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
-        except:
+        except Exception:
             pass  # Fallback if conversion fails
         
         # Slight color tint (cool blue for space)

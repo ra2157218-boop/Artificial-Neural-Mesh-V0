@@ -157,7 +157,7 @@ class PiperTTS:
         try:
             # This is a light check
             return True
-        except:
+        except Exception:
             return False
     
     def load_model(self) -> bool:

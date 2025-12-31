@@ -17,6 +17,7 @@ Capabilities:
 from __future__ import annotations
 from typing import List, Dict, Any, Optional
 import re
+from anm.utils.debug_logger import log_debug
 
 from anm.specialists.base import (
     BaseSpecialist,
@@ -78,10 +79,10 @@ class MemoryLLM(BaseSpecialist):
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M1", "location": "memory_llm.py:__init__", "message": "MemoryLLM initialized", "data": {"DIARY_AVAILABLE": DIARY_AVAILABLE, "has_diary": self.diary is not None, "diary_type": type(self.diary).__name__ if self.diary else "None", "diary_path": str(self.diary.diary_path) if self.diary else "None"}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M1", "location": "memory_llm.py:__init__", "message": "MemoryLLM initialized", "data": {"DIARY_AVAILABLE": DIARY_AVAILABLE, "has_diary": self.diary is not None, "diary_type": type(self.diary).__name__ if self.diary else "None", "diary_path": str(self.diary.diary_path) if self.diary else "None"}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
     
     @property
     def domain(self) -> SpecialistDomain:
@@ -331,18 +332,18 @@ class MemoryLLM(BaseSpecialist):
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M1", "location": "memory_llm.py:log_session", "message": "log_session called", "data": {"has_diary": self.diary is not None, "diary_type": type(self.diary).__name__ if self.diary else "None", "user_query": user_query[:100]}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M1", "location": "memory_llm.py:log_session", "message": "log_session called", "data": {"has_diary": self.diary is not None, "diary_type": type(self.diary).__name__ if self.diary else "None", "user_query": user_query[:100]}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         if not self.diary:
             # #region agent log
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M1", "location": "memory_llm.py:log_session", "message": "Diary is None, returning early", "data": {"DIARY_AVAILABLE": DIARY_AVAILABLE}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M1", "location": "memory_llm.py:log_session", "message": "Diary is None, returning early", "data": {"DIARY_AVAILABLE": DIARY_AVAILABLE}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             return
         
@@ -404,10 +405,10 @@ class MemoryLLM(BaseSpecialist):
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M3", "location": "memory_llm.py:log_session", "message": "Before calling diary.log_interaction", "data": {"has_diary": self.diary is not None, "final_answer_length": len(final_answer)}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M3", "location": "memory_llm.py:log_session", "message": "Before calling diary.log_interaction", "data": {"has_diary": self.diary is not None, "final_answer_length": len(final_answer)}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         try:
             self.diary.log_interaction(
                 user_query=user_query,
@@ -434,9 +435,9 @@ class MemoryLLM(BaseSpecialist):
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M3", "location": "memory_llm.py:log_session", "message": "diary.log_interaction raised exception", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200]}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M3", "location": "memory_llm.py:log_session", "message": "diary.log_interaction raised exception", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200]}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             import logging
             logger = logging.getLogger(__name__)

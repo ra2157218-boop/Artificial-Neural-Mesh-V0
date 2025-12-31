@@ -95,7 +95,7 @@ class GitIntegration:
                 staged_files=staged,
                 current_branch=current_branch,
             )
-        except:
+        except Exception:
             return GitStatus(
                 clean=True,
                 modified_files=[],
@@ -229,7 +229,7 @@ class GitIntegration:
                         author=parts[3],
                         timestamp=parts[4],
                     ))
-        except:
+        except Exception:
             pass
         
         return commits
@@ -272,7 +272,7 @@ class GitIntegration:
                 text=True,
             )
             return result.stdout
-        except:
+        except Exception:
             return ""
     
     def stash_changes(self, message: str = "") -> Dict[str, Any]:

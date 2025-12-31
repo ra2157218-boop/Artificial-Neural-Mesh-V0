@@ -154,7 +154,7 @@ class DataPipeline:
                             hash=self._hash_text(text),
                             metadata=data,
                         )
-                except:
+                except Exception:
                     pass
     
     def _ingest_json(self, path: Path) -> Generator[DataSample, None, None]:

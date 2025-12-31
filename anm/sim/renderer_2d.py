@@ -240,7 +240,7 @@ class Renderer2D:
             if os.path.exists(output_path):
                 try:
                     os.remove(output_path)
-                except:
+                except Exception:
                     pass
             warnings.warn(f"Renderer2D: Rendering failed: {e}", RuntimeWarning)
             return None

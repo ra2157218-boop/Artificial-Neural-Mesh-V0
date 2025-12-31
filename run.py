@@ -84,11 +84,32 @@ def ensure_venv():
 
 def load_input_from_file(path: str) -> str:
     """Load user query from a file."""
-    if not os.path.exists(path):
-        print(f"[ERROR] File not found: {path}")
+    # Security: Validate path to prevent path traversal attacks
+    try:
+        # Resolve to absolute path and check it's within safe directories
+        abs_path = os.path.abspath(os.path.realpath(path))
+        cwd = os.path.abspath(os.getcwd())
+
+        # Allow files in current working directory or subdirectories
+        if not abs_path.startswith(cwd):
+            print(f"[ERROR] Security: File must be in current directory or subdirectories")
+            print(f"[ERROR] Attempted path: {path}")
+            sys.exit(1)
+
+        if not os.path.exists(abs_path):
+            print(f"[ERROR] File not found: {path}")
+            sys.exit(1)
+
+        # Additional check: file must be a regular file (not directory, symlink, etc.)
+        if not os.path.isfile(abs_path):
+            print(f"[ERROR] Path must be a regular file: {path}")
+            sys.exit(1)
+
+        with open(abs_path, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except Exception as e:
+        print(f"[ERROR] Failed to load file: {e}")
         sys.exit(1)
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read().strip()
 
 
 def print_banner():
@@ -179,7 +200,10 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
         ui.print_info("Running pre-startup sanity check...")
         ui.console.print() if ui.console else print()
     
-    ui.print_mode_info(quick_mode, auto_mode, optimize_prompts, research_mode)
+    # Track research mode state (can be toggled)
+    current_research_mode = research_mode
+    
+    ui.print_mode_info(quick_mode, auto_mode, optimize_prompts, current_research_mode)
 
     config = ANMConfig(
         skip_sanity_check=skip_sanity,
@@ -187,7 +211,7 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
         quick_mode=quick_mode,
         auto_mode=auto_mode,
         optimize_prompts=optimize_prompts,
-        research_mode=research_mode,
+        research_mode=current_research_mode,
     )
     anm = ANM(config)
     
@@ -200,7 +224,13 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
     
     while True:
         try:
-            user_input = ui.prompt().strip()
+            # Update prompt based on research mode
+            if current_research_mode:
+                prompt_text = "ANM [Research Mode Active]> "
+            else:
+                prompt_text = "ANM> "
+            
+            user_input = ui.prompt(prompt_text).strip()
             
             if not user_input:
                 continue
@@ -208,6 +238,49 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
             if user_input.lower() == "exit":
                 ui.print_success("Goodbye!")
                 break
+            
+            # Research mode toggle command
+            if user_input.lower() == "research":
+                current_research_mode = not current_research_mode
+                # Reinitialize ANM with new research mode
+                config = ANMConfig(
+                    skip_sanity_check=skip_sanity,
+                    auto_fix=True,
+                    quick_mode=False,  # Research mode disables quick mode
+                    auto_mode=False,   # Research mode disables auto mode
+                    optimize_prompts=optimize_prompts,
+                    research_mode=current_research_mode,
+                )
+                anm = ANM(config)
+                
+                if current_research_mode:
+                    ui.print_success("🔬 Research Mode Activated!")
+                    ui.print_info("Maximum quality mode with structured PDF output enabled.")
+                else:
+                    ui.print_success("🔬 Research Mode Deactivated")
+                    ui.print_info("Returned to normal mode.")
+                ui.console.print() if ui.console else print()
+                continue
+            
+            # Exit research mode with "normal" or "exit research"
+            if user_input.lower() in ["normal", "exit research"]:
+                if current_research_mode:
+                    current_research_mode = False
+                    config = ANMConfig(
+                        skip_sanity_check=skip_sanity,
+                        auto_fix=True,
+                        quick_mode=quick_mode,
+                        auto_mode=auto_mode,
+                        optimize_prompts=optimize_prompts,
+                        research_mode=False,
+                    )
+                    anm = ANM(config)
+                    ui.print_success("🔬 Research Mode Deactivated")
+                    ui.print_info("Returned to normal mode.")
+                    ui.console.print() if ui.console else print()
+                else:
+                    ui.print_info("Research mode is not active.")
+                continue
             
             if user_input.lower().startswith("expand "):
                 domain = user_input[7:].strip()
@@ -230,22 +303,37 @@ def interactive_mode(skip_sanity: bool = False, quick_mode: bool = False, auto_m
                 continue
             
             if user_input.lower() == "status":
-                ui.print_status({
+                status_dict = {
                     "router": "Active",
                     "wot": "Active (Polymath Mode)",
                     "expansion": "V2 Maximum Level",
                     "memory": "Cloud Diary Active",
                     "safety": "LawBook v1.2 Aligned",
                     "sanity_passed": anm.sanity_passed,
-                })
+                }
+                if current_research_mode:
+                    status_dict["research_mode"] = "Active"
+                ui.print_status(status_dict)
                 continue
             
             if user_input.lower() == "help":
                 ui.print_help()
                 continue
             
-            # Process as regular query
+            # Process as regular query (with current research mode)
             ui.print_processing(user_input)
+            
+            # Update ANM config if research mode changed
+            if anm.anm_config.research_mode != current_research_mode:
+                config = ANMConfig(
+                    skip_sanity_check=skip_sanity,
+                    auto_fix=True,
+                    quick_mode=False if current_research_mode else quick_mode,
+                    auto_mode=False if current_research_mode else auto_mode,
+                    optimize_prompts=optimize_prompts,
+                    research_mode=current_research_mode,
+                )
+                anm = ANM(config)
             
             progress = ui.create_progress()
             if progress:

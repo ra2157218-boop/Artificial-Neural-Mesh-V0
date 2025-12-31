@@ -311,7 +311,7 @@ class ManagedThreadPool:
                 # ThreadPoolExecutor doesn't expose current workers directly
                 # We track it ourselves
                 pass
-            except:
+            except Exception:
                 pass
             
             return PoolStats(

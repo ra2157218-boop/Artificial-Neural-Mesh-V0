@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Dict, Any, Optional
 import platform
 import subprocess
+import logging
 
 
 class DeviceAwareness:
@@ -110,8 +111,9 @@ class DeviceAwareness:
                                 info["memory_gb"] = round(memory_kb / (1024 ** 2), 2)
                                 break
                     info["cpu_count"] = cpu_count
-            except Exception:
+            except Exception as e:
                 # Last resort: use platform defaults
+                logging.warning(f"Failed to get device info, using defaults: {e}")
                 info["cpu_count"] = 4  # Conservative default
                 info["memory_gb"] = 8.0  # Conservative default
         
@@ -163,8 +165,8 @@ class DeviceAwareness:
                         "name": "Apple Silicon GPU",
                     }
                     return True, gpu_info
-        except Exception:
-            pass
+        except Exception as e:
+            logging.debug(f"Apple Metal detection failed: {e}")
         
         # Check for AMD GPU (Linux)
         try:
@@ -180,9 +182,9 @@ class DeviceAwareness:
                     "name": "AMD GPU",
                 }
                 return True, gpu_info
-        except Exception:
-            pass
-        
+        except Exception as e:
+            logging.debug(f"AMD GPU detection failed: {e}")
+
         return False, None
     
     def _detect_npu(self) -> tuple[bool, Optional[Dict[str, Any]]]:
@@ -206,9 +208,9 @@ class DeviceAwareness:
                             "name": "Apple Neural Engine",
                         }
                         return True, npu_info
-        except Exception:
-            pass
-        
+        except Exception as e:
+            logging.debug(f"NPU detection failed: {e}")
+
         return False, None
     
     def _check_thermal_status(self) -> Dict[str, Any]:
@@ -236,8 +238,8 @@ class DeviceAwareness:
                         thermal_status["thermal_state"] = "high"
                     else:
                         thermal_status["thermal_state"] = "normal"
-        except Exception:
-            pass
+        except Exception as e:
+            logging.debug(f"macOS thermal check failed: {e}")
         
         # Linux thermal check
         try:
@@ -257,9 +259,9 @@ class DeviceAwareness:
                             thermal_status["thermal_state"] = "high"
                         else:
                             thermal_status["thermal_state"] = "normal"
-        except Exception:
-            pass
-        
+        except Exception as e:
+            logging.debug(f"Linux thermal check failed: {e}")
+
         return thermal_status
     
     def _get_recommendation(

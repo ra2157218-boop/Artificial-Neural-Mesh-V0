@@ -1,0 +1,1392 @@
+[2025-12-30 22:03:13] [INFO] ============================================================
+[2025-12-30 22:03:13] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 22:03:13] [INFO] ============================================================
+[2025-12-30 22:03:13] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 22:03:13] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 22:03:13] [INFO] Starting test run...
+[2025-12-30 22:03:13] [INFO] STARTING: test_anm_config_import
+[2025-12-30 22:03:13] [INFO] Testing ANMConfig import...
+[2025-12-30 22:03:13] [INFO] ANMConfig imported successfully
+[2025-12-30 22:03:13] [INFO] PASSED: test_anm_config_import (3.5ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_anm_config_default_instantiation
+[2025-12-30 22:03:13] [INFO] Testing ANMConfig default instantiation...
+[2025-12-30 22:03:13] [INFO] Default config created: parallel_models=2
+[2025-12-30 22:03:13] [INFO] PASSED: test_anm_config_default_instantiation (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_anm_config_parallel_models_clamping_low
+[2025-12-30 22:03:13] [INFO] Testing parallel_models clamping (low)...
+[2025-12-30 22:03:13] [INFO] parallel_models=0 clamped to 1
+[2025-12-30 22:03:13] [INFO] PASSED: test_anm_config_parallel_models_clamping_low (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_anm_config_parallel_models_clamping_high
+[2025-12-30 22:03:13] [INFO] Testing parallel_models clamping (high)...
+[2025-12-30 22:03:13] [INFO] parallel_models=100 clamped to 10
+[2025-12-30 22:03:13] [INFO] PASSED: test_anm_config_parallel_models_clamping_high (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_anm_config_quick_mode
+[2025-12-30 22:03:13] [INFO] Testing quick_mode configuration...
+[2025-12-30 22:03:13] [INFO] quick_mode=True set correctly
+[2025-12-30 22:03:13] [INFO] PASSED: test_anm_config_quick_mode (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_anm_config_research_mode
+[2025-12-30 22:03:13] [INFO] Testing research_mode configuration...
+[2025-12-30 22:03:13] [INFO] research_mode=True set correctly
+[2025-12-30 22:03:13] [INFO] PASSED: test_anm_config_research_mode (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_anm_config_auto_mode_default
+[2025-12-30 22:03:13] [INFO] Testing auto_mode default...
+[2025-12-30 22:03:13] [INFO] auto_mode default: True
+[2025-12-30 22:03:13] [INFO] PASSED: test_anm_config_auto_mode_default (0.1ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_anm_config_all_attributes_exist
+[2025-12-30 22:03:13] [INFO] Testing ANMConfig attributes...
+[2025-12-30 22:03:13] [INFO]   parallel_models: 2
+[2025-12-30 22:03:13] [INFO]   quick_mode: False
+[2025-12-30 22:03:13] [INFO]   auto_mode: True
+[2025-12-30 22:03:13] [INFO]   research_mode: False
+[2025-12-30 22:03:13] [INFO]   verbose: True
+[2025-12-30 22:03:13] [INFO]   skip_sanity_check: False
+[2025-12-30 22:03:13] [INFO] All expected attributes present
+[2025-12-30 22:03:13] [INFO] PASSED: test_anm_config_all_attributes_exist (0.4ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_anm_main
+[2025-12-30 22:03:13] [INFO] Testing import: anm
+[2025-12-30 22:03:13] [INFO] anm module imported, version: 0.1.0-opensource
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_anm_main (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_anm_class
+[2025-12-30 22:03:13] [INFO] Testing import: ANM class
+[2025-12-30 22:03:13] [INFO] ANM class imported successfully
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_anm_class (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_config_settings
+[2025-12-30 22:03:13] [INFO] Testing import: anm.config.settings
+[2025-12-30 22:03:13] [INFO] settings module imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_config_settings (70.6ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_core_types
+[2025-12-30 22:03:13] [INFO] Testing import: anm.core.types
+[2025-12-30 22:03:13] [INFO] types module imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_core_types (15.3ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_router
+[2025-12-30 22:03:13] [INFO] Testing import: Router
+[2025-12-30 22:03:13] [INFO] Router class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_router (53.7ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_planner_llm
+[2025-12-30 22:03:13] [INFO] Testing import: PlannerLLM
+[2025-12-30 22:03:13] [INFO] PlannerLLM class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_planner_llm (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_base_specialist
+[2025-12-30 22:03:13] [INFO] Testing import: BaseSpecialist
+[2025-12-30 22:03:13] [INFO] BaseSpecialist class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_base_specialist (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_general_llm
+[2025-12-30 22:03:13] [INFO] Testing import: GeneralLLM
+[2025-12-30 22:03:13] [INFO] GeneralLLM class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_general_llm (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_math_llm
+[2025-12-30 22:03:13] [INFO] Testing import: MathLLM
+[2025-12-30 22:03:13] [INFO] MathLLM class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_math_llm (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_physics_llm
+[2025-12-30 22:03:13] [INFO] Testing import: PhysicsLLM
+[2025-12-30 22:03:13] [INFO] PhysicsLLM class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_physics_llm (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_code_llm
+[2025-12-30 22:03:13] [INFO] Testing import: CodeLLM
+[2025-12-30 22:03:13] [INFO] CodeLLM class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_code_llm (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_memory_hub
+[2025-12-30 22:03:13] [INFO] Testing import: MemoryHub
+[2025-12-30 22:03:13] [INFO] MemoryHub class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_memory_hub (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_diary_memory
+[2025-12-30 22:03:13] [INFO] Testing import: DiaryMemory
+[2025-12-30 22:03:13] [INFO] DiaryMemory class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_diary_memory (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_inference
+[2025-12-30 22:03:13] [INFO] Testing import: inference
+[2025-12-30 22:03:13] [INFO] inference module imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_inference (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_hardware
+[2025-12-30 22:03:13] [INFO] Testing import: hardware
+[2025-12-30 22:03:13] [INFO] hardware module imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_hardware (0.1ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_metacognition
+[2025-12-30 22:03:13] [INFO] Testing import: metacognition
+[2025-12-30 22:03:13] [INFO] metacognition module imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_metacognition (6.8ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_refiner
+[2025-12-30 22:03:13] [INFO] Testing import: Refiner
+[2025-12-30 22:03:13] [INFO] Refiner class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_refiner (0.2ms)
+[2025-12-30 22:03:13] [INFO] STARTING: test_import_verifier
+[2025-12-30 22:03:13] [INFO] Testing import: Verifier
+[2025-12-30 22:03:13] [INFO] Verifier class imported
+[2025-12-30 22:03:13] [INFO] PASSED: test_import_verifier (0.2ms)
+[2025-12-30 22:03:13] [INFO] ============================================================
+[2025-12-30 22:03:13] [INFO] TEST RUN COMPLETE
+[2025-12-30 22:03:13] [INFO] Total: 26 | Passed: 26 | Failed: 0
+[2025-12-30 22:03:13] [INFO] Success rate: 100.0%
+[2025-12-30 22:03:13] [INFO] ============================================================
+[2025-12-30 22:03:25] [INFO] ============================================================
+[2025-12-30 22:03:25] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 22:03:25] [INFO] ============================================================
+[2025-12-30 22:03:25] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 22:03:25] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 22:03:25] [INFO] Starting test run...
+[2025-12-30 22:03:26] [INFO] STARTING: test_anm_instantiation_default
+[2025-12-30 22:03:26] [INFO] Testing ANM instantiation with defaults...
+[2025-12-30 22:03:26] [INFO] ANM instantiated in 16.2ms
+[2025-12-30 22:03:26] [INFO] PASSED: test_anm_instantiation_default (18.9ms)
+[2025-12-30 22:03:26] [INFO] STARTING: test_anm_instantiation_quick_mode
+[2025-12-30 22:03:26] [INFO] Testing ANM instantiation with quick_mode=True...
+[2025-12-30 22:03:26] [INFO] ANM quick mode instantiation successful
+[2025-12-30 22:03:26] [INFO] PASSED: test_anm_instantiation_quick_mode (0.3ms)
+[2025-12-30 22:03:26] [INFO] STARTING: test_anm_query_simple_greeting
+[2025-12-30 22:03:26] [INFO] ANMConfig created successfully
+[2025-12-30 22:03:26] [INFO] Creating ANM instance...
+[2025-12-30 22:03:26] [INFO] ANM instance created in 0.0ms
+[2025-12-30 22:03:26] [INFO] Testing ANM query: 'Hello'...
+[2025-12-30 22:03:50] [INFO] Query completed in 24109.6ms
+[2025-12-30 22:03:50] [INFO] Result status: approved
+[2025-12-30 22:03:50] [INFO] Result preview: Providre your general reasoning and end with WOT_REQUEST: HIGH
+Providre your general reasoning and e...
+[2025-12-30 22:03:50] [INFO] PASSED: test_anm_query_simple_greeting (24111.7ms)
+[2025-12-30 22:03:50] [INFO] STARTING: test_anm_query_math
+[2025-12-30 22:03:50] [INFO] Testing ANM query: 'What is 2 + 2?'...
+[2025-12-30 22:04:35] [INFO] Query completed in 45418.7ms
+[2025-12-30 22:04:35] [INFO] Result: The sum of 2 and 2 is 4. This is a fundamental arithmetic fact that holds true regardless of context or additional rules, as specified in the question
+
+[VERIFIER_READY]
+[2025-12-30 22:04:35] [INFO] PASSED: test_anm_query_math (45420.6ms)
+[2025-12-30 22:04:35] [INFO] STARTING: test_anm_query_empty_string
+[2025-12-30 22:04:35] [INFO] Testing ANM query with empty string...
+[2025-12-30 22:04:35] [INFO] Empty query result: {'status': 'error', 'result': 'Invalid query: query must be a non-empty string', 'error': 'Invalid input'}
+[2025-12-30 22:04:35] [INFO] PASSED: test_anm_query_empty_string (0.6ms)
+[2025-12-30 22:04:35] [INFO] STARTING: test_anm_query_whitespace_only
+[2025-12-30 22:04:35] [INFO] Testing ANM query with whitespace only...
+[2025-12-30 22:04:35] [INFO] Whitespace query result: {'status': 'error', 'result': 'Invalid query: query cannot be empty', 'error': 'Empty input'}
+[2025-12-30 22:04:35] [INFO] PASSED: test_anm_query_whitespace_only (0.5ms)
+[2025-12-30 22:04:35] [INFO] STARTING: test_anm_query_code
+[2025-12-30 22:04:35] [INFO] Testing ANM query: code request...
+[2025-12-30 22:05:11] [INFO] Code query result preview: [VERIFIER_READY]
+[2025-12-30 22:05:11] [INFO] PASSED: test_anm_query_code (35861.7ms)
+[2025-12-30 22:05:11] [INFO] STARTING: test_anm_query_physics
+[2025-12-30 22:05:11] [INFO] Testing ANM query: physics...
+[2025-12-30 22:06:52] [ERROR] FAILED: test_anm_query_physics - 7 (of 8) futures unfinished
+[2025-12-30 22:06:52] [INFO] Cleaning up ANM instance...
+[2025-12-30 22:06:52] [INFO] ============================================================
+[2025-12-30 22:06:52] [INFO] TEST RUN COMPLETE
+[2025-12-30 22:06:52] [INFO] Total: 8 | Passed: 7 | Failed: 1
+[2025-12-30 22:06:52] [INFO] Success rate: 87.5%
+[2025-12-30 22:06:52] [INFO] ============================================================
+[2025-12-30 22:07:20] [INFO] ============================================================
+[2025-12-30 22:07:20] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 22:07:20] [INFO] ============================================================
+[2025-12-30 22:07:20] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 22:07:20] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 22:07:20] [INFO] Starting test run...
+[2025-12-30 22:07:20] [INFO] STARTING: test_router_instantiation
+[2025-12-30 22:07:20] [INFO] Testing Router instantiation...
+[2025-12-30 22:07:20] [INFO] Router instantiated successfully
+[2025-12-30 22:07:20] [INFO] PASSED: test_router_instantiation (48.5ms)
+[2025-12-30 22:07:20] [INFO] STARTING: test_router_with_config
+[2025-12-30 22:07:20] [INFO] Testing Router with config...
+[2025-12-30 22:07:20] [INFO] Router with config instantiated
+[2025-12-30 22:07:20] [INFO] PASSED: test_router_with_config (0.6ms)
+[2025-12-30 22:07:20] [INFO] STARTING: test_router_handle_simple_query
+[2025-12-30 22:07:20] [INFO] Testing Router.handle() with simple query...
+[2025-12-30 22:07:47] [INFO] Router.handle() completed in 26778.9ms
+[2025-12-30 22:07:47] [INFO] Result keys: ['status', 'result', 'verification', 'log_path', 'router_plan', 'consistency', 'memory_brief', 'lfm_report', 'point_game_rfs', 'point_game_stats', 'processing_time_ms', 'wot_steps']
+[2025-12-30 22:07:47] [INFO] Result preview: The sum of 2 and 2 is 4
+
+[VERIFIER_READY]
+[2025-12-30 22:07:47] [INFO] Router plan: {'entry_specialist': 'math', 'active_domains': ['math'], 'max_steps': 12, 'reason': 'Auto-selected strategy for query: What is 2 + 2?', 'inject_memory': True, 'needs_research': False, 'needs_facts': False, 'strategy_tags': ['auto'], 'risk_score': 0.3, 'risk_level': 'medium', 'task_type': 'analysis', 'step_plan': '', 'run_id': '2025-12-30_22-07-20-374632', 'user_query': 'What is 2 + 2?', 'difficulty': 'easy'}
+[2025-12-30 22:07:47] [INFO] PASSED: test_router_handle_simple_query (26780.2ms)
+[2025-12-30 22:07:47] [INFO] STARTING: test_router_handle_quick_mode
+[2025-12-30 22:07:47] [INFO] Testing Router.handle() in quick mode...
+[2025-12-30 22:08:52] [INFO] Quick mode result keys: ['status', 'result', 'verification', 'log_path', 'router_plan', 'mode', 'processing_time_ms', 'wot_steps']
+[2025-12-30 22:08:52] [INFO] PASSED: test_router_handle_quick_mode (64880.7ms)
+[2025-12-30 22:08:52] [INFO] STARTING: test_router_handle_research_mode
+[2025-12-30 22:08:52] [INFO] Testing Router.handle() in research mode...
+[2025-12-30 22:10:22] [INFO] Research mode result keys: ['status', 'result', 'verification', 'metacognition', 'authority_assignments', 'output_path', 'output_format', 'log_path', 'mode', 'wot_steps', 'processing_time_ms']
+[2025-12-30 22:10:22] [INFO] PASSED: test_router_handle_research_mode (90691.3ms)
+[2025-12-30 22:10:22] [INFO] STARTING: test_router_handle_empty_query
+[2025-12-30 22:10:22] [INFO] Testing Router.handle() with empty query...
+[2025-12-30 22:10:22] [INFO] Empty query result: {'status': 'error', 'result': 'Invalid query: must be a non-empty string', 'error': 'Invalid input'}
+[2025-12-30 22:10:22] [INFO] PASSED: test_router_handle_empty_query (2.4ms)
+[2025-12-30 22:10:22] [INFO] STARTING: test_math_domain_detection
+[2025-12-30 22:10:22] [INFO] Testing math domain detection...
+[2025-12-30 22:12:01] [INFO] Math query - entry: general, domains: ['general']
+[2025-12-30 22:12:01] [INFO] PASSED: test_math_domain_detection (98482.6ms)
+[2025-12-30 22:12:01] [INFO] STARTING: test_code_domain_detection
+[2025-12-30 22:12:01] [INFO] Testing code domain detection...
+[2025-12-30 22:13:33] [INFO] Code query - entry: code
+[2025-12-30 22:13:33] [INFO] PASSED: test_code_domain_detection (92439.7ms)
+[2025-12-30 22:13:33] [INFO] STARTING: test_physics_domain_detection
+[2025-12-30 22:13:33] [INFO] Testing physics domain detection...
+[2025-12-30 22:14:35] [INFO] Physics query - entry: physics
+[2025-12-30 22:14:35] [INFO] PASSED: test_physics_domain_detection (62190.5ms)
+[2025-12-30 22:14:35] [INFO] STARTING: test_router_handles_none_gracefully
+[2025-12-30 22:14:35] [INFO] Testing Router with None input...
+[2025-12-30 22:14:35] [INFO] None input result: {'status': 'error', 'result': 'Invalid query: must be a non-empty string', 'error': 'Invalid input'}
+[2025-12-30 22:14:35] [INFO] PASSED: test_router_handles_none_gracefully (1.8ms)
+[2025-12-30 22:14:35] [INFO] STARTING: test_router_handles_special_characters
+[2025-12-30 22:14:35] [INFO] Testing Router with special characters...
+[2025-12-30 22:15:21] [INFO] Special chars result: <class 'dict'>
+[2025-12-30 22:15:21] [INFO] PASSED: test_router_handles_special_characters (45250.3ms)
+[2025-12-30 22:15:21] [INFO] ============================================================
+[2025-12-30 22:15:21] [INFO] TEST RUN COMPLETE
+[2025-12-30 22:15:21] [INFO] Total: 11 | Passed: 11 | Failed: 0
+[2025-12-30 22:15:21] [INFO] Success rate: 100.0%
+[2025-12-30 22:15:21] [INFO] ============================================================
+[2025-12-30 22:19:28] [INFO] ============================================================
+[2025-12-30 22:19:28] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 22:19:28] [INFO] ============================================================
+[2025-12-30 22:19:28] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 22:19:28] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 22:19:28] [INFO] Starting test run...
+[2025-12-30 22:19:28] [INFO] STARTING: test_memory_hub_import
+[2025-12-30 22:19:28] [INFO] Testing MemoryHub import...
+[2025-12-30 22:19:28] [INFO] MemoryHub imported successfully
+[2025-12-30 22:19:28] [INFO] PASSED: test_memory_hub_import (8.0ms)
+[2025-12-30 22:19:28] [INFO] STARTING: test_memory_hub_instantiation
+[2025-12-30 22:19:28] [INFO] Testing MemoryHub instantiation...
+[2025-12-30 22:19:28] [INFO] MemoryHub instantiated
+[2025-12-30 22:19:28] [INFO] PASSED: test_memory_hub_instantiation (1.2ms)
+[2025-12-30 22:19:28] [INFO] STARTING: test_memory_hub_get_context
+[2025-12-30 22:19:28] [INFO] Testing MemoryHub.get_context()...
+[2025-12-30 22:19:28] [INFO] get_context returned: <class 'anm.memory.memory_hub.MemoryContext'>
+[2025-12-30 22:19:28] [INFO] PASSED: test_memory_hub_get_context (0.7ms)
+[2025-12-30 22:19:28] [INFO] STARTING: test_memory_hub_build_brief
+[2025-12-30 22:19:28] [INFO] Testing MemoryHub.build_memory_brief()...
+[2025-12-30 22:19:28] [INFO] Memory brief length: 100 chars
+[2025-12-30 22:19:28] [INFO] PASSED: test_memory_hub_build_brief (0.8ms)
+[2025-12-30 22:19:28] [INFO] STARTING: test_diary_memory_import
+[2025-12-30 22:19:28] [INFO] Testing DiaryMemory import...
+[2025-12-30 22:19:28] [INFO] DiaryMemory imported
+[2025-12-30 22:19:28] [INFO] PASSED: test_diary_memory_import (0.1ms)
+[2025-12-30 22:19:28] [INFO] STARTING: test_diary_memory_instantiation
+[2025-12-30 22:19:28] [INFO] Testing DiaryMemory instantiation...
+[2025-12-30 22:19:28] [INFO] DiaryMemory instantiated
+[2025-12-30 22:19:28] [INFO] PASSED: test_diary_memory_instantiation (0.6ms)
+[2025-12-30 22:19:28] [INFO] STARTING: test_diary_memory_log_entry
+[2025-12-30 22:19:28] [INFO] Testing DiaryMemory.log_entry()...
+[2025-12-30 22:19:28] [WARNING] log_entry raised: 'DiaryMemory' object has no attribute 'log_entry'
+[2025-12-30 22:19:28] [INFO] PASSED: test_diary_memory_log_entry (0.6ms)
+[2025-12-30 22:19:28] [INFO] STARTING: test_diary_memory_query
+[2025-12-30 22:19:28] [INFO] Testing DiaryMemory.query()...
+[2025-12-30 22:19:28] [WARNING] query raised: 'DiaryMemory' object has no attribute 'query'
+[2025-12-30 22:19:28] [INFO] PASSED: test_diary_memory_query (0.5ms)
+[2025-12-30 22:19:28] [INFO] STARTING: test_episodic_memory_import
+[2025-12-30 22:19:28] [INFO] Testing EpisodicMemory import...
+[2025-12-30 22:19:28] [INFO] EpisodicMemory imported
+[2025-12-30 22:19:28] [INFO] PASSED: test_episodic_memory_import (0.1ms)
+[2025-12-30 22:19:28] [INFO] STARTING: test_diary_persists_across_instances
+[2025-12-30 22:19:28] [INFO] Testing diary persistence...
+[2025-12-30 22:19:28] [WARNING] Persistence check raised: 'DiaryMemory' object has no attribute 'query'
+[2025-12-30 22:19:28] [INFO] PASSED: test_diary_persists_across_instances (0.6ms)
+[2025-12-30 22:19:28] [INFO] ============================================================
+[2025-12-30 22:19:28] [INFO] TEST RUN COMPLETE
+[2025-12-30 22:19:28] [INFO] Total: 10 | Passed: 10 | Failed: 0
+[2025-12-30 22:19:28] [INFO] Success rate: 100.0%
+[2025-12-30 22:19:28] [INFO] ============================================================
+[2025-12-30 22:20:06] [INFO] ============================================================
+[2025-12-30 22:20:06] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 22:20:06] [INFO] ============================================================
+[2025-12-30 22:20:06] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 22:20:06] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 22:20:06] [INFO] Starting test run...
+[2025-12-30 22:20:06] [INFO] STARTING: test_empty_string_query
+[2025-12-30 22:20:06] [INFO] ANMConfig created successfully
+[2025-12-30 22:20:06] [INFO] Creating ANM instance...
+[2025-12-30 22:20:06] [INFO] ANM instance created in 19.6ms
+[2025-12-30 22:20:06] [INFO] Testing empty string query...
+[2025-12-30 22:20:06] [INFO] Empty string result: {'status': 'error', 'result': 'Invalid query: query must be a non-empty string', 'error': 'Invalid input'}
+[2025-12-30 22:20:06] [INFO] PASSED: test_empty_string_query (0.2ms)
+[2025-12-30 22:20:06] [INFO] STARTING: test_whitespace_only_query
+[2025-12-30 22:20:06] [INFO] Testing whitespace-only query...
+[2025-12-30 22:20:06] [INFO] Whitespace result: {'status': 'error', 'result': 'Invalid query: query cannot be empty', 'error': 'Empty input'}
+[2025-12-30 22:20:06] [INFO] PASSED: test_whitespace_only_query (0.2ms)
+[2025-12-30 22:20:06] [INFO] STARTING: test_none_handling
+[2025-12-30 22:20:06] [INFO] Testing None input...
+[2025-12-30 22:20:06] [INFO] None input result: {'status': 'error', 'result': 'Invalid query: query must be a non-empty string', 'error': 'Invalid input'}
+[2025-12-30 22:20:06] [INFO] PASSED: test_none_handling (0.2ms)
+[2025-12-30 22:20:06] [INFO] STARTING: test_long_query_1000_chars
+[2025-12-30 22:20:06] [INFO] Testing 1000 char query...
+[2025-12-30 22:21:42] [ERROR] FAILED: test_long_query_1000_chars - 7 (of 8) futures unfinished
+[2025-12-30 22:21:42] [INFO] Cleaning up ANM instance...
+[2025-12-30 22:21:42] [INFO] ============================================================
+[2025-12-30 22:21:42] [INFO] TEST RUN COMPLETE
+[2025-12-30 22:21:42] [INFO] Total: 4 | Passed: 3 | Failed: 1
+[2025-12-30 22:21:42] [INFO] Success rate: 75.0%
+[2025-12-30 22:21:42] [INFO] ============================================================
+[2025-12-30 22:25:23] [INFO] ============================================================
+[2025-12-30 22:25:23] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 22:25:23] [INFO] ============================================================
+[2025-12-30 22:25:23] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 22:25:23] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 22:25:23] [INFO] Starting test run...
+[2025-12-30 22:25:23] [INFO] STARTING: test_base_specialist_import
+[2025-12-30 22:25:23] [INFO] Testing BaseSpecialist import...
+[2025-12-30 22:25:23] [INFO] BaseSpecialist imported successfully
+[2025-12-30 22:25:23] [INFO] PASSED: test_base_specialist_import (69.0ms)
+[2025-12-30 22:25:23] [INFO] STARTING: test_base_specialist_is_abstract
+[2025-12-30 22:25:23] [INFO] Testing BaseSpecialist is abstract...
+[2025-12-30 22:25:23] [INFO] BaseSpecialist correctly raises TypeError (abstract)
+[2025-12-30 22:25:23] [INFO] PASSED: test_base_specialist_is_abstract (0.2ms)
+[2025-12-30 22:25:23] [INFO] STARTING: test_general_llm_instantiation
+[2025-12-30 22:25:23] [INFO] Testing GeneralLLM instantiation...
+[2025-12-30 22:25:23] [INFO] GeneralLLM instantiated
+[2025-12-30 22:25:23] [INFO] PASSED: test_general_llm_instantiation (0.2ms)
+[2025-12-30 22:25:23] [INFO] STARTING: test_general_llm_run
+[2025-12-30 22:25:23] [INFO] Testing GeneralLLM.run()...
+[2025-12-30 22:25:26] [INFO] GeneralLLM.run() completed in 3253.3ms
+[2025-12-30 22:25:26] [INFO] Result preview: If the query is simple, provide a brief answer. If not, explain thoroughly.
+
+The user is asking about AI, which I need to define and break it down into sub-tasks.
+</think>
+
+ confid: MEDIUM 
+efficiency...
+[2025-12-30 22:25:26] [INFO] WOT_REQUEST marker found in output
+[2025-12-30 22:25:26] [INFO] PASSED: test_general_llm_run (3255.6ms)
+[2025-12-30 22:25:26] [INFO] STARTING: test_math_llm_instantiation
+[2025-12-30 22:25:26] [INFO] Testing MathLLM instantiation...
+[2025-12-30 22:25:26] [INFO] MathLLM instantiated
+[2025-12-30 22:25:26] [INFO] PASSED: test_math_llm_instantiation (0.9ms)
+[2025-12-30 22:25:26] [INFO] STARTING: test_math_llm_run
+[2025-12-30 22:25:26] [INFO] Testing MathLLM.run()...
+[2025-12-30 22:25:49] [INFO] MathLLM.run() completed in 22478.3ms
+[2025-12-30 22:25:49] [INFO] Result preview: confidence and efficiency.
+
+Okay, so the user has asked me to solve the equation x squared minus four equals zero. Hmm, okay, let's think about this step by step.
+
+First off, I remember that solving a...
+[2025-12-30 22:25:49] [INFO] PASSED: test_math_llm_run (22480.3ms)
+[2025-12-30 22:25:49] [INFO] STARTING: test_physics_llm_instantiation
+[2025-12-30 22:25:49] [INFO] Testing PhysicsLLM instantiation...
+[2025-12-30 22:25:49] [INFO] PhysicsLLM instantiated
+[2025-12-30 22:25:49] [INFO] PASSED: test_physics_llm_instantiation (0.6ms)
+[2025-12-30 22:25:49] [INFO] STARTING: test_physics_llm_run
+[2025-12-30 22:25:49] [INFO] Testing PhysicsLLM.run()...
+[2025-12-30 22:25:57] [INFO] PhysicsLLM.run() completed in 7837.5ms
+[2025-12-30 22:25:57] [INFO] Result preview: Your reasoning must be physics-consistent, with all units correct and scientific. If you cannot answer the query or your output is not relevant, state this clearly.
+
+Now let me think... Okay, Newton's...
+[2025-12-30 22:25:57] [INFO] PASSED: test_physics_llm_run (7839.4ms)
+[2025-12-30 22:25:57] [INFO] STARTING: test_code_llm_instantiation
+[2025-12-30 22:25:57] [INFO] Testing CodeLLM instantiation...
+[2025-12-30 22:25:57] [INFO] CodeLLM instantiated
+[2025-12-30 22:25:57] [INFO] PASSED: test_code_llm_instantiation (0.7ms)
+[2025-12-30 22:25:57] [INFO] STARTING: test_code_llm_run
+[2025-12-30 22:25:57] [INFO] Testing CodeLLM.run()...
+[2025-12-30 22:26:48] [INFO] CodeLLM.run() completed in 51153.4ms
+[2025-12-30 22:26:48] [INFO] Result preview: So, I need to write a function that computes the factorial of an integer.
+
+So, my task is to:
+
+- Define a Python function called factorial
+- Implement it with proper mathematical operations.
+- Return the computed factorial value.
+
+But wait, I should also think about handling edge cases and possible ...
+[2025-12-30 22:26:48] [INFO] PASSED: test_code_llm_run (51154.4ms)
+[2025-12-30 22:26:48] [INFO] STARTING: test_chemistry_llm_instantiation
+[2025-12-30 22:26:48] [INFO] Testing ChemistryLLM instantiation...
+[2025-12-30 22:26:48] [INFO] ChemistryLLM instantiated
+[2025-12-30 22:26:48] [INFO] PASSED: test_chemistry_llm_instantiation (0.2ms)
+[2025-12-30 22:26:48] [INFO] STARTING: test_biology_llm_instantiation
+[2025-12-30 22:26:48] [INFO] Testing BiologyLLM instantiation...
+[2025-12-30 22:26:48] [INFO] BiologyLLM instantiated
+[2025-12-30 22:26:48] [INFO] PASSED: test_biology_llm_instantiation (0.2ms)
+[2025-12-30 22:26:48] [INFO] STARTING: test_memory_llm_instantiation
+[2025-12-30 22:26:48] [INFO] Testing MemoryLLM instantiation...
+[2025-12-30 22:26:48] [INFO] MemoryLLM instantiated
+[2025-12-30 22:26:48] [INFO] PASSED: test_memory_llm_instantiation (0.9ms)
+[2025-12-30 22:26:48] [INFO] STARTING: test_research_llm_instantiation
+[2025-12-30 22:26:48] [INFO] Testing ResearchLLM instantiation...
+[2025-12-30 22:26:48] [INFO] ResearchLLM instantiated
+[2025-12-30 22:26:48] [INFO] PASSED: test_research_llm_instantiation (0.2ms)
+[2025-12-30 22:26:48] [INFO] STARTING: test_wot_request_in_general_output
+[2025-12-30 22:26:48] [INFO] Testing WOT_REQUEST in GeneralLLM output...
+[2025-12-30 22:26:56] [INFO] WOT_REQUEST present: True
+[2025-12-30 22:26:56] [INFO] PASSED: test_wot_request_in_general_output (8032.4ms)
+[2025-12-30 22:26:56] [INFO] ============================================================
+[2025-12-30 22:26:56] [INFO] TEST RUN COMPLETE
+[2025-12-30 22:26:56] [INFO] Total: 15 | Passed: 15 | Failed: 0
+[2025-12-30 22:26:56] [INFO] Success rate: 100.0%
+[2025-12-30 22:26:56] [INFO] ============================================================
+[2025-12-30 22:57:29] [INFO] ============================================================
+[2025-12-30 22:57:29] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 22:57:29] [INFO] ============================================================
+[2025-12-30 22:57:29] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 22:57:29] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 22:57:29] [INFO] Starting test run...
+[2025-12-30 22:57:29] [INFO] STARTING: test_anm_config_import
+[2025-12-30 22:57:29] [INFO] Testing ANMConfig import...
+[2025-12-30 22:57:29] [INFO] ANMConfig imported successfully
+[2025-12-30 22:57:29] [INFO] PASSED: test_anm_config_import (5.7ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_anm_config_default_instantiation
+[2025-12-30 22:57:29] [INFO] Testing ANMConfig default instantiation...
+[2025-12-30 22:57:29] [INFO] Default config created: parallel_models=2
+[2025-12-30 22:57:29] [INFO] PASSED: test_anm_config_default_instantiation (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_anm_config_parallel_models_clamping_low
+[2025-12-30 22:57:29] [INFO] Testing parallel_models clamping (low)...
+[2025-12-30 22:57:29] [INFO] parallel_models=0 clamped to 1
+[2025-12-30 22:57:29] [INFO] PASSED: test_anm_config_parallel_models_clamping_low (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_anm_config_parallel_models_clamping_high
+[2025-12-30 22:57:29] [INFO] Testing parallel_models clamping (high)...
+[2025-12-30 22:57:29] [INFO] parallel_models=100 clamped to 10
+[2025-12-30 22:57:29] [INFO] PASSED: test_anm_config_parallel_models_clamping_high (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_anm_config_quick_mode
+[2025-12-30 22:57:29] [INFO] Testing quick_mode configuration...
+[2025-12-30 22:57:29] [INFO] quick_mode=True set correctly
+[2025-12-30 22:57:29] [INFO] PASSED: test_anm_config_quick_mode (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_anm_config_research_mode
+[2025-12-30 22:57:29] [INFO] Testing research_mode configuration...
+[2025-12-30 22:57:29] [INFO] research_mode=True set correctly
+[2025-12-30 22:57:29] [INFO] PASSED: test_anm_config_research_mode (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_anm_config_auto_mode_default
+[2025-12-30 22:57:29] [INFO] Testing auto_mode default...
+[2025-12-30 22:57:29] [INFO] auto_mode default: True
+[2025-12-30 22:57:29] [INFO] PASSED: test_anm_config_auto_mode_default (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_anm_config_all_attributes_exist
+[2025-12-30 22:57:29] [INFO] Testing ANMConfig attributes...
+[2025-12-30 22:57:29] [INFO]   parallel_models: 2
+[2025-12-30 22:57:29] [INFO]   quick_mode: False
+[2025-12-30 22:57:29] [INFO]   auto_mode: True
+[2025-12-30 22:57:29] [INFO]   research_mode: False
+[2025-12-30 22:57:29] [INFO]   verbose: True
+[2025-12-30 22:57:29] [INFO]   skip_sanity_check: False
+[2025-12-30 22:57:29] [INFO] All expected attributes present
+[2025-12-30 22:57:29] [INFO] PASSED: test_anm_config_all_attributes_exist (0.5ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_anm_main
+[2025-12-30 22:57:29] [INFO] Testing import: anm
+[2025-12-30 22:57:29] [INFO] anm module imported, version: 0.1.0-opensource
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_anm_main (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_anm_class
+[2025-12-30 22:57:29] [INFO] Testing import: ANM class
+[2025-12-30 22:57:29] [INFO] ANM class imported successfully
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_anm_class (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_config_settings
+[2025-12-30 22:57:29] [INFO] Testing import: anm.config.settings
+[2025-12-30 22:57:29] [INFO] settings module imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_config_settings (70.5ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_core_types
+[2025-12-30 22:57:29] [INFO] Testing import: anm.core.types
+[2025-12-30 22:57:29] [INFO] types module imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_core_types (12.6ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_router
+[2025-12-30 22:57:29] [INFO] Testing import: Router
+[2025-12-30 22:57:29] [INFO] Router class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_router (88.4ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_planner_llm
+[2025-12-30 22:57:29] [INFO] Testing import: PlannerLLM
+[2025-12-30 22:57:29] [INFO] PlannerLLM class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_planner_llm (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_base_specialist
+[2025-12-30 22:57:29] [INFO] Testing import: BaseSpecialist
+[2025-12-30 22:57:29] [INFO] BaseSpecialist class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_base_specialist (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_general_llm
+[2025-12-30 22:57:29] [INFO] Testing import: GeneralLLM
+[2025-12-30 22:57:29] [INFO] GeneralLLM class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_general_llm (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_math_llm
+[2025-12-30 22:57:29] [INFO] Testing import: MathLLM
+[2025-12-30 22:57:29] [INFO] MathLLM class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_math_llm (0.1ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_physics_llm
+[2025-12-30 22:57:29] [INFO] Testing import: PhysicsLLM
+[2025-12-30 22:57:29] [INFO] PhysicsLLM class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_physics_llm (0.1ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_code_llm
+[2025-12-30 22:57:29] [INFO] Testing import: CodeLLM
+[2025-12-30 22:57:29] [INFO] CodeLLM class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_code_llm (0.1ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_memory_hub
+[2025-12-30 22:57:29] [INFO] Testing import: MemoryHub
+[2025-12-30 22:57:29] [INFO] MemoryHub class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_memory_hub (0.1ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_diary_memory
+[2025-12-30 22:57:29] [INFO] Testing import: DiaryMemory
+[2025-12-30 22:57:29] [INFO] DiaryMemory class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_diary_memory (0.1ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_inference
+[2025-12-30 22:57:29] [INFO] Testing import: inference
+[2025-12-30 22:57:29] [INFO] inference module imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_inference (0.1ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_hardware
+[2025-12-30 22:57:29] [INFO] Testing import: hardware
+[2025-12-30 22:57:29] [INFO] hardware module imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_hardware (0.1ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_metacognition
+[2025-12-30 22:57:29] [INFO] Testing import: metacognition
+[2025-12-30 22:57:29] [INFO] metacognition module imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_metacognition (7.1ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_refiner
+[2025-12-30 22:57:29] [INFO] Testing import: Refiner
+[2025-12-30 22:57:29] [INFO] Refiner class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_refiner (0.2ms)
+[2025-12-30 22:57:29] [INFO] STARTING: test_import_verifier
+[2025-12-30 22:57:29] [INFO] Testing import: Verifier
+[2025-12-30 22:57:29] [INFO] Verifier class imported
+[2025-12-30 22:57:29] [INFO] PASSED: test_import_verifier (0.1ms)
+[2025-12-30 22:57:29] [INFO] ============================================================
+[2025-12-30 22:57:29] [INFO] TEST RUN COMPLETE
+[2025-12-30 22:57:29] [INFO] Total: 26 | Passed: 26 | Failed: 0
+[2025-12-30 22:57:29] [INFO] Success rate: 100.0%
+[2025-12-30 22:57:29] [INFO] ============================================================
+[2025-12-30 23:12:02] [INFO] ============================================================
+[2025-12-30 23:12:02] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 23:12:02] [INFO] ============================================================
+[2025-12-30 23:12:02] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 23:12:02] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 23:12:02] [INFO] Starting test run...
+[2025-12-30 23:12:02] [INFO] STARTING: test_anm_query_physics
+[2025-12-30 23:12:02] [INFO] ANMConfig created successfully
+[2025-12-30 23:12:02] [INFO] Creating ANM instance...
+[2025-12-30 23:12:02] [INFO] ANM instance created in 21.3ms
+[2025-12-30 23:12:02] [INFO] Testing ANM query: physics...
+[2025-12-30 23:12:40] [INFO] Physics query result preview: ANSWER: Newton's first law
+
+[VERIFIER_READY]
+[2025-12-30 23:12:40] [INFO] PASSED: test_anm_query_physics (37831.4ms)
+[2025-12-30 23:12:40] [INFO] Cleaning up ANM instance...
+[2025-12-30 23:12:40] [INFO] ============================================================
+[2025-12-30 23:12:40] [INFO] TEST RUN COMPLETE
+[2025-12-30 23:12:40] [INFO] Total: 1 | Passed: 1 | Failed: 0
+[2025-12-30 23:12:40] [INFO] Success rate: 100.0%
+[2025-12-30 23:12:40] [INFO] ============================================================
+[2025-12-30 23:15:25] [INFO] ============================================================
+[2025-12-30 23:15:25] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 23:15:25] [INFO] ============================================================
+[2025-12-30 23:15:25] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 23:15:25] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 23:15:25] [INFO] Starting test run...
+[2025-12-30 23:15:25] [INFO] STARTING: test_math_simple_arithmetic
+[2025-12-30 23:15:25] [INFO] ANMConfig created successfully
+[2025-12-30 23:15:25] [INFO] Creating ANM instance...
+[2025-12-30 23:15:25] [INFO] ANM instance created in 21.1ms
+[2025-12-30 23:15:25] [INFO] Testing math: simple arithmetic...
+[2025-12-30 23:15:57] [INFO] Result: ANSWER (write directly, no CoT, no thinking tags): 42
+
+[VERIFIER_READY]
+[2025-12-30 23:15:57] [INFO] PASSED: test_math_simple_arithmetic (31182.7ms)
+[2025-12-30 23:15:57] [INFO] STARTING: test_math_algebra
+[2025-12-30 23:15:57] [INFO] Testing math: algebra...
+[2025-12-30 23:17:22] [INFO] Result: ANSWER: Solve for x: 2x + 5 = 15
+
+[VERIFIER_READY]
+[2025-12-30 23:17:22] [INFO] PASSED: test_math_algebra (85861.2ms)
+[2025-12-30 23:17:22] [INFO] STARTING: test_math_calculus
+[2025-12-30 23:17:22] [INFO] Testing math: calculus...
+[2025-12-30 23:18:01] [INFO] Result: The derivative of x³ with respect to x is 3x²
+
+[VERIFIER_READY]
+[2025-12-30 23:18:01] [INFO] PASSED: test_math_calculus (38925.8ms)
+[2025-12-30 23:18:01] [INFO] STARTING: test_math_percentage
+[2025-12-30 23:18:01] [INFO] Testing math: percentage...
+[2025-12-30 23:18:33] [INFO] Result: [VERIFIER_READY]
+[2025-12-30 23:18:33] [INFO] PASSED: test_math_percentage (31816.6ms)
+[2025-12-30 23:18:33] [INFO] STARTING: test_physics_newton_law
+[2025-12-30 23:18:33] [INFO] Testing physics: Newton's law...
+[2025-12-30 23:19:15] [INFO] Result: ANSWER: Newton's second law states that the net force acting on an object is equal to its mass multiplied by its acceleration
+
+[VERIFIER_READY]
+[2025-12-30 23:19:15] [INFO] PASSED: test_physics_newton_law (42299.3ms)
+[2025-12-30 23:19:15] [INFO] STARTING: test_physics_force_calculation
+[2025-12-30 23:19:15] [INFO] Testing physics: force calculation...
+[2025-12-30 23:20:08] [INFO] Result: The force on a 10 kg object accelerating at 5 m/s² is calculated using Newton's second law, F = ma. Substituting the values, we get F = 10 * 5 = 50 N.
+ANSWER: 50 N
+
+[VERIFIER_READY]
+[2025-12-30 23:20:08] [INFO] PASSED: test_physics_force_calculation (52737.8ms)
+[2025-12-30 23:20:08] [INFO] STARTING: test_physics_energy
+[2025-12-30 23:20:08] [INFO] Testing physics: energy...
+[2025-12-30 23:20:38] [INFO] Result: Kinetic energy is the energy an object possesses due to its motion. It is directly related to an object's mass and velocity, with the formula \( KE = \frac{1}{2}mv^2 \)
+
+[VERIFIER_READY]
+[2025-12-30 23:20:38] [INFO] PASSED: test_physics_energy (30130.3ms)
+[2025-12-30 23:20:38] [INFO] STARTING: test_code_simple_function
+[2025-12-30 23:20:38] [INFO] Testing code: simple function...
+[2025-12-30 23:21:35] [INFO] Result: ANM's multi-domain reasoning system likely requires the prompt to be structured across multiple domains. Since no specialist output is provided, I'll assume the refined prompt should integrate various knowledge areas for a comprehensive analysis
+
+[VERIFIER_READY]
+[2025-12-30 23:21:35] [INFO] PASSED: test_code_simple_function (56312.7ms)
+[2025-12-30 23:21:35] [INFO] STARTING: test_code_algorithm
+[2025-12-30 23:21:35] [INFO] Testing code: algorithm...
+[2025-12-30 23:22:29] [INFO] Result: [VERIFIER_READY]
+[2025-12-30 23:22:29] [INFO] PASSED: test_code_algorithm (54192.0ms)
+[2025-12-30 23:22:29] [INFO] STARTING: test_code_explanation
+[2025-12-30 23:22:29] [INFO] Testing code: explanation...
+[2025-12-30 23:23:14] [INFO] Result: ANSWER: A for loop is a programming construct that allows you to repeatedly execute a block of code, usually in response to an iteration variable
+
+[VERIFIER_READY]
+[2025-12-30 23:23:14] [INFO] PASSED: test_code_explanation (45121.6ms)
+[2025-12-30 23:23:14] [INFO] STARTING: test_chemistry_molecule
+[2025-12-30 23:23:14] [INFO] Testing chemistry: molecule...
+[2025-12-30 23:23:50] [INFO] Result: [VERIFIER_READY]
+[2025-12-30 23:23:50] [INFO] PASSED: test_chemistry_molecule (36100.9ms)
+[2025-12-30 23:23:50] [INFO] STARTING: test_chemistry_bonds
+[2025-12-30 23:23:50] [INFO] Testing chemistry: bonds...
+[2025-12-30 23:24:22] [INFO] Result: WoT execution failed: bad character range ⟶-> at position 20
+[2025-12-30 23:24:22] [INFO] PASSED: test_chemistry_bonds (32287.7ms)
+[2025-12-30 23:24:22] [INFO] STARTING: test_biology_cell
+[2025-12-30 23:24:22] [INFO] Testing biology: cell...
+[2025-12-30 23:25:10] [INFO] Result: What is a cell? A cell is the basic structural and functional unit of life, composed of various organelles such as the nucleus, mitochondria, and ribosomes. It provides essential functions for metabol
+[2025-12-30 23:25:10] [INFO] PASSED: test_biology_cell (48014.1ms)
+[2025-12-30 23:25:10] [INFO] STARTING: test_biology_dna
+[2025-12-30 23:25:10] [INFO] Testing biology: DNA...
+[2025-12-30 23:26:02] [INFO] Result: DNA is the acronym for deoxyadenosine triphosphate, a sugar phosphate molecule composed of deoxyadenosine (a base) and three phosphates
+
+[VERIFIER_READY]
+[2025-12-30 23:26:02] [INFO] PASSED: test_biology_dna (51690.5ms)
+[2025-12-30 23:26:02] [INFO] STARTING: test_general_greeting
+[2025-12-30 23:26:02] [INFO] Testing general: greeting...
+[2025-12-30 23:26:40] [INFO] Result: [VERIFIERReady]
+
+[VERIFIER_READY]
+[2025-12-30 23:26:40] [INFO] PASSED: test_general_greeting (38258.8ms)
+[2025-12-30 23:26:40] [INFO] STARTING: test_general_factual
+[2025-12-30 23:26:40] [INFO] Testing general: factual...
+[2025-12-30 23:27:17] [INFO] Result: The capital of France is Paris
+
+[VERIFIER_READY]
+[2025-12-30 23:27:17] [INFO] PASSED: test_general_factual (36987.7ms)
+[2025-12-30 23:27:17] [INFO] STARTING: test_general_ai
+[2025-12-30 23:27:17] [INFO] Testing general: AI...
+[2025-12-30 23:27:53] [INFO] Result: [VERIFIER_ready]
+
+[VERIFIER_READY]
+[2025-12-30 23:27:53] [INFO] PASSED: test_general_ai (35259.7ms)
+[2025-12-30 23:27:53] [INFO] STARTING: test_anm_instantiation_default
+[2025-12-30 23:27:53] [INFO] Testing ANM instantiation with defaults...
+[2025-12-30 23:27:53] [INFO] ANM instantiated in 0.0ms
+[2025-12-30 23:27:53] [INFO] PASSED: test_anm_instantiation_default (0.3ms)
+[2025-12-30 23:27:53] [INFO] STARTING: test_anm_instantiation_quick_mode
+[2025-12-30 23:27:53] [INFO] Testing ANM instantiation with quick_mode=True...
+[2025-12-30 23:27:53] [INFO] ANM quick mode instantiation successful
+[2025-12-30 23:27:53] [INFO] PASSED: test_anm_instantiation_quick_mode (0.2ms)
+[2025-12-30 23:27:53] [INFO] STARTING: test_anm_query_simple_greeting
+[2025-12-30 23:27:53] [INFO] Testing ANM query: 'Hello'...
+[2025-12-30 23:28:19] [INFO] Query completed in 26381.9ms
+[2025-12-30 23:28:19] [INFO] Result status: approved
+[2025-12-30 23:28:19] [INFO] Result preview: Providre your general reasoning and end with WOT_REQUEST: HIGH
+Providre your general reasoning and e...
+[2025-12-30 23:28:19] [INFO] PASSED: test_anm_query_simple_greeting (26382.8ms)
+[2025-12-30 23:28:19] [INFO] STARTING: test_anm_query_math
+[2025-12-30 23:28:19] [INFO] Testing ANM query: 'What is 2 + 2?'...
+[2025-12-30 23:28:52] [INFO] Query completed in 32976.1ms
+[2025-12-30 23:28:52] [INFO] Result: The sum of 2 and 2 is 4
+
+[VERIFIER_READY]
+[2025-12-30 23:28:52] [INFO] PASSED: test_anm_query_math (32976.8ms)
+[2025-12-30 23:28:52] [INFO] STARTING: test_anm_query_empty_string
+[2025-12-30 23:28:52] [INFO] Testing ANM query with empty string...
+[2025-12-30 23:28:52] [INFO] Empty query result: {'status': 'error', 'result': 'Invalid query: query must be a non-empty string', 'error': 'Invalid input'}
+[2025-12-30 23:28:52] [INFO] PASSED: test_anm_query_empty_string (0.2ms)
+[2025-12-30 23:28:52] [INFO] STARTING: test_anm_query_whitespace_only
+[2025-12-30 23:28:52] [INFO] Testing ANM query with whitespace only...
+[2025-12-30 23:28:52] [INFO] Whitespace query result: {'status': 'error', 'result': 'Invalid query: query cannot be empty', 'error': 'Empty input'}
+[2025-12-30 23:28:52] [INFO] PASSED: test_anm_query_whitespace_only (0.3ms)
+[2025-12-30 23:28:52] [INFO] STARTING: test_anm_query_code
+[2025-12-30 23:28:52] [INFO] Testing ANM query: code request...
+[2025-12-30 23:29:34] [INFO] Code query result preview: The refined version of the prompt better suits ANM's multi-domain reasoning system. I have two memory entries from 2025-12-30.
+First entry: [entry1]
+Second entry: [entry2]
+I need to summarize them in a way that aligns with ANM's multi-domain reasoning system, which emphasizes generalizable patterns 
+[2025-12-30 23:29:34] [INFO] PASSED: test_anm_query_code (41918.9ms)
+[2025-12-30 23:29:34] [INFO] STARTING: test_anm_query_physics
+[2025-12-30 23:29:34] [INFO] Testing ANM query: physics...
+[2025-12-30 23:30:09] [INFO] Physics query result preview: Newton's first law states that an object at rest remains at rest and an object in motion continues to move at constant velocity unless acted upon by an external force
+
+[VERIFIER_READY]
+[2025-12-30 23:30:09] [INFO] PASSED: test_anm_query_physics (34757.1ms)
+[2025-12-30 23:30:09] [INFO] STARTING: test_router_plan_present_on_success
+[2025-12-30 23:30:09] [INFO] Testing router_plan presence on success...
+[2025-12-30 23:30:48] [INFO] router_plan keys: ['entry_specialist', 'active_domains', 'max_steps', 'reason', 'inject_memory', 'needs_research', 'needs_facts', 'strategy_tags', 'risk_score', 'risk_level', 'task_type', 'step_plan', 'run_id', 'user_query', 'difficulty', 'prompt_optimized']
+[2025-12-30 23:30:48] [INFO] entry_specialist: physics
+[2025-12-30 23:30:48] [INFO] active_domains: ['general', 'physics', 'facts']
+[2025-12-30 23:30:48] [INFO] PASSED: test_router_plan_present_on_success (38908.4ms)
+[2025-12-30 23:30:48] [INFO] STARTING: test_router_plan_present_on_empty_query
+[2025-12-30 23:30:48] [INFO] Testing router_plan presence on empty query...
+[2025-12-30 23:30:48] [ERROR] BUG FOUND: router_plan missing on empty query!
+[2025-12-30 23:30:48] [ERROR] FAILED: test_router_plan_present_on_empty_query - router_plan should always be present
+[2025-12-30 23:30:48] [INFO] Cleaning up ANM instance...
+[2025-12-30 23:30:48] [INFO] ============================================================
+[2025-12-30 23:30:48] [INFO] TEST RUN COMPLETE
+[2025-12-30 23:30:48] [INFO] Total: 27 | Passed: 26 | Failed: 1
+[2025-12-30 23:30:48] [INFO] Success rate: 96.3%
+[2025-12-30 23:30:48] [INFO] ============================================================
+[2025-12-30 23:36:02] [INFO] ============================================================
+[2025-12-30 23:36:02] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 23:36:02] [INFO] ============================================================
+[2025-12-30 23:36:02] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 23:36:02] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 23:36:02] [INFO] Starting test run...
+[2025-12-30 23:36:02] [INFO] STARTING: test_router_plan_present_on_empty_query
+[2025-12-30 23:36:02] [INFO] ANMConfig created successfully
+[2025-12-30 23:36:02] [INFO] Creating ANM instance...
+[2025-12-30 23:36:02] [INFO] ANM instance created in 21.8ms
+[2025-12-30 23:36:02] [INFO] Testing router_plan presence on empty query...
+[2025-12-30 23:36:02] [INFO] PASSED: test_router_plan_present_on_empty_query (0.2ms)
+[2025-12-30 23:36:02] [INFO] Cleaning up ANM instance...
+[2025-12-30 23:36:02] [INFO] ============================================================
+[2025-12-30 23:36:02] [INFO] TEST RUN COMPLETE
+[2025-12-30 23:36:02] [INFO] Total: 1 | Passed: 1 | Failed: 0
+[2025-12-30 23:36:02] [INFO] Success rate: 100.0%
+[2025-12-30 23:36:02] [INFO] ============================================================
+[2025-12-30 23:36:58] [INFO] ============================================================
+[2025-12-30 23:36:58] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-30 23:36:58] [INFO] ============================================================
+[2025-12-30 23:36:58] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-30 23:36:58] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-30 23:36:58] [INFO] Starting test run...
+[2025-12-30 23:36:58] [INFO] STARTING: test_math_simple_arithmetic
+[2025-12-30 23:36:58] [INFO] ANMConfig created successfully
+[2025-12-30 23:36:58] [INFO] Creating ANM instance...
+[2025-12-30 23:36:58] [INFO] ANM instance created in 21.8ms
+[2025-12-30 23:36:58] [INFO] Testing math: simple arithmetic...
+[2025-12-30 23:37:30] [INFO] Result: ANSWER (write directly, no CoT, no thinking tags): 42
+
+[VERIFIER_READY]
+[2025-12-30 23:37:30] [INFO] PASSED: test_math_simple_arithmetic (31971.2ms)
+[2025-12-30 23:37:30] [INFO] STARTING: test_math_algebra
+[2025-12-30 23:37:30] [INFO] Testing math: algebra...
+[2025-12-30 23:38:07] [INFO] Result: The solution to the equation 2x + 5 = 15 is x = 5. To find this, subtract 5 from both sides of the equation to get 2x = 10, then divide both sides by 2 to obtain x = 5
+
+[VERIFIER_READY]
+[2025-12-30 23:38:07] [INFO] PASSED: test_math_algebra (36380.2ms)
+[2025-12-30 23:38:07] [INFO] STARTING: test_math_calculus
+[2025-12-30 23:38:07] [INFO] Testing math: calculus...
+[2025-12-30 23:38:32] [INFO] Result: The derivative of x^3 is 3x²
+
+[VERIFIER_READY]
+[2025-12-30 23:38:32] [INFO] PASSED: test_math_calculus (25641.1ms)
+[2025-12-30 23:38:32] [INFO] STARTING: test_math_percentage
+[2025-12-30 23:38:32] [INFO] Testing math: percentage...
+[2025-12-30 23:39:04] [INFO] Result: [VERIFIER_READY]
+[2025-12-30 23:39:04] [INFO] PASSED: test_math_percentage (32175.8ms)
+[2025-12-30 23:39:04] [INFO] STARTING: test_physics_newton_law
+[2025-12-30 23:39:04] [INFO] Testing physics: Newton's law...
+[2025-12-30 23:39:30] [INFO] Result: [VERIFIER_READY]
+[2025-12-30 23:39:30] [INFO] PASSED: test_physics_newton_law (25618.0ms)
+[2025-12-30 23:39:30] [INFO] STARTING: test_physics_force_calculation
+[2025-12-30 23:39:30] [INFO] Testing physics: force calculation...
+[2025-12-30 23:39:59] [INFO] Result: ANSWER: The force can be calculated using Newton's second law, F = m * a. For an object with mass m = 10 kg accelerating at a = 5 m/s², the force is F = 10 kg * 5 m/s² = 50 N
+
+[VERIFIER_READY]
+[2025-12-30 23:39:59] [INFO] PASSED: test_physics_force_calculation (29494.6ms)
+[2025-12-30 23:39:59] [INFO] STARTING: test_physics_energy
+[2025-12-30 23:39:59] [INFO] Testing physics: energy...
+[2025-12-30 23:40:31] [INFO] Result: Kinetic energy is the energy an object possesses due to its motion. It is directly related to an object's mass and velocity, with the formula \( KE = \frac{1}{2}mv^2 \)
+
+[VERIFIER_READY]
+[2025-12-30 23:40:31] [INFO] PASSED: test_physics_energy (31500.9ms)
+[2025-12-30 23:40:31] [INFO] STARTING: test_code_simple_function
+[2025-12-30 23:40:31] [INFO] Testing code: simple function...
+[2025-12-30 23:41:31] [INFO] Result: [VERIFIER_READY]
+[2025-12-30 23:41:31] [INFO] PASSED: test_code_simple_function (60197.3ms)
+[2025-12-30 23:41:31] [INFO] STARTING: test_code_algorithm
+[2025-12-30 23:41:31] [INFO] Testing code: algorithm...
+[2025-12-30 23:43:33] [INFO] Result: [Error during refinement/verification: cannot access local variable 'fallback_issues' where it is not associated with a value]
+[2025-12-30 23:43:33] [INFO] PASSED: test_code_algorithm (122006.2ms)
+[2025-12-30 23:43:33] [INFO] STARTING: test_code_explanation
+[2025-12-30 23:43:33] [INFO] Testing code: explanation...
+[2025-12-30 23:44:06] [INFO] Result: [VERIFIER_READY]
+[2025-12-30 23:44:06] [INFO] PASSED: test_code_explanation (33008.9ms)
+[2025-12-30 23:44:06] [INFO] STARTING: test_chemistry_molecule
+[2025-12-30 23:44:06] [INFO] Testing chemistry: molecule...
+[2025-12-30 23:44:58] [INFO] Result: H₂O is a chemical compound composed of two hydrogen atoms and one oxygen atom, making it the most common naturally occurring substance on Earth. It serves as the building block for water molecules and
+[2025-12-30 23:44:58] [INFO] PASSED: test_chemistry_molecule (51894.2ms)
+[2025-12-30 23:44:58] [INFO] STARTING: test_chemistry_bonds
+[2025-12-30 23:44:58] [INFO] Testing chemistry: bonds...
+[2025-12-30 23:45:31] [INFO] Result: WoT execution failed: bad character range ⟶-> at position 20
+[2025-12-30 23:45:31] [INFO] PASSED: test_chemistry_bonds (32757.5ms)
+[2025-12-30 23:45:31] [INFO] STARTING: test_biology_cell
+[2025-12-30 23:45:31] [INFO] Testing biology: cell...
+[2025-12-30 23:46:12] [INFO] Result: A cell is the basic structural and functional unit of life. It typically consists of a nucleus, which contains DNA, and various organelles such as ribosomes, mitochondria, or chloroplasts, depending o
+[2025-12-30 23:46:12] [INFO] PASSED: test_biology_cell (41482.8ms)
+[2025-12-30 23:46:12] [INFO] STARTING: test_biology_dna
+[2025-12-30 23:46:12] [INFO] Testing biology: DNA...
+[2025-12-30 23:46:43] [INFO] Result: DNA is the acronym for脱氧核糖核酸，which is a nucleic acid composed primarily of deoxyribose sugars and nitrogenous base pairs. It plays a central role in cell division and DNA replication, serving as the g
+[2025-12-30 23:46:43] [INFO] PASSED: test_biology_dna (30820.6ms)
+[2025-12-30 23:46:43] [INFO] STARTING: test_general_greeting
+[2025-12-30 23:46:43] [INFO] Testing general: greeting...
+[2025-12-30 23:47:23] [INFO] Result: [VERIFIERReady]
+
+[VERIFIER_READY]
+[2025-12-30 23:47:23] [INFO] PASSED: test_general_greeting (39868.3ms)
+[2025-12-30 23:47:23] [INFO] STARTING: test_general_factual
+[2025-12-30 23:47:23] [INFO] Testing general: factual...
+[2025-12-30 23:47:54] [INFO] Result: The capital of France is Paris
+
+[VERIFIER_READY]
+[2025-12-30 23:47:54] [INFO] PASSED: test_general_factual (31188.9ms)
+[2025-12-30 23:47:54] [INFO] STARTING: test_general_ai
+[2025-12-30 23:47:54] [INFO] Testing general: AI...
+[2025-12-30 23:48:27] [INFO] Result: [VERIFIER_ready]
+
+[VERIFIER_READY]
+[2025-12-30 23:48:27] [INFO] PASSED: test_general_ai (32688.2ms)
+[2025-12-30 23:48:27] [INFO] STARTING: test_anm_instantiation_default
+[2025-12-30 23:48:27] [INFO] Testing ANM instantiation with defaults...
+[2025-12-30 23:48:27] [INFO] ANM instantiated in 0.0ms
+[2025-12-30 23:48:27] [INFO] PASSED: test_anm_instantiation_default (0.3ms)
+[2025-12-30 23:48:27] [INFO] STARTING: test_anm_instantiation_quick_mode
+[2025-12-30 23:48:27] [INFO] Testing ANM instantiation with quick_mode=True...
+[2025-12-30 23:48:27] [INFO] ANM quick mode instantiation successful
+[2025-12-30 23:48:27] [INFO] PASSED: test_anm_instantiation_quick_mode (0.2ms)
+[2025-12-30 23:48:27] [INFO] STARTING: test_anm_query_simple_greeting
+[2025-12-30 23:48:27] [INFO] Testing ANM query: 'Hello'...
+[2025-12-30 23:48:52] [INFO] Query completed in 25597.8ms
+[2025-12-30 23:48:52] [INFO] Result status: approved
+[2025-12-30 23:48:52] [INFO] Result preview: Providre your general reasoning and end with WOT_REQUEST: HIGH
+Providre your general reasoning and e...
+[2025-12-30 23:48:52] [INFO] PASSED: test_anm_query_simple_greeting (25598.4ms)
+[2025-12-30 23:48:52] [INFO] STARTING: test_anm_query_math
+[2025-12-30 23:48:52] [INFO] Testing ANM query: 'What is 2 + 2?'...
+[2025-12-30 23:49:49] [INFO] Query completed in 56844.0ms
+[2025-12-30 23:49:49] [INFO] Result: 2 + 2 equals 4.[VERIFIER_ready]
+
+[VERIFIER_READY]
+[2025-12-30 23:49:49] [INFO] PASSED: test_anm_query_math (56845.8ms)
+[2025-12-30 23:49:49] [INFO] STARTING: test_anm_query_empty_string
+[2025-12-30 23:49:49] [INFO] Testing ANM query with empty string...
+[2025-12-30 23:49:49] [INFO] Empty query result: {'status': 'error', 'result': 'Invalid query: query must be a non-empty string', 'error': 'Invalid input', 'router_plan': None}
+[2025-12-30 23:49:49] [INFO] PASSED: test_anm_query_empty_string (0.2ms)
+[2025-12-30 23:49:49] [INFO] STARTING: test_anm_query_whitespace_only
+[2025-12-30 23:49:49] [INFO] Testing ANM query with whitespace only...
+[2025-12-30 23:49:49] [INFO] Whitespace query result: {'status': 'error', 'result': 'Invalid query: query cannot be empty', 'error': 'Empty input', 'router_plan': None}
+[2025-12-30 23:49:49] [INFO] PASSED: test_anm_query_whitespace_only (0.2ms)
+[2025-12-30 23:49:49] [INFO] STARTING: test_anm_query_code
+[2025-12-30 23:49:49] [INFO] Testing ANM query: code request...
+[2025-12-30 23:51:28] [INFO] Code query result preview: ANM Session Episode 
+ANM SPECIALIST: Router/Refiner 
+RUN_ID: 2025-12-30_23-36-58-734392 
+TITLE: ANM Session Episode 
+TAGS: anm_session, domain:general, domain:memory
+
+[VERIFIER_READY]
+[2025-12-30 23:51:28] [INFO] PASSED: test_anm_query_code (98431.8ms)
+[2025-12-30 23:51:28] [INFO] STARTING: test_anm_query_physics
+[2025-12-30 23:51:28] [INFO] Testing ANM query: physics...
+[2025-12-30 23:51:58] [INFO] Physics query result preview: [VERIFIER_READY]
+[2025-12-30 23:51:58] [INFO] PASSED: test_anm_query_physics (30620.1ms)
+[2025-12-30 23:51:58] [INFO] STARTING: test_router_plan_present_on_success
+[2025-12-30 23:51:58] [INFO] Testing router_plan presence on success...
+[2025-12-30 23:52:35] [INFO] router_plan keys: ['entry_specialist', 'active_domains', 'max_steps', 'reason', 'inject_memory', 'needs_research', 'needs_facts', 'strategy_tags', 'risk_score', 'risk_level', 'task_type', 'step_plan', 'run_id', 'user_query', 'difficulty', 'prompt_optimized']
+[2025-12-30 23:52:35] [INFO] entry_specialist: physics
+[2025-12-30 23:52:35] [INFO] active_domains: ['physics', 'general']
+[2025-12-30 23:52:35] [INFO] PASSED: test_router_plan_present_on_success (36615.8ms)
+[2025-12-30 23:52:35] [INFO] STARTING: test_router_plan_present_on_empty_query
+[2025-12-30 23:52:35] [INFO] Testing router_plan presence on empty query...
+[2025-12-30 23:52:35] [INFO] PASSED: test_router_plan_present_on_empty_query (0.2ms)
+[2025-12-30 23:52:35] [INFO] STARTING: test_anm_cleanup
+[2025-12-30 23:52:35] [INFO] Testing ANM cleanup...
+[2025-12-30 23:52:35] [INFO] ANM cleanup successful
+[2025-12-30 23:52:35] [INFO] PASSED: test_anm_cleanup (42.9ms)
+[2025-12-30 23:52:35] [INFO] STARTING: test_anm_context_manager
+[2025-12-30 23:52:35] [INFO] Testing ANM as context manager...
+[2025-12-30 23:53:29] [INFO] ANM context manager test passed
+[2025-12-30 23:53:29] [INFO] PASSED: test_anm_context_manager (54097.8ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_memory_hub_import
+[2025-12-30 23:53:29] [INFO] Testing MemoryHub import...
+[2025-12-30 23:53:29] [INFO] MemoryHub imported successfully
+[2025-12-30 23:53:29] [INFO] PASSED: test_memory_hub_import (0.2ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_memory_hub_instantiation
+[2025-12-30 23:53:29] [INFO] Testing MemoryHub instantiation...
+[2025-12-30 23:53:29] [INFO] MemoryHub instantiated
+[2025-12-30 23:53:29] [INFO] PASSED: test_memory_hub_instantiation (1.8ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_memory_hub_get_context
+[2025-12-30 23:53:29] [INFO] Testing MemoryHub.get_context()...
+[2025-12-30 23:53:29] [INFO] get_context returned: <class 'anm.memory.memory_hub.MemoryContext'>
+[2025-12-30 23:53:29] [INFO] PASSED: test_memory_hub_get_context (1.0ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_memory_hub_build_brief
+[2025-12-30 23:53:29] [INFO] Testing MemoryHub.build_memory_brief()...
+[2025-12-30 23:53:29] [INFO] Memory brief length: 100 chars
+[2025-12-30 23:53:29] [INFO] PASSED: test_memory_hub_build_brief (0.9ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_diary_memory_import
+[2025-12-30 23:53:29] [INFO] Testing DiaryMemory import...
+[2025-12-30 23:53:29] [INFO] DiaryMemory imported
+[2025-12-30 23:53:29] [INFO] PASSED: test_diary_memory_import (0.2ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_diary_memory_instantiation
+[2025-12-30 23:53:29] [INFO] Testing DiaryMemory instantiation...
+[2025-12-30 23:53:29] [INFO] DiaryMemory instantiated
+[2025-12-30 23:53:29] [INFO] PASSED: test_diary_memory_instantiation (0.9ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_diary_memory_log_entry
+[2025-12-30 23:53:29] [INFO] Testing DiaryMemory.log_entry()...
+[2025-12-30 23:53:29] [WARNING] log_entry raised: 'DiaryMemory' object has no attribute 'log_entry'
+[2025-12-30 23:53:29] [INFO] PASSED: test_diary_memory_log_entry (1.0ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_diary_memory_query
+[2025-12-30 23:53:29] [INFO] Testing DiaryMemory.query()...
+[2025-12-30 23:53:29] [WARNING] query raised: 'DiaryMemory' object has no attribute 'query'
+[2025-12-30 23:53:29] [INFO] PASSED: test_diary_memory_query (0.7ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_episodic_memory_import
+[2025-12-30 23:53:29] [INFO] Testing EpisodicMemory import...
+[2025-12-30 23:53:29] [INFO] EpisodicMemory imported
+[2025-12-30 23:53:29] [INFO] PASSED: test_episodic_memory_import (0.2ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_diary_persists_across_instances
+[2025-12-30 23:53:29] [INFO] Testing diary persistence...
+[2025-12-30 23:53:29] [WARNING] Persistence check raised: 'DiaryMemory' object has no attribute 'query'
+[2025-12-30 23:53:29] [INFO] PASSED: test_diary_persists_across_instances (1.1ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_router_instantiation
+[2025-12-30 23:53:29] [INFO] Testing Router instantiation...
+[2025-12-30 23:53:29] [INFO] Router instantiated successfully
+[2025-12-30 23:53:29] [INFO] PASSED: test_router_instantiation (1.0ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_router_with_config
+[2025-12-30 23:53:29] [INFO] Testing Router with config...
+[2025-12-30 23:53:29] [INFO] Router with config instantiated
+[2025-12-30 23:53:29] [INFO] PASSED: test_router_with_config (0.9ms)
+[2025-12-30 23:53:29] [INFO] STARTING: test_router_handle_simple_query
+[2025-12-30 23:53:29] [INFO] Testing Router.handle() with simple query...
+[2025-12-30 23:54:16] [INFO] Router.handle() completed in 46677.4ms
+[2025-12-30 23:54:16] [INFO] Result keys: ['status', 'result', 'verification', 'log_path', 'router_plan', 'consistency', 'memory_brief', 'lfm_report', 'point_game_rfs', 'point_game_stats', 'processing_time_ms', 'wot_steps']
+[2025-12-30 23:54:16] [INFO] Result preview: ANSWER (write directly, no CoT, no thinking tags):
+
+[VERIFIER_READY]
+[2025-12-30 23:54:16] [INFO] Router plan: {'entry_specialist': 'math', 'active_domains': ['math'], 'max_steps': 12, 'reason': 'Auto-selected strategy for query: What is 2 + 2?', 'inject_memory': True, 'needs_research': False, 'needs_facts': False, 'strategy_tags': ['auto'], 'risk_score': 0.3, 'risk_level': 'medium', 'task_type': 'analysis', 'step_plan': '', 'run_id': '2025-12-30_23-53-29-689859', 'user_query': 'What is 2 + 2?', 'difficulty': 'easy'}
+[2025-12-30 23:54:16] [INFO] PASSED: test_router_handle_simple_query (46679.3ms)
+[2025-12-30 23:54:16] [INFO] STARTING: test_router_handle_quick_mode
+[2025-12-30 23:54:16] [INFO] Testing Router.handle() in quick mode...
+[2025-12-30 23:55:23] [INFO] Quick mode result keys: ['status', 'result', 'verification', 'log_path', 'router_plan', 'mode', 'processing_time_ms', 'wot_steps']
+[2025-12-30 23:55:23] [INFO] PASSED: test_router_handle_quick_mode (67428.2ms)
+[2025-12-30 23:55:23] [INFO] STARTING: test_router_handle_research_mode
+[2025-12-30 23:55:23] [INFO] Testing Router.handle() in research mode...
+[2025-12-30 23:55:45] [INFO] Research mode result keys: ['status', 'result', 'verification', 'metacognition', 'authority_assignments', 'output_path', 'output_format', 'log_path', 'mode', 'wot_steps', 'processing_time_ms']
+[2025-12-30 23:55:45] [INFO] PASSED: test_router_handle_research_mode (21870.2ms)
+[2025-12-30 23:55:45] [INFO] STARTING: test_router_handle_empty_query
+[2025-12-30 23:55:45] [INFO] Testing Router.handle() with empty query...
+[2025-12-30 23:55:45] [INFO] Empty query result: {'status': 'error', 'result': 'Invalid query: must be a non-empty string', 'error': 'Invalid input'}
+[2025-12-30 23:55:45] [INFO] PASSED: test_router_handle_empty_query (1.8ms)
+[2025-12-30 23:55:45] [INFO] STARTING: test_math_domain_detection
+[2025-12-30 23:55:45] [INFO] Testing math domain detection...
+[2025-12-30 23:56:35] [INFO] Math query - entry: general, domains: ['general']
+[2025-12-30 23:56:35] [INFO] PASSED: test_math_domain_detection (49563.1ms)
+[2025-12-30 23:56:35] [INFO] STARTING: test_code_domain_detection
+[2025-12-30 23:56:35] [INFO] Testing code domain detection...
+[2025-12-30 23:57:16] [INFO] Code query - entry: code
+[2025-12-30 23:57:16] [INFO] PASSED: test_code_domain_detection (41594.9ms)
+[2025-12-30 23:57:16] [INFO] STARTING: test_physics_domain_detection
+[2025-12-30 23:57:16] [INFO] Testing physics domain detection...
+[2025-12-30 23:57:44] [INFO] Physics query - entry: physics
+[2025-12-30 23:57:44] [INFO] PASSED: test_physics_domain_detection (27738.1ms)
+[2025-12-30 23:57:44] [INFO] STARTING: test_router_handles_none_gracefully
+[2025-12-30 23:57:44] [INFO] Testing Router with None input...
+[2025-12-30 23:57:44] [INFO] None input result: {'status': 'error', 'result': 'Invalid query: must be a non-empty string', 'error': 'Invalid input'}
+[2025-12-30 23:57:44] [INFO] PASSED: test_router_handles_none_gracefully (1.9ms)
+[2025-12-30 23:57:44] [INFO] STARTING: test_router_handles_special_characters
+[2025-12-30 23:57:44] [INFO] Testing Router with special characters...
+[2025-12-30 23:58:30] [INFO] Special chars result: <class 'dict'>
+[2025-12-30 23:58:30] [INFO] PASSED: test_router_handles_special_characters (45420.9ms)
+[2025-12-30 23:58:30] [INFO] STARTING: test_base_specialist_import
+[2025-12-30 23:58:30] [INFO] Testing BaseSpecialist import...
+[2025-12-30 23:58:30] [INFO] BaseSpecialist imported successfully
+[2025-12-30 23:58:30] [INFO] PASSED: test_base_specialist_import (0.2ms)
+[2025-12-30 23:58:30] [INFO] STARTING: test_base_specialist_is_abstract
+[2025-12-30 23:58:30] [INFO] Testing BaseSpecialist is abstract...
+[2025-12-30 23:58:30] [INFO] BaseSpecialist correctly raises TypeError (abstract)
+[2025-12-30 23:58:30] [INFO] PASSED: test_base_specialist_is_abstract (0.2ms)
+[2025-12-30 23:58:30] [INFO] STARTING: test_general_llm_instantiation
+[2025-12-30 23:58:30] [INFO] Testing GeneralLLM instantiation...
+[2025-12-30 23:58:30] [INFO] GeneralLLM instantiated
+[2025-12-30 23:58:30] [INFO] PASSED: test_general_llm_instantiation (0.2ms)
+[2025-12-30 23:58:30] [INFO] STARTING: test_general_llm_run
+[2025-12-30 23:58:30] [INFO] Testing GeneralLLM.run()...
+[2025-12-30 23:58:46] [INFO] GeneralLLM.run() completed in 16852.7ms
+[2025-12-30 23:58:46] [INFO] Result preview: META-COGNITION: HIGH (certain), MEDIUM (some uncertainty), LOW (significaant uncertainty).
+META-EFFICIENCY: EFFICIENT (concise, focused) or INEFFICIENT (verbose, redundant).
+OUTPUT FORMAT: WOT_REQUEST...
+[2025-12-30 23:58:46] [INFO] WOT_REQUEST marker found in output
+[2025-12-30 23:58:46] [INFO] PASSED: test_general_llm_run (16853.2ms)
+[2025-12-30 23:58:46] [INFO] STARTING: test_math_llm_instantiation
+[2025-12-30 23:58:46] [INFO] Testing MathLLM instantiation...
+[2025-12-30 23:58:46] [INFO] MathLLM instantiated
+[2025-12-30 23:58:46] [INFO] PASSED: test_math_llm_instantiation (0.2ms)
+[2025-12-30 23:58:46] [INFO] STARTING: test_math_llm_run
+[2025-12-30 23:58:46] [INFO] Testing MathLLM.run()...
+[2025-12-30 23:59:15] [INFO] MathLLM.run() completed in 28157.2ms
+[2025-12-30 23:59:15] [INFO] Result preview: MATH SPECIALIST:
+- I am the MAATH SPESIALIST of ANM V0-OpenSource.
+- You work inside the Web-of-Thought system.
+
+WHAT TO DO:
+- Perform algebra, calculus (derivaTIes, integrals, limits).
+- Work with li...
+[2025-12-30 23:59:15] [INFO] PASSED: test_math_llm_run (28158.0ms)
+[2025-12-30 23:59:15] [INFO] STARTING: test_physics_llm_instantiation
+[2025-12-30 23:59:15] [INFO] Testing PhysicsLLM instantiation...
+[2025-12-30 23:59:15] [INFO] PhysicsLLM instantiated
+[2025-12-30 23:59:15] [INFO] PASSED: test_physics_llm_instantiation (0.2ms)
+[2025-12-30 23:59:15] [INFO] STARTING: test_physics_llm_run
+[2025-12-30 23:59:15] [INFO] Testing PhysicsLLM.run()...
+[2025-12-30 23:59:18] [INFO] PhysicsLLM.run() completed in 3737.0ms
+[2025-12-30 23:59:18] [INFO] Result preview: --- WoT PACKET(PHYSICS VIEW) ---
+USER_QUERY: What is the equation for a force F acting on an object of mass m and acceleration a?
+
+Provide your physics reasoning and end with WOT_REQUEST.<|user|>
+
+---...
+[2025-12-30 23:59:18] [INFO] PASSED: test_physics_llm_run (3737.5ms)
+[2025-12-30 23:59:18] [INFO] STARTING: test_code_llm_instantiation
+[2025-12-30 23:59:18] [INFO] Testing CodeLLM instantiation...
+[2025-12-30 23:59:18] [INFO] CodeLLM instantiated
+[2025-12-30 23:59:18] [INFO] PASSED: test_code_llm_instantiation (0.2ms)
+[2025-12-30 23:59:18] [INFO] STARTING: test_code_llm_run
+[2025-12-30 23:59:18] [INFO] Testing CodeLLM.run()...
+[2025-12-30 23:59:45] [INFO] CodeLLM.run() completed in 26929.8ms
+[2025-12-30 23:59:45] [INFO] Result preview: YOUR CODE:
+```python
+def factorial(n):
+ if n <= 1:
+ return 0
+ else:
+ return n * factorial(n-1)
+```
+
+EXAMPLE:
+```python
+factorial(5) # Output: 120
+```
+
+META-COGNITION (MANDATORY):
+- Before writing, verify your output is relevant to the USER QUERY in the packet.
+- Assess your confidence: HIGH (certain...
+[2025-12-30 23:59:45] [INFO] PASSED: test_code_llm_run (26930.5ms)
+[2025-12-30 23:59:45] [INFO] STARTING: test_chemistry_llm_instantiation
+[2025-12-30 23:59:45] [INFO] Testing ChemistryLLM instantiation...
+[2025-12-30 23:59:45] [INFO] ChemistryLLM instantiated
+[2025-12-30 23:59:45] [INFO] PASSED: test_chemistry_llm_instantiation (0.2ms)
+[2025-12-30 23:59:45] [INFO] STARTING: test_biology_llm_instantiation
+[2025-12-30 23:59:45] [INFO] Testing BiologyLLM instantiation...
+[2025-12-30 23:59:45] [INFO] BiologyLLM instantiated
+[2025-12-30 23:59:45] [INFO] PASSED: test_biology_llm_instantiation (0.2ms)
+[2025-12-30 23:59:45] [INFO] STARTING: test_memory_llm_instantiation
+[2025-12-30 23:59:45] [INFO] Testing MemoryLLM instantiation...
+[2025-12-30 23:59:45] [INFO] MemoryLLM instantiated
+[2025-12-30 23:59:45] [INFO] PASSED: test_memory_llm_instantiation (1.5ms)
+[2025-12-30 23:59:45] [INFO] STARTING: test_research_llm_instantiation
+[2025-12-30 23:59:45] [INFO] Testing ResearchLLM instantiation...
+[2025-12-30 23:59:45] [INFO] ResearchLLM instantiated
+[2025-12-30 23:59:45] [INFO] PASSED: test_research_llm_instantiation (0.2ms)
+[2025-12-30 23:59:45] [INFO] STARTING: test_wot_request_in_general_output
+[2025-12-30 23:59:45] [INFO] Testing WOT_REQUEST in GeneralLLM output...
+[2025-12-30 23:59:55] [INFO] WOT_REQUEST present: True
+[2025-12-30 23:59:55] [INFO] PASSED: test_wot_request_in_general_output (9988.3ms)
+[2025-12-30 23:59:55] [INFO] STARTING: test_empty_string_query
+[2025-12-30 23:59:55] [INFO] Testing empty string query...
+[2025-12-30 23:59:55] [INFO] Empty string result: {'status': 'error', 'result': 'Invalid query: query must be a non-empty string', 'error': 'Invalid input', 'router_plan': None}
+[2025-12-30 23:59:55] [INFO] PASSED: test_empty_string_query (0.2ms)
+[2025-12-30 23:59:55] [INFO] STARTING: test_whitespace_only_query
+[2025-12-30 23:59:55] [INFO] Testing whitespace-only query...
+[2025-12-30 23:59:55] [INFO] Whitespace result: {'status': 'error', 'result': 'Invalid query: query cannot be empty', 'error': 'Empty input', 'router_plan': None}
+[2025-12-30 23:59:55] [INFO] PASSED: test_whitespace_only_query (0.2ms)
+[2025-12-30 23:59:55] [INFO] STARTING: test_none_handling
+[2025-12-30 23:59:55] [INFO] Testing None input...
+[2025-12-30 23:59:55] [INFO] None input result: {'status': 'error', 'result': 'Invalid query: query must be a non-empty string', 'error': 'Invalid input', 'router_plan': None}
+[2025-12-30 23:59:55] [INFO] PASSED: test_none_handling (0.2ms)
+[2025-12-30 23:59:55] [INFO] STARTING: test_long_query_1000_chars
+[2025-12-30 23:59:55] [INFO] Testing 1000 char query...
+[2025-12-31 00:02:31] [INFO] 1000 char query completed in 155490.9ms
+[2025-12-31 00:02:31] [INFO] PASSED: test_long_query_1000_chars (155491.8ms)
+[2025-12-31 00:02:31] [INFO] STARTING: test_long_query_5000_chars
+[2025-12-31 00:02:31] [INFO] Testing 5000 char query...
+[2025-12-31 00:03:13] [INFO] 5000 char query completed in 42219.9ms
+[2025-12-31 00:03:13] [INFO] PASSED: test_long_query_5000_chars (42220.7ms)
+[2025-12-31 00:03:13] [INFO] STARTING: test_special_characters_basic
+[2025-12-31 00:03:13] [INFO] Testing special characters...
+[2025-12-31 00:04:05] [INFO] Special chars result type: <class 'dict'>
+[2025-12-31 00:04:05] [INFO] PASSED: test_special_characters_basic (51908.6ms)
+[2025-12-31 00:04:05] [INFO] STARTING: test_unicode_characters
+[2025-12-31 00:04:05] [INFO] Testing unicode characters...
+[2025-12-31 00:04:42] [INFO] Unicode result type: <class 'dict'>
+[2025-12-31 00:04:42] [INFO] PASSED: test_unicode_characters (37541.2ms)
+[2025-12-31 00:04:42] [INFO] STARTING: test_emoji_characters
+[2025-12-31 00:04:42] [INFO] Testing emoji characters...
+[2025-12-31 00:05:21] [INFO] Emoji result type: <class 'dict'>
+[2025-12-31 00:05:21] [INFO] PASSED: test_emoji_characters (38502.7ms)
+[2025-12-31 00:05:21] [INFO] STARTING: test_sql_like_input
+[2025-12-31 00:05:21] [INFO] Testing SQL-like input...
+[2025-12-31 00:06:10] [INFO] SQL-like result: <class 'dict'>
+[2025-12-31 00:06:10] [INFO] PASSED: test_sql_like_input (49309.0ms)
+[2025-12-31 00:06:10] [INFO] STARTING: test_html_like_input
+[2025-12-31 00:06:10] [INFO] Testing HTML-like input...
+[2025-12-31 00:06:56] [INFO] HTML-like result: <class 'dict'>
+[2025-12-31 00:06:56] [INFO] PASSED: test_html_like_input (46023.8ms)
+[2025-12-31 00:06:56] [INFO] STARTING: test_repeated_letters
+[2025-12-31 00:06:56] [INFO] Testing repeated letters...
+[2025-12-31 00:07:35] [INFO] Repeated letters result: <class 'dict'>
+[2025-12-31 00:07:35] [INFO] PASSED: test_repeated_letters (38606.9ms)
+[2025-12-31 00:07:35] [INFO] STARTING: test_repeated_question_marks
+[2025-12-31 00:07:35] [INFO] Testing repeated question marks...
+[2025-12-31 00:08:25] [INFO] Repeated ? result: <class 'dict'>
+[2025-12-31 00:08:25] [INFO] PASSED: test_repeated_question_marks (50187.2ms)
+[2025-12-31 00:08:25] [INFO] STARTING: test_10_sequential_queries
+[2025-12-31 00:08:25] [INFO] Testing 10 sequential queries...
+[2025-12-31 00:09:00] [INFO] Query 1/10 completed in 35068.8ms
+[2025-12-31 00:09:29] [INFO] Query 2/10 completed in 28662.7ms
+[2025-12-31 00:11:01] [INFO] Query 3/10 completed in 91870.6ms
+[2025-12-31 00:11:42] [INFO] Query 4/10 completed in 41365.8ms
+[2025-12-31 00:12:10] [INFO] Query 5/10 completed in 27597.0ms
+[2025-12-31 00:12:40] [INFO] Query 6/10 completed in 30037.2ms
+[2025-12-31 00:13:30] [INFO] Query 7/10 completed in 50190.9ms
+[2025-12-31 00:13:54] [INFO] Query 8/10 completed in 24377.3ms
+[2025-12-31 00:15:05] [INFO] Query 9/10 completed in 70672.3ms
+[2025-12-31 00:15:47] [INFO] Query 10/10 completed in 42630.4ms
+[2025-12-31 00:15:47] [INFO] Sequential queries: 10/10 successful, total time: 442472.9ms
+[2025-12-31 00:15:47] [INFO] PASSED: test_10_sequential_queries (442479.6ms)
+[2025-12-31 00:15:47] [INFO] STARTING: test_rapid_queries
+[2025-12-31 00:15:48] [INFO] Testing rapid succession queries...
+[2025-12-31 00:17:31] [INFO] Rapid queries: 5/5 successful in 103495.9ms total
+[2025-12-31 00:17:31] [INFO] PASSED: test_rapid_queries (103497.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_anm_config_import
+[2025-12-31 00:17:31] [INFO] Testing ANMConfig import...
+[2025-12-31 00:17:31] [INFO] ANMConfig imported successfully
+[2025-12-31 00:17:31] [INFO] PASSED: test_anm_config_import (0.3ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_anm_config_default_instantiation
+[2025-12-31 00:17:31] [INFO] Testing ANMConfig default instantiation...
+[2025-12-31 00:17:31] [INFO] Default config created: parallel_models=2
+[2025-12-31 00:17:31] [INFO] PASSED: test_anm_config_default_instantiation (0.4ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_anm_config_parallel_models_clamping_low
+[2025-12-31 00:17:31] [INFO] Testing parallel_models clamping (low)...
+[2025-12-31 00:17:31] [INFO] parallel_models=0 clamped to 1
+[2025-12-31 00:17:31] [INFO] PASSED: test_anm_config_parallel_models_clamping_low (0.3ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_anm_config_parallel_models_clamping_high
+[2025-12-31 00:17:31] [INFO] Testing parallel_models clamping (high)...
+[2025-12-31 00:17:31] [INFO] parallel_models=100 clamped to 10
+[2025-12-31 00:17:31] [INFO] PASSED: test_anm_config_parallel_models_clamping_high (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_anm_config_quick_mode
+[2025-12-31 00:17:31] [INFO] Testing quick_mode configuration...
+[2025-12-31 00:17:31] [INFO] quick_mode=True set correctly
+[2025-12-31 00:17:31] [INFO] PASSED: test_anm_config_quick_mode (0.3ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_anm_config_research_mode
+[2025-12-31 00:17:31] [INFO] Testing research_mode configuration...
+[2025-12-31 00:17:31] [INFO] research_mode=True set correctly
+[2025-12-31 00:17:31] [INFO] PASSED: test_anm_config_research_mode (0.3ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_anm_config_auto_mode_default
+[2025-12-31 00:17:31] [INFO] Testing auto_mode default...
+[2025-12-31 00:17:31] [INFO] auto_mode default: True
+[2025-12-31 00:17:31] [INFO] PASSED: test_anm_config_auto_mode_default (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_anm_config_all_attributes_exist
+[2025-12-31 00:17:31] [INFO] Testing ANMConfig attributes...
+[2025-12-31 00:17:31] [INFO]   parallel_models: 2
+[2025-12-31 00:17:31] [INFO]   quick_mode: False
+[2025-12-31 00:17:31] [INFO]   auto_mode: True
+[2025-12-31 00:17:31] [INFO]   research_mode: False
+[2025-12-31 00:17:31] [INFO]   verbose: True
+[2025-12-31 00:17:31] [INFO]   skip_sanity_check: False
+[2025-12-31 00:17:31] [INFO] All expected attributes present
+[2025-12-31 00:17:31] [INFO] PASSED: test_anm_config_all_attributes_exist (1.6ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_anm_main
+[2025-12-31 00:17:31] [INFO] Testing import: anm
+[2025-12-31 00:17:31] [INFO] anm module imported, version: 0.1.0-opensource
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_anm_main (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_anm_class
+[2025-12-31 00:17:31] [INFO] Testing import: ANM class
+[2025-12-31 00:17:31] [INFO] ANM class imported successfully
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_anm_class (0.4ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_config_settings
+[2025-12-31 00:17:31] [INFO] Testing import: anm.config.settings
+[2025-12-31 00:17:31] [INFO] settings module imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_config_settings (71.4ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_core_types
+[2025-12-31 00:17:31] [INFO] Testing import: anm.core.types
+[2025-12-31 00:17:31] [INFO] types module imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_core_types (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_router
+[2025-12-31 00:17:31] [INFO] Testing import: Router
+[2025-12-31 00:17:31] [INFO] Router class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_router (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_planner_llm
+[2025-12-31 00:17:31] [INFO] Testing import: PlannerLLM
+[2025-12-31 00:17:31] [INFO] PlannerLLM class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_planner_llm (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_base_specialist
+[2025-12-31 00:17:31] [INFO] Testing import: BaseSpecialist
+[2025-12-31 00:17:31] [INFO] BaseSpecialist class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_base_specialist (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_general_llm
+[2025-12-31 00:17:31] [INFO] Testing import: GeneralLLM
+[2025-12-31 00:17:31] [INFO] GeneralLLM class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_general_llm (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_math_llm
+[2025-12-31 00:17:31] [INFO] Testing import: MathLLM
+[2025-12-31 00:17:31] [INFO] MathLLM class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_math_llm (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_physics_llm
+[2025-12-31 00:17:31] [INFO] Testing import: PhysicsLLM
+[2025-12-31 00:17:31] [INFO] PhysicsLLM class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_physics_llm (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_code_llm
+[2025-12-31 00:17:31] [INFO] Testing import: CodeLLM
+[2025-12-31 00:17:31] [INFO] CodeLLM class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_code_llm (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_memory_hub
+[2025-12-31 00:17:31] [INFO] Testing import: MemoryHub
+[2025-12-31 00:17:31] [INFO] MemoryHub class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_memory_hub (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_diary_memory
+[2025-12-31 00:17:31] [INFO] Testing import: DiaryMemory
+[2025-12-31 00:17:31] [INFO] DiaryMemory class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_diary_memory (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_inference
+[2025-12-31 00:17:31] [INFO] Testing import: inference
+[2025-12-31 00:17:31] [INFO] inference module imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_inference (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_hardware
+[2025-12-31 00:17:31] [INFO] Testing import: hardware
+[2025-12-31 00:17:31] [INFO] hardware module imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_hardware (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_metacognition
+[2025-12-31 00:17:31] [INFO] Testing import: metacognition
+[2025-12-31 00:17:31] [INFO] metacognition module imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_metacognition (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_refiner
+[2025-12-31 00:17:31] [INFO] Testing import: Refiner
+[2025-12-31 00:17:31] [INFO] Refiner class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_refiner (0.2ms)
+[2025-12-31 00:17:31] [INFO] STARTING: test_import_verifier
+[2025-12-31 00:17:31] [INFO] Testing import: Verifier
+[2025-12-31 00:17:31] [INFO] Verifier class imported
+[2025-12-31 00:17:31] [INFO] PASSED: test_import_verifier (0.2ms)
+[2025-12-31 00:17:31] [INFO] Cleaning up ANM instance...
+[2025-12-31 00:17:31] [INFO] ============================================================
+[2025-12-31 00:17:31] [INFO] TEST RUN COMPLETE
+[2025-12-31 00:17:31] [INFO] Total: 105 | Passed: 105 | Failed: 0
+[2025-12-31 00:17:31] [INFO] Success rate: 100.0%
+[2025-12-31 00:17:31] [INFO] ============================================================
+[2025-12-31 17:28:44] [INFO] ============================================================
+[2025-12-31 17:28:44] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-31 17:28:44] [INFO] ============================================================
+[2025-12-31 17:28:44] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-31 17:28:44] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-31 17:28:44] [INFO] Starting test run...
+[2025-12-31 17:28:44] [INFO] STARTING: test_import_anm_main
+[2025-12-31 17:28:44] [INFO] Testing import: anm
+[2025-12-31 17:28:44] [INFO] anm module imported, version: 0.1.0-opensource
+[2025-12-31 17:28:44] [INFO] PASSED: test_import_anm_main (3.5ms)
+[2025-12-31 17:28:44] [INFO] STARTING: test_import_anm_class
+[2025-12-31 17:28:44] [INFO] Testing import: ANM class
+[2025-12-31 17:28:44] [INFO] ANM class imported successfully
+[2025-12-31 17:28:44] [INFO] PASSED: test_import_anm_class (0.2ms)
+[2025-12-31 17:28:44] [INFO] STARTING: test_import_config_settings
+[2025-12-31 17:28:44] [INFO] Testing import: anm.config.settings
+[2025-12-31 17:28:44] [INFO] settings module imported
+[2025-12-31 17:28:44] [INFO] PASSED: test_import_config_settings (114.5ms)
+[2025-12-31 17:28:44] [INFO] STARTING: test_import_core_types
+[2025-12-31 17:28:44] [INFO] Testing import: anm.core.types
+[2025-12-31 17:28:44] [INFO] types module imported
+[2025-12-31 17:28:44] [INFO] PASSED: test_import_core_types (14.5ms)
+[2025-12-31 17:28:44] [INFO] STARTING: test_import_router
+[2025-12-31 17:28:44] [INFO] Testing import: Router
+[2025-12-31 17:28:45] [INFO] Router class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_router (99.5ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_planner_llm
+[2025-12-31 17:28:45] [INFO] Testing import: PlannerLLM
+[2025-12-31 17:28:45] [INFO] PlannerLLM class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_planner_llm (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_base_specialist
+[2025-12-31 17:28:45] [INFO] Testing import: BaseSpecialist
+[2025-12-31 17:28:45] [INFO] BaseSpecialist class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_base_specialist (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_general_llm
+[2025-12-31 17:28:45] [INFO] Testing import: GeneralLLM
+[2025-12-31 17:28:45] [INFO] GeneralLLM class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_general_llm (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_math_llm
+[2025-12-31 17:28:45] [INFO] Testing import: MathLLM
+[2025-12-31 17:28:45] [INFO] MathLLM class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_math_llm (0.1ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_physics_llm
+[2025-12-31 17:28:45] [INFO] Testing import: PhysicsLLM
+[2025-12-31 17:28:45] [INFO] PhysicsLLM class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_physics_llm (0.1ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_code_llm
+[2025-12-31 17:28:45] [INFO] Testing import: CodeLLM
+[2025-12-31 17:28:45] [INFO] CodeLLM class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_code_llm (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_memory_hub
+[2025-12-31 17:28:45] [INFO] Testing import: MemoryHub
+[2025-12-31 17:28:45] [INFO] MemoryHub class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_memory_hub (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_diary_memory
+[2025-12-31 17:28:45] [INFO] Testing import: DiaryMemory
+[2025-12-31 17:28:45] [INFO] DiaryMemory class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_diary_memory (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_inference
+[2025-12-31 17:28:45] [INFO] Testing import: inference
+[2025-12-31 17:28:45] [INFO] inference module imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_inference (0.1ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_hardware
+[2025-12-31 17:28:45] [INFO] Testing import: hardware
+[2025-12-31 17:28:45] [INFO] hardware module imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_hardware (0.1ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_metacognition
+[2025-12-31 17:28:45] [INFO] Testing import: metacognition
+[2025-12-31 17:28:45] [INFO] metacognition module imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_metacognition (7.3ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_refiner
+[2025-12-31 17:28:45] [INFO] Testing import: Refiner
+[2025-12-31 17:28:45] [INFO] Refiner class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_refiner (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_import_verifier
+[2025-12-31 17:28:45] [INFO] Testing import: Verifier
+[2025-12-31 17:28:45] [INFO] Verifier class imported
+[2025-12-31 17:28:45] [INFO] PASSED: test_import_verifier (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_anm_config_import
+[2025-12-31 17:28:45] [INFO] Testing ANMConfig import...
+[2025-12-31 17:28:45] [INFO] ANMConfig imported successfully
+[2025-12-31 17:28:45] [INFO] PASSED: test_anm_config_import (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_anm_config_default_instantiation
+[2025-12-31 17:28:45] [INFO] Testing ANMConfig default instantiation...
+[2025-12-31 17:28:45] [INFO] Default config created: parallel_models=2
+[2025-12-31 17:28:45] [INFO] PASSED: test_anm_config_default_instantiation (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_anm_config_parallel_models_clamping_low
+[2025-12-31 17:28:45] [INFO] Testing parallel_models clamping (low)...
+[2025-12-31 17:28:45] [INFO] parallel_models=0 clamped to 1
+[2025-12-31 17:28:45] [INFO] PASSED: test_anm_config_parallel_models_clamping_low (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_anm_config_parallel_models_clamping_high
+[2025-12-31 17:28:45] [INFO] Testing parallel_models clamping (high)...
+[2025-12-31 17:28:45] [INFO] parallel_models=100 clamped to 10
+[2025-12-31 17:28:45] [INFO] PASSED: test_anm_config_parallel_models_clamping_high (0.1ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_anm_config_quick_mode
+[2025-12-31 17:28:45] [INFO] Testing quick_mode configuration...
+[2025-12-31 17:28:45] [INFO] quick_mode=True set correctly
+[2025-12-31 17:28:45] [INFO] PASSED: test_anm_config_quick_mode (0.1ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_anm_config_research_mode
+[2025-12-31 17:28:45] [INFO] Testing research_mode configuration...
+[2025-12-31 17:28:45] [INFO] research_mode=True set correctly
+[2025-12-31 17:28:45] [INFO] PASSED: test_anm_config_research_mode (0.1ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_anm_config_auto_mode_default
+[2025-12-31 17:28:45] [INFO] Testing auto_mode default...
+[2025-12-31 17:28:45] [INFO] auto_mode default: True
+[2025-12-31 17:28:45] [INFO] PASSED: test_anm_config_auto_mode_default (0.2ms)
+[2025-12-31 17:28:45] [INFO] STARTING: test_anm_config_all_attributes_exist
+[2025-12-31 17:28:45] [INFO] Testing ANMConfig attributes...
+[2025-12-31 17:28:45] [INFO]   parallel_models: 2
+[2025-12-31 17:28:45] [INFO]   quick_mode: False
+[2025-12-31 17:28:45] [INFO]   auto_mode: True
+[2025-12-31 17:28:45] [INFO]   research_mode: False
+[2025-12-31 17:28:45] [INFO]   verbose: True
+[2025-12-31 17:28:45] [INFO]   skip_sanity_check: False
+[2025-12-31 17:28:45] [INFO] All expected attributes present
+[2025-12-31 17:28:45] [INFO] PASSED: test_anm_config_all_attributes_exist (0.4ms)
+[2025-12-31 17:28:45] [INFO] ============================================================
+[2025-12-31 17:28:45] [INFO] TEST RUN COMPLETE
+[2025-12-31 17:28:45] [INFO] Total: 26 | Passed: 26 | Failed: 0
+[2025-12-31 17:28:45] [INFO] Success rate: 100.0%
+[2025-12-31 17:28:45] [INFO] ============================================================
+[2025-12-31 17:29:25] [INFO] ============================================================
+[2025-12-31 17:29:25] [INFO] ANM V0-OpenSource COMPREHENSIVE TEST SUITE
+[2025-12-31 17:29:25] [INFO] ============================================================
+[2025-12-31 17:29:25] [INFO] Python version: 3.14.0 (main, Oct  7 2025, 09:34:52) [Clang 17.0.0 (clang-1700.3.19.1)]
+[2025-12-31 17:29:25] [INFO] Project root: /Users/syedabdurrehman/ANM V0-OpenSource
+[2025-12-31 17:29:25] [INFO] Starting test run...
+[2025-12-31 17:29:25] [INFO] STARTING: test_anm_query_physics
+[2025-12-31 17:29:25] [INFO] ANMConfig created successfully
+[2025-12-31 17:29:25] [INFO] Creating ANM instance...
+[2025-12-31 17:29:25] [INFO] ANM instance created in 20.9ms
+[2025-12-31 17:29:25] [INFO] Testing ANM query: physics...
+[2025-12-31 17:30:18] [INFO] Physics query result preview: ANSWER: Newton's first law states that an object at rest stays at rest and an object in motion continues to move at a constant velocity unless acted upon by an external force
+
+[VERIFIER_READY]
+[2025-12-31 17:30:18] [INFO] PASSED: test_anm_query_physics (52272.7ms)
+[2025-12-31 17:30:18] [INFO] Cleaning up ANM instance...
+[2025-12-31 17:30:18] [INFO] ============================================================
+[2025-12-31 17:30:18] [INFO] TEST RUN COMPLETE
+[2025-12-31 17:30:18] [INFO] Total: 1 | Passed: 1 | Failed: 0
+[2025-12-31 17:30:18] [INFO] Success rate: 100.0%
+[2025-12-31 17:30:18] [INFO] ============================================================

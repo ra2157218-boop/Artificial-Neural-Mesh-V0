@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import uuid
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Tuple
 
@@ -26,6 +27,7 @@ from anm.specialists.selfawareness_llm import SelfAwarenessLLM
 from anm.memory.working_memory import WorkingMemory
 from anm.memory.meta_memory import MetaMemory
 from anm.system.inference import run_model
+from anm.utils.output_utils import clean_output, normalize_text
 
 try:
     from anm.utils.prompts import RESEARCH_PROMPT
@@ -56,7 +58,7 @@ class ResearchHit:
 #  BACKEND BASE CLASS
 # ======================================================================
 
-class BaseResearchBackend:
+class BaseResearchBackend(ABC):
     """
     Abstract interface for research backends.
     Implementations:
@@ -64,8 +66,10 @@ class BaseResearchBackend:
       - (Future) LocalCorpusBackend, BingBackend, etc.
     """
 
+    @abstractmethod
     def search(self, query: str, max_results: int = 5) -> List[ResearchHit]:
-        raise NotImplementedError
+        """Search for research hits. Must be implemented by subclasses."""
+        pass
 
 
 # ======================================================================
@@ -193,6 +197,7 @@ class ResearchLLM:
         self_awareness_llm: Optional[SelfAwarenessLLM] = None,
         working_memory: Optional[WorkingMemory] = None,
         meta_memory: Optional[MetaMemory] = None,
+        research_kb=None,
     ) -> None:
 
         self.backend = backend or DuckDuckGoBackend()
@@ -203,6 +208,9 @@ class ResearchLLM:
         self.selfaware = self_awareness_llm
         self.working_memory = working_memory
         self.meta_memory = meta_memory
+
+        # Research Knowledge Base (optional)
+        self.research_kb = research_kb
 
         self.system_prefix = self._system_prefix()
 
@@ -228,8 +236,9 @@ class ResearchLLM:
 
         PROCESS:
           - Extract a search query.
+          - Check research KB for related past research (RAG).
           - Fetch hits via backend (evidence only).
-          - Provide hits + context to DeepSeek for analysis.
+          - Provide hits + context + past research to DeepSeek for analysis.
           - Build META block (GRE + Self-Awareness + Diagnostics).
           - Attach META + final WOT_REQUEST line.
 
@@ -237,6 +246,24 @@ class ResearchLLM:
           - Internal reasoning text + META + single WOT_REQUEST line.
         """
         query = self._extract_query_from_wot_packet(wot_packet)
+
+        # Check for related past research (RAG)
+        past_research_context = ""
+        if self.research_kb and self.research_kb.is_available():
+            try:
+                past_research_summary = self.research_kb.get_research_summary(
+                    query=query,
+                    limit=3,
+                )
+                if past_research_summary:
+                    past_research_context = (
+                        "\n\n--- RELATED PAST RESEARCH (KNOWLEDGE BASE) ---\n"
+                        + past_research_summary
+                        + "\n[Use this to avoid repeating research and build on past findings]\n"
+                    )
+            except Exception as e:
+                # Non-critical, continue without past research
+                pass
 
         try:
             hits = self.backend.search(query, max_results=6)
@@ -260,6 +287,7 @@ class ResearchLLM:
             + wot_packet
             + "\n\n--- SEARCH QUERY (DERIVED) ---\n"
             + query[:500]
+            + past_research_context
             + "\n\n--- SEARCH RESULTS (RAW EVIDENCE) ---\n"
             + search_dump
             + "\n\nRespond ONLY with research reasoning + final WOT_REQUEST.\n"
@@ -452,29 +480,19 @@ class ResearchLLM:
 
     def _clean_output(self, text: str) -> str:
         """
-        Strip R1 thinking junk + role prefixes.
+        Clean output using centralized utilities.
         Ensure at least one WOT_REQUEST line exists.
         """
         if not text:
             return "WOT_REQUEST: NONE"
 
-        t = text.strip()
-
-        # Strip leading prefixes / role markers
-        for p in [
-            "Research reasoning:", "Research:", "Reasoning:",
-            "[RESEARCH]", "[Research]", "assistant:", "system:",
-        ]:
-            if t.startswith(p):
-                t = t[len(p):].strip()
-
-        junk = [
-            "Thinking...", "thinking...", "THINKING...",
-            "<think>", "</think>", "<THINK>", "</THINK>",
-            "</s>", "<s>", "<|begin_of_text|>", "<|end_of_text|>",
-        ]
-        for j in junk:
-            t = t.replace(j, "")
+        # Use centralized cleaning utility
+        t = clean_output(
+            text,
+            domain_name="research",
+            clean_thinking=True,
+            remove_role_prefixes=True,
+        )
 
         if "</think>" in t:
             t = t.split("</think>", 1)[-1].strip()

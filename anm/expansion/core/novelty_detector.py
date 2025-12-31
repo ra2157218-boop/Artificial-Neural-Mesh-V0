@@ -31,36 +31,43 @@ class NoveltyResult:
     embedding_used: bool
 
 
-class EmbeddingCache:
-    """In-memory + disk cache for embeddings to avoid recomputation."""
-    
-    def __init__(self, cache_dir: str = ".anm_cache/embeddings"):
-        self.cache_dir = cache_dir
-        self.memory_cache: Dict[str, List[float]] = {}
-        os.makedirs(cache_dir, exist_ok=True)
-    
-    def _get_key(self, text: str) -> str:
-        return hashlib.md5(text.encode()).hexdigest()
-    
-    def get(self, text: str) -> Optional[List[float]]:
-        key = self._get_key(text)
-        if key in self.memory_cache:
-            return self.memory_cache[key]
-        
-        cache_path = os.path.join(self.cache_dir, f"{key}.json")
-        if os.path.exists(cache_path):
-            with open(cache_path, "r") as f:
-                embedding = json.load(f)
-                self.memory_cache[key] = embedding
-                return embedding
-        return None
-    
-    def set(self, text: str, embedding: List[float]) -> None:
-        key = self._get_key(text)
-        self.memory_cache[key] = embedding
-        cache_path = os.path.join(self.cache_dir, f"{key}.json")
-        with open(cache_path, "w") as f:
-            json.dump(embedding, f)
+# NOTE: EmbeddingCache has been moved to anm/utils/embeddings.py
+# This copy is kept here for backward compatibility
+# New code should import from anm.utils.embeddings instead
+try:
+    from anm.utils.embeddings import EmbeddingCache
+except ImportError:
+    # Fallback to local implementation if utils version not available
+    class EmbeddingCache:
+        """In-memory + disk cache for embeddings to avoid recomputation."""
+
+        def __init__(self, cache_dir: str = ".anm_cache/embeddings"):
+            self.cache_dir = cache_dir
+            self.memory_cache: Dict[str, List[float]] = {}
+            os.makedirs(cache_dir, exist_ok=True)
+
+        def _get_key(self, text: str) -> str:
+            return hashlib.md5(text.encode()).hexdigest()
+
+        def get(self, text: str) -> Optional[List[float]]:
+            key = self._get_key(text)
+            if key in self.memory_cache:
+                return self.memory_cache[key]
+
+            cache_path = os.path.join(self.cache_dir, f"{key}.json")
+            if os.path.exists(cache_path):
+                with open(cache_path, "r") as f:
+                    embedding = json.load(f)
+                    self.memory_cache[key] = embedding
+                    return embedding
+            return None
+
+        def set(self, text: str, embedding: List[float]) -> None:
+            key = self._get_key(text)
+            self.memory_cache[key] = embedding
+            cache_path = os.path.join(self.cache_dir, f"{key}.json")
+            with open(cache_path, "w") as f:
+                json.dump(embedding, f)
 
 
 class NoveltyDetectorV2:
@@ -81,7 +88,10 @@ class NoveltyDetectorV2:
     KNOWN_DOMAINS = {
         "general": ["general", "common", "basic", "everyday", "simple"],
         "math": ["mathematics", "algebra", "calculus", "geometry", "equation", "proof", "theorem"],
-        "physics": ["physics", "force", "energy", "motion", "quantum", "relativity", "gravity"],
+        "physics": ["physics", "force", "energy", "motion", "quantum", "relativity", "gravity",
+                    "newton", "newton's law", "first law", "second law", "third law",
+                    "thermodynamics", "kinetic", "potential", "momentum", "acceleration",
+                    "velocity", "mass", "weight", "friction", "conservation law"],
         "code": ["programming", "software", "algorithm", "function", "class", "code", "debug"],
         "chemistry": ["chemistry", "molecule", "reaction", "element", "compound", "bond", "acid"],
         "biology": ["biology", "cell", "dna", "organism", "evolution", "gene", "protein"],
@@ -131,8 +141,14 @@ class NoveltyDetectorV2:
             "weight": 0.9,
         },
         "law": {
-            "keywords": ["law", "legal", "court", "judge", "attorney", "statute", "regulation",
-                        "contract", "liability", "jurisdiction", "precedent", "litigation"],
+            "keywords": ["legal", "court", "judge", "attorney", "statute", "regulation",
+                        "contract", "liability", "jurisdiction", "precedent", "litigation",
+                        "lawsuit", "lawyer", "plaintiff", "defendant", "verdict"],
+            # Exclude patterns that indicate physics/science context (not legal)
+            "exclude_patterns": ["newton", "physics", "first law", "second law", "third law",
+                                "thermodynamics", "conservation", "motion", "force",
+                                "kepler", "ohm", "faraday", "coulomb", "boyle", "charles",
+                                "ideal gas", "murphy's law", "moore's law"],
             "weight": 1.1,
         },
         "engineering": {
@@ -165,7 +181,11 @@ class NoveltyDetectorV2:
         # Thresholds
         self.keyword_confidence_threshold = 0.3
         self.embedding_similarity_threshold = 0.7
-        self.combined_confidence_threshold = 0.5
+        self.combined_confidence_threshold = 0.6  # Raised from 0.5 to reduce false positives
+
+        # Minimum known domain score to skip novelty detection entirely
+        # If a known domain has a strong match, don't trigger novelty detection
+        self.known_domain_override_threshold = 0.3
         
         # Detection weights
         self.layer_weights = {
@@ -251,7 +271,13 @@ class NoveltyDetectorV2:
         for domain, config in self.NOVEL_DOMAIN_PATTERNS.items():
             keywords = config["keywords"]
             weight = config["weight"]
-            
+            exclude_patterns = config.get("exclude_patterns", [])
+
+            # Check if any exclude pattern is present - if so, skip this novel domain
+            has_exclusion = any(excl in q_lower for excl in exclude_patterns)
+            if has_exclusion:
+                continue  # Skip this domain due to exclusion pattern match
+
             matched_keywords = [kw for kw in keywords if kw in q_lower]
             if matched_keywords:
                 score = min(len(matched_keywords) * 0.15 * weight, 1.0)
@@ -404,7 +430,24 @@ Respond in JSON format:
         pattern: Dict[str, Any],
     ) -> Dict[str, Any]:
         """Combine all detection layers with weighted scoring."""
-        
+
+        # SAFEGUARD: If known domain has strong match, skip novelty detection entirely
+        # This prevents false positives like "Newton's law" being flagged as legal domain
+        known_domain_scores = keyword.get("known_domain_scores", {})
+        best_known_score = max(known_domain_scores.values()) if known_domain_scores else 0.0
+        if best_known_score >= self.known_domain_override_threshold:
+            # Known domain detected with high confidence - not a novel domain
+            best_known_domain = max(known_domain_scores.items(), key=lambda x: x[1])[0]
+            return {
+                "requires_new_domain": False,
+                "detected_domain": None,
+                "confidence": 0.0,
+                "semantic_distance": 0.0,
+                "reasoning": f"Known domain detected: {best_known_domain} ({best_known_score:.2f})",
+                "suggested_domains": [],
+                "keywords": keyword.get("matched_keywords", []),
+            }
+
         scores = []
         weights = []
         
@@ -515,7 +558,7 @@ Respond in JSON format:
                 model="text-embedding-ada-002"
             )
             return response['data'][0]['embedding']
-        except:
+        except Exception:
             pass
         
         # Fallback: simple word-based embedding (bag of words with TF-IDF-like weighting)

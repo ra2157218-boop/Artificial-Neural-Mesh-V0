@@ -17,10 +17,21 @@ a high-quality final answer that:
 """
 
 from __future__ import annotations
+import logging
 import re
+import time
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum, auto
+from anm.utils.debug_logger import log_debug
+from anm.utils.output_utils import clean_thinking_tags, normalize_text
+from anm.refiner.constants import (
+    MAX_ANSWER_LENGTH,
+    MIN_ANSWER_LENGTH,
+    MAX_KEY_POINTS,
+    MAX_CONCLUSIONS,
+    MAX_FORMULAS,
+)
 
 from anm.utils.prompts import REFINER_PROMPT
 from anm.system.inference import get_inference_engine, InferenceConfig
@@ -55,8 +66,8 @@ class AnswerQuality(Enum):
 class RefinerConfig:
     """Refiner configuration."""
     default_style: AnswerStyle = AnswerStyle.DETAILED
-    max_answer_length: int = 4000
-    min_answer_length: int = 50
+    max_answer_length: int = MAX_ANSWER_LENGTH
+    min_answer_length: int = MIN_ANSWER_LENGTH
     max_tokens: int = 2048
     add_confidence: bool = True
     add_caveats: bool = True
@@ -139,10 +150,10 @@ class Refiner:
         import json
         try:
             domain_outputs = {k: v for k, v in packet.items() if k.endswith("_rounds")}
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "refiner.py:refine", "message": "Refiner called", "data": {"user_query": packet.get("user_query", "")[:100], "domain_outputs_keys": list(domain_outputs.keys()), "domain_outputs_lengths": {k: len(v) if v else 0 for k, v in domain_outputs.items()}, "has_empty_outputs": any(not v or not v.strip() or "[produced no output]" in v for v in domain_outputs.values() if v)}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "refiner.py:refine", "message": "Refiner called", "data": {"user_query": packet.get("user_query", "")[:100], "domain_outputs_keys": list(domain_outputs.keys()), "domain_outputs_lengths": {k: len(v) if v else 0 for k, v in domain_outputs.items()}, "has_empty_outputs": any(not v or not v.strip() or "[produced no output]" in v for v in domain_outputs.values() if v)}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         
         # Check if this is a simple greeting/casual query - pass through without modification
         user_query = packet.get("user_query", "").lower().strip()
@@ -278,17 +289,17 @@ class Refiner:
         import json
         import time
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "refiner.py:_extract_key_content", "message": "Extract key content start", "data": {"domains": list(domain_outputs.keys()), "output_lengths": {k: len(v) if v else 0 for k, v in domain_outputs.items()}}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "refiner.py:_extract_key_content", "message": "Extract key content start", "data": {"domains": list(domain_outputs.keys()), "output_lengths": {k: len(v) if v else 0 for k, v in domain_outputs.items()}}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         
         for domain, output in domain_outputs.items():
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "refiner.py:_extract_key_content", "message": "Processing domain output", "data": {"domain": domain, "output_length": len(output) if output else 0, "output_preview": output[:150] if output else "EMPTY", "is_empty": not output or output.strip() in ["", "None", "N/A"], "has_no_output_marker": "[produced no output]" in output if output else False}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "refiner.py:_extract_key_content", "message": "Processing domain output", "data": {"domain": domain, "output_length": len(output) if output else 0, "output_preview": output[:150] if output else "EMPTY", "is_empty": not output or output.strip() in ["", "None", "N/A"], "has_no_output_marker": "[produced no output]" in output if output else False}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             # Skip empty outputs and "produced no output" markers
             if not output or (isinstance(output, str) and output.strip() in ["", "None", "N/A"]):
@@ -322,7 +333,7 @@ class Refiner:
                 sent = sent.strip()
                 if len(sent) > 20 and not self._is_instruction_text(sent):
                     points.append(sent)
-            return points[:10]
+            return points[:MAX_KEY_POINTS]
         
         # Look for bullet points
         for match in re.finditer(r'[-•*]\s+(.+?)(?=\n|$)', text):
@@ -341,8 +352,8 @@ class Refiner:
                 if end == -1:
                     end = min(idx + 200, len(text))
                 points.append(text[idx:end].strip())
-        
-        return points[:10]  # Limit
+
+        return points[:MAX_KEY_POINTS]
     
     def _is_malformed_instruction(self, text: str) -> bool:
         """Check if text is malformed (repetitive instructions)."""
@@ -384,8 +395,8 @@ class Refiner:
                 conc = match.group(1).strip()
                 if len(conc) > 10:
                     conclusions.append(conc)
-        
-        return conclusions[:5]
+
+        return conclusions[:MAX_CONCLUSIONS]
     
     def _extract_formulas(self, text: str) -> List[str]:
         """Extract mathematical formulas."""
@@ -398,8 +409,8 @@ class Refiner:
         # Equation patterns
         for match in re.finditer(r'([A-Za-z_]+\s*=\s*[^,\n]{3,50})', text):
             formulas.append(match.group(1))
-        
-        return formulas[:10]
+
+        return formulas[:MAX_FORMULAS]
     
     def _extract_code_blocks(self, text: str) -> List[str]:
         """Extract code blocks."""
@@ -583,9 +594,9 @@ class Refiner:
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R1", "location": "refiner.py:_compose_answer", "message": "Raw answer from LLM", "data": {"raw_answer_length": len(raw_answer) if raw_answer else 0, "raw_answer_preview": raw_answer[:200] if raw_answer else "EMPTY", "has_thinking_tags": "</think>" in raw_answer if raw_answer else False}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R1", "location": "refiner.py:_compose_answer", "message": "Raw answer from LLM", "data": {"raw_answer_length": len(raw_answer) if raw_answer else 0, "raw_answer_preview": raw_answer[:200] if raw_answer else "EMPTY", "has_thinking_tags": "</think>" in raw_answer if raw_answer else False}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
         finally:
             # Restore original engine mode
@@ -599,10 +610,10 @@ class Refiner:
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R2", "location": "refiner.py:_compose_answer", "message": "After cleaning output", "data": {"cleaned_answer_length": len(answer) if answer else 0, "cleaned_answer_preview": answer[:200] if answer else "EMPTY", "is_too_short": len(answer) < 20 if answer else True}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R2", "location": "refiner.py:_compose_answer", "message": "After cleaning output", "data": {"cleaned_answer_length": len(answer) if answer else 0, "cleaned_answer_preview": answer[:200] if answer else "EMPTY", "is_too_short": len(answer) < 20 if answer else True}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         
         # Ensure answer is not None
         if answer is None:
@@ -631,9 +642,9 @@ class Refiner:
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R1", "location": "refiner.py:_compose_answer", "message": "Triggering fallback", "data": {"reason": "thinking_tags_only" if is_thinking_tags_only else "too_short" if len(answer) < 20 else "error", "answer_length": len(answer)}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R1", "location": "refiner.py:_compose_answer", "message": "Triggering fallback", "data": {"reason": "thinking_tags_only" if is_thinking_tags_only else "too_short" if len(answer) < 20 else "error", "answer_length": len(answer)}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             answer = self._fallback_compose(extracted, style, packet)
         
@@ -934,10 +945,10 @@ ANSWER (write directly, no CoT, no thinking tags):
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R2", "location": "refiner.py:_clean_thinking_tags", "message": "Cleaned thinking tags", "data": {"original_length": len(text) if text else 0, "cleaned_length": len(result), "result_preview": result[:100] if result else "EMPTY"}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "R2", "location": "refiner.py:_clean_thinking_tags", "message": "Cleaned thinking tags", "data": {"original_length": len(text) if text else 0, "cleaned_length": len(result), "result_preview": result[:100] if result else "EMPTY"}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         return result
     
     def _format_code_blocks(self, text: str) -> str:
@@ -1071,18 +1082,15 @@ ANSWER (write directly, no CoT, no thinking tags):
         return text.strip()
     
     def _clean_output(self, text: str) -> str:
-        """Clean LLM output."""
+        """Clean LLM output using centralized utilities."""
         if not text:
             return ""
-        
-        # Remove thinking tags
-        text = self._clean_thinking_tags(text)
-        
-        # Remove excessive whitespace
-        while "\n\n\n" in text:
-            text = text.replace("\n\n\n", "\n\n")
-        
-        return text.strip()
+
+        # Use centralized cleaning utilities
+        text = clean_thinking_tags(text)
+        text = normalize_text(text)
+
+        return text
     
     def _ensure_verifier_ready(self, answer: str) -> str:
         """Ensure answer has single [VERIFIER_READY] at end."""

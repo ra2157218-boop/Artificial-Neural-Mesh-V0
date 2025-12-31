@@ -258,7 +258,8 @@ class RayTracingRenderer:
             if os.path.exists(output_path):
                 try:
                     os.remove(output_path)
-                except:
+                except Exception as ex:
+                    # Failed to clean up output file, non-critical
                     pass
             warnings.warn(f"RayTracingRenderer: Rendering failed: {e}", RuntimeWarning)
             return None

@@ -235,9 +235,11 @@ class TrueWoTMax:
         # Beam search state
         self._paths: List[ReasoningPath] = []
         
-        # Thought cache
+        # Thought cache with TTL (specialist output cache)
         self._thought_cache: Dict[str, Dict[str, Any]] = {}
         self._cache_lock = threading.Lock()
+        self._cache_hits: int = 0
+        self._cache_misses: int = 0
         
         # Metacognition instance (lazy loaded)
         self._metacog = None
@@ -526,14 +528,78 @@ class TrueWoTMax:
             return {}
     
     # ========================================================
+    #  SPECIALIST OUTPUT CACHE (OPTIMIZATION)
+    # ========================================================
+
+    def _make_cache_key(self, domain: str, packet: str) -> str:
+        """Create cache key from domain and packet hash."""
+        packet_hash = hashlib.md5(packet.encode()).hexdigest()[:16]
+        return f"{domain}:{packet_hash}"
+
+    def _cache_get(self, domain: str, packet: str) -> Optional[str]:
+        """Get cached specialist output if valid."""
+        if not self.config.enable_thought_cache:
+            return None
+
+        key = self._make_cache_key(domain, packet)
+        with self._cache_lock:
+            entry = self._thought_cache.get(key)
+            if entry:
+                # Check TTL
+                if time.time() - entry["timestamp"] < self.config.cache_ttl_seconds:
+                    self._cache_hits += 1
+                    return entry["output"]
+                else:
+                    # Expired
+                    del self._thought_cache[key]
+            self._cache_misses += 1
+        return None
+
+    def _cache_set(self, domain: str, packet: str, output: str) -> None:
+        """Cache specialist output with TTL."""
+        if not self.config.enable_thought_cache:
+            return
+
+        key = self._make_cache_key(domain, packet)
+        with self._cache_lock:
+            self._thought_cache[key] = {
+                "output": output,
+                "timestamp": time.time(),
+                "domain": domain,
+            }
+            # Limit cache size (LRU-style cleanup)
+            if len(self._thought_cache) > 100:
+                oldest = min(self._thought_cache.items(), key=lambda x: x[1]["timestamp"])
+                del self._thought_cache[oldest[0]]
+
+    def _run_specialist_cached(
+        self,
+        domain: str,
+        packet: str,
+        specialists: Dict[str, Any],
+    ) -> str:
+        """Run specialist with caching for optimization."""
+        # Check cache first
+        cached = self._cache_get(domain, packet)
+        if cached is not None:
+            return cached
+
+        # Run specialist
+        output = specialists[domain].run(packet)
+
+        # Cache result
+        self._cache_set(domain, packet, output)
+        return output
+
+    # ========================================================
     #  QUALITY & CONFIDENCE ESTIMATION
     # ========================================================
-    
+
     def _estimate_step_confidence(self, output: str) -> float:
         """Estimate confidence from output text."""
         if not output:
             return 0.1
-        
+
         lower = output.lower()
         
         # Confidence markers
@@ -849,7 +915,8 @@ Please fix this issue and provide corrected reasoning.
         self._paths = []
         self.loop_window = []
         self.intent_trace = []
-        
+        self._formatted_memory_cache: Optional[str] = None  # Memory section cache
+
         for d in self.domains:
             self.domain_stats[d] = {
                 "calls": 0,
@@ -871,10 +938,11 @@ Please fix this issue and provide corrected reasoning.
         """Refresh memory based on MEMORY_QUERY."""
         if not self.memory_llm:
             return
-        
+
         mem_query = self._extract_memory_query(output, query)
         try:
             self.memory_context = self.memory_llm.query(user_query=mem_query, limit_blocks=10)
+            self._formatted_memory_cache = None  # Invalidate cache on refresh
         except Exception:
             pass
     
@@ -962,14 +1030,30 @@ Please fix this issue and provide corrected reasoning.
         return any(m in lower for m in ["i think", "maybe", "not sure", "probably"])
     
     def _update_stability_flags(self) -> None:
-        """Update stability tracking."""
+        """Update stability tracking with gradient-based plateau detection."""
         if any(self.updated.values()):
             self.no_change_steps = 0
         else:
             self.no_change_steps += 1
-        
+
+        # Original binary check
         if self.no_change_steps >= 2:
             self.global_stable = True
+            return
+
+        # Gradient-based plateau detection (check quality trend)
+        if len(self.step_quality) >= 3:
+            recent = self.step_quality[-3:]
+            qualities = [q.get("quality", 0.5) for q in recent]
+
+            # Calculate quality trend (gradient)
+            if len(qualities) == 3:
+                trend = (qualities[2] - qualities[0]) / 2
+                variance = sum((q - sum(qualities)/3)**2 for q in qualities) / 3
+
+                # Plateau: low variance + minimal improvement + decent quality
+                if variance < 0.01 and abs(trend) < 0.05 and qualities[-1] > 0.6:
+                    self.global_stable = True
     
     # ========================================================
     #  ROUTING HELPERS
@@ -1035,15 +1119,37 @@ When done:
   WOT_REQUEST: NONE
 """
     
-    def _build_full_context_packet(self, query: str) -> str:
-        """Build full context packet with all domain CoTs."""
+    def _build_full_context_packet(self, query: str, max_domains: int = 3) -> str:
+        """Build optimized context packet with recent domain CoTs.
+
+        Optimization: Only include top N most relevant domains (by recency/length)
+        to reduce token overhead while preserving important context.
+        """
         mem = self._format_memory_section()
-        
-        domain_dump = "\n\n".join(
-            f"== {d.upper()} ==\n{self.cots[d]}"
+
+        # Get domains with content, sorted by relevance (length + recency)
+        active_cots = [
+            (d, self.cots[d], self.domain_stats[d]["calls"])
             for d in self.domains if self.cots[d].strip()
-        ) or "[No previous reasoning.]"
-        
+        ]
+
+        # Sort by call count (most recent) and length (most content)
+        active_cots.sort(key=lambda x: (x[2], len(x[1])), reverse=True)
+
+        # Take top N domains for context (optimization)
+        top_cots = active_cots[:max_domains]
+
+        if top_cots:
+            domain_dump = "\n\n".join(
+                f"== {d.upper()} ==\n{cot[:1500]}"  # Truncate long CoTs
+                for d, cot, _ in top_cots
+            )
+            # Add note if we truncated
+            if len(active_cots) > max_domains:
+                domain_dump += f"\n\n[+ {len(active_cots) - max_domains} more domains omitted for brevity]"
+        else:
+            domain_dump = "[No previous reasoning.]"
+
         return f"""
 USER QUERY:
 {query}
@@ -1063,26 +1169,34 @@ INSTRUCTIONS:
 """
     
     def _format_memory_section(self) -> str:
-        """Format memory context."""
+        """Format memory context (cached for performance)."""
+        # Return cached version if available
+        if hasattr(self, '_formatted_memory_cache') and self._formatted_memory_cache is not None:
+            return self._formatted_memory_cache
+
         if not self.memory_context:
             return "No memory loaded."
-        
+
         mc = self.memory_context
         lines = []
-        
+
         if mc.get("query"):
             lines.append(f"Query: {mc['query']}")
-        
+
         if mc.get("highlights"):
             lines.append("Highlights:")
             for h in mc["highlights"][:5]:
                 lines.append(f"  - {h}")
-        
+
         if mc.get("memory_summary"):
             summary = mc["memory_summary"][:500]
             lines.append(f"Summary: {summary}")
-        
-        return "\n".join(lines) or "Memory context empty."
+
+        result = "\n".join(lines) or "Memory context empty."
+
+        # Cache the formatted result
+        self._formatted_memory_cache = result
+        return result
     
     # ========================================================
     #  PARSING (from V0-OpenSource)
@@ -1120,24 +1234,30 @@ INSTRUCTIONS:
             self.loop_window = self.loop_window[-self.loop_window_size:]
     
     def _loop_pattern_detected(self) -> bool:
-        """Detect loop patterns."""
+        """Detect loop patterns (optimized with early exit)."""
         win = self.loop_window
-        if len(win) < 4:
+        win_len = len(win)
+
+        # Minimum window for any pattern
+        if win_len < 3:
             return False
-        
-        # Low diversity
-        if len(set(win)) <= 2 and len(win) >= 4:
+
+        # AAA pattern (most common - check first for early exit)
+        if win[-1] == win[-2] == win[-3]:
             return True
-        
-        # ABAB pattern
+
+        if win_len < 4:
+            return False
+
+        # ABAB pattern (second most common)
         last4 = win[-4:]
-        if len(set(last4)) == 2 and last4[0] == last4[2] and last4[1] == last4[3]:
+        if last4[0] == last4[2] and last4[1] == last4[3] and last4[0] != last4[1]:
             return True
-        
-        # AAA pattern
-        if len(set(win[-3:])) == 1:
+
+        # Low diversity (expensive - check last)
+        if len(set(win)) <= 2:
             return True
-        
+
         return False
     
     # ========================================================

@@ -69,7 +69,7 @@ class CodeValidator:
                     timeout=5,
                 )
                 tools[tool] = result.returncode == 0
-            except:
+            except Exception:
                 pass
         
         return tools
@@ -187,7 +187,7 @@ class CodeValidator:
                             message=f"Module '{module}' may not be available",
                             severity="warning",
                         ))
-        except:
+        except Exception:
             pass
         
         return warnings, imports_checked
@@ -250,7 +250,7 @@ class CodeValidator:
                             message=f"Function '{node.name}' is {func_lines} lines (consider refactoring)",
                             severity="info",
                         ))
-        except:
+        except Exception:
             pass
         
         return info, stats
@@ -289,7 +289,7 @@ class CodeValidator:
                         message=line,
                         severity="warning",
                     ))
-        except:
+        except Exception:
             pass
         finally:
             os.unlink(temp_path)
@@ -321,13 +321,13 @@ class CodeValidator:
                         message=line,
                         severity="warning",
                     ))
-        except:
+        except Exception:
             pass
         finally:
             os.unlink(temp_path)
-        
+
         return warnings
-    
+
     def _run_security_scan(self, code: str, filename: str) -> List[ValidationError]:
         """Run security scanning using bandit."""
         errors = []
@@ -356,7 +356,7 @@ class CodeValidator:
                     message=issue.get("issue_text", ""),
                     severity=severity,
                 ))
-        except:
+        except Exception:
             pass
         finally:
             os.unlink(temp_path)
@@ -375,7 +375,7 @@ class CodeValidator:
                 if fixed != code:
                     fixes_applied.append("Formatted with black")
                     code = fixed
-            except:
+            except Exception:
                 pass
         
         # Try auto-fixing with ruff if available
@@ -393,11 +393,11 @@ class CodeValidator:
                 
                 with open(temp_path, 'r') as f:
                     fixed = f.read()
-                
+
                 if fixed != code:
                     fixes_applied.append("Auto-fixed lint issues with ruff")
                     code = fixed
-            except:
+            except Exception:
                 pass
             finally:
                 os.unlink(temp_path)

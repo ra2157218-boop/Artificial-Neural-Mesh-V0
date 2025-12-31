@@ -26,6 +26,7 @@ from enum import Enum
 import hashlib
 import json
 import os
+import logging
 
 from anm.memory.diary_memory import DiaryMemory
 from anm.memory.working_memory import WorkingMemory
@@ -547,7 +548,8 @@ class MemoryHub:
                 return [
                     BehavioralInsight(**item) for item in data
                 ]
-        except Exception:
+        except Exception as e:
+            logging.warning(f"Failed to load behavioral insights: {e}")
             return []
     
     def _save_insights(self) -> None:
@@ -567,8 +569,8 @@ class MemoryHub:
             ]
             with open(self.insights_path, "w") as f:
                 json.dump(data, f, indent=2)
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning(f"Failed to save behavioral insights: {e}")
     
     # ============================================================
     #  WORKING MEMORY INTEGRATION

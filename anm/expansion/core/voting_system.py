@@ -292,7 +292,7 @@ RESPONSE FORMAT (JSON):
                     can_partially_handle=data.get("can_partially_handle", False),
                     suggested_collaboration=data.get("suggested_collaboration", []),
                 )
-        except:
+        except Exception:
             pass
         
         # Fallback: Heuristic parsing

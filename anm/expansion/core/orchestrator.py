@@ -91,7 +91,7 @@ class PipelineOrchestrator:
         try:
             from anm.expansion.core.metrics import ExpansionMetrics
             self.metrics = ExpansionMetrics()
-        except:
+        except Exception:
             pass
     
     def register_stage(self, config: StageConfig) -> None:
@@ -354,7 +354,7 @@ class PipelineOrchestrator:
             try:
                 json.dumps(value)
                 serializable[key] = value
-            except:
+            except Exception:
                 serializable[key] = str(value)
         return serializable
     

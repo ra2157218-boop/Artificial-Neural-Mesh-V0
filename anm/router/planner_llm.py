@@ -6,10 +6,12 @@
 # ============================================================
 
 from __future__ import annotations
+import logging
 import json
 from typing import Any, Dict, Optional
 
 from anm.system.inference import run_model
+from anm.utils.debug_logger import log_debug
 
 
 # ============================================================
@@ -77,20 +79,20 @@ class PlannerLLM:
         import json
         import time
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "planner_llm.py:plan", "message": "Plan start", "data": {"user_query": user_query[:200]}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "planner_llm.py:plan", "message": "Plan start", "data": {"user_query": user_query[:200]}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         prompt = self._build_prompt(user_query, memory_brief)
         raw = run_model(prompt, max_tokens=512)
         parsed = self._parse_json(raw)
         safe = self._normalize(parsed, user_query)
         # #region agent log
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "planner_llm.py:plan", "message": "Plan result", "data": {"entry_specialist": safe.get("entry_specialist"), "reason": safe.get("reason", "")[:200]}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "planner_llm.py:plan", "message": "Plan result", "data": {"entry_specialist": safe.get("entry_specialist"), "reason": safe.get("reason", "")[:200]}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         return safe
 
     # --------------------------------------------------------
@@ -460,10 +462,10 @@ MEMORY_BRIEF:
         import json
         import time
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference start", "data": {"query": q_lower[:200]}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference start", "data": {"query": q_lower[:200]}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
+            # #endregion
 
         # SIMULATION: video generation, animations, physics scenarios
         if any(k in q for k in [
@@ -474,9 +476,9 @@ MEMORY_BRIEF:
             result = "simulation"
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "simulation"}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "simulation"}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             return result
         
@@ -490,9 +492,9 @@ MEMORY_BRIEF:
             result = "physics"
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "physics"}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "physics"}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             return result
         
@@ -500,18 +502,18 @@ MEMORY_BRIEF:
             result = "sound"
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "sound"}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "sound"}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             return result
         if any(k in q for k in ["image", "visual", "frame", "diagram", "picture"]):
             result = "image"
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "image"}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "image"}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             return result
         # MATH: arithmetic, calculations, equations, derivations
@@ -524,45 +526,45 @@ MEMORY_BRIEF:
                 result = "math"
                 # #region agent log
                 try:
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "math_arithmetic"}, "timestamp": int(time.time() * 1000)}) + "\n")
-                except: pass
-                # #endregion
+                    log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "math_arithmetic"}, "timestamp": int(time.time() * 1000)})
+                except Exception as e:
+                    logging.warning(f"Debug logging failed: {e}")
+            # #endregion
                 return result
         if any(k in q for k in ["derive", "integral", "equation", "gradient", "matrix", "proof", "theorem"]):
             result = "math"
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "math"}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "math"}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             return result
         if any(k in q for k in ["python", "code", "function", "class", "algorithm"]):
             result = "code"
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "code"}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "code"}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             return result
         if any(k in q for k in ["reaction", "molecule", "compound", "bond", "stoichiometry"]):
             result = "chemistry"
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "chemistry"}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "chemistry"}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             return result
         if any(k in q for k in ["cell", "neuron", "organism", "evolution", "physiology"]):
             result = "biology"
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "biology"}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "biology"}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             return result
         
@@ -575,17 +577,17 @@ MEMORY_BRIEF:
             result = "facts"
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "facts"}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "facts"}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             return result
 
         result = "general"
         # #region agent log
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "none"}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "planner_llm.py:_infer_entry_from_query", "message": "Entry inference result", "data": {"result": result, "matched": "none"}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
+            # #endregion
         return result

@@ -16,6 +16,7 @@ from typing import Dict, Any, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from anm.utils.prompts import ROUTER_PROMPT, WOT_PACKET_TEMPLATES
+from anm.utils.debug_logger import log_debug
 
 # Specialists
 from anm.specialists.math_llm import MathLLM
@@ -94,6 +95,10 @@ class ParallelSpecialistAdapter:
           - Strips all internal WOT_REQUEST lines from that primary.
           - Appends a single consensus WOT_REQUEST line at the end.
       • This keeps TrueWoT happy (ONLY one WOT_REQUEST: line visible).
+
+    OPTIMIZATION (V0-OpenSource):
+      • adaptive_workers: Use fewer workers in ADAPTIVE mode (1 by default)
+      • set_adaptive_mode(bool): Toggle between full ensemble and single worker
     """
 
     def __init__(
@@ -102,12 +107,24 @@ class ParallelSpecialistAdapter:
         n_workers: int = 4,
         name: str = "",
         worker_kwargs: Optional[Dict[str, Any]] = None,  # NEW: Pass kwargs to workers
+        adaptive_workers: int = 1,  # Workers for adaptive mode (optimization)
     ) -> None:
         self.worker_cls = worker_cls
         self.n_workers = max(1, int(n_workers or 1))
+        self.adaptive_workers = max(1, int(adaptive_workers or 1))
+        self._adaptive_mode = False  # Start in full ensemble mode
         self.name = name or getattr(worker_cls, "__name__", "specialist")
         kwargs = worker_kwargs or {}
         self.workers = [worker_cls(**kwargs) for _ in range(self.n_workers)]
+
+    def set_adaptive_mode(self, enabled: bool) -> None:
+        """Enable/disable adaptive mode (uses fewer workers for speed)."""
+        self._adaptive_mode = enabled
+
+    @property
+    def active_workers(self) -> int:
+        """Get current active worker count based on mode."""
+        return self.adaptive_workers if self._adaptive_mode else self.n_workers
 
     # ------------- internal helpers -------------
 
@@ -134,12 +151,16 @@ class ParallelSpecialistAdapter:
     # ------------- public API -------------
 
     def run(self, wot_packet: str) -> str:
-        # Single worker case → just delegate
-        if self.n_workers <= 1 or len(self.workers) <= 1:
+        # Get active worker count (respects adaptive mode)
+        num_active = self.active_workers
+
+        # Single worker case → just delegate (optimized path)
+        if num_active <= 1 or len(self.workers) <= 1:
             return self.workers[0].run(wot_packet)
 
-        # Multi-worker ensemble
+        # Multi-worker ensemble (use only active_workers count)
         results: List[str] = []
+        active_workers_list = self.workers[:num_active]
 
         def _safe_run(worker):
             try:
@@ -148,8 +169,8 @@ class ParallelSpecialistAdapter:
             except Exception as e:
                 return f"[{self.name} worker error: {e}]"
 
-        with ThreadPoolExecutor(max_workers=self.n_workers) as ex:
-            futs = [ex.submit(_safe_run, w) for w in self.workers]
+        with ThreadPoolExecutor(max_workers=num_active) as ex:
+            futs = [ex.submit(_safe_run, w) for w in active_workers_list]
             for fut in as_completed(futs):
                 try:
                     results.append(fut.result())
@@ -363,14 +384,9 @@ class Router:
         )
         
         # Research specialist (optional - requires requests)
-        if ResearchLLM is not None:
-            self.research = ParallelSpecialistAdapter(
-                ResearchLLM,
-                n_workers=self.parallel_workers,
-                name="research",
-            )
-        else:
-            self.research = None
+        # NOTE: ResearchLLM initialization moved after research_kb setup (line 455+)
+        # Placeholder for now - will be initialized after research_kb
+        self.research = None
         
         self.facts = ParallelSpecialistAdapter(
             FactsLLM,
@@ -432,6 +448,38 @@ class Router:
         # Handlers for modularity
         self.novelty_handler = NoveltyHandler(self.VALID_DOMAINS, self.config)
         
+        # Initialize Research Knowledge Base (RAG) - BEFORE ResearchLLM
+        self.research_kb = None
+        research_kb_enabled = self.config.get("research_kb_enabled", True)
+        if research_kb_enabled:
+            try:
+                from anm.memory.research_vector_store import ResearchVectorStore
+                self.research_kb = ResearchVectorStore()
+                if self.research_kb.is_available():
+                    self._logger.info("Research Knowledge Base enabled")
+                else:
+                    self._logger.warning("Research KB unavailable, RAG disabled")
+                    self.research_kb = None
+            except Exception as e:
+                self._logger.warning(f"Failed to initialize Research KB: {e}")
+                self.research_kb = None
+
+        # Initialize ResearchLLM with research_kb (after research_kb is ready)
+        if ResearchLLM is not None:
+            research_kwargs = {
+                "research_kb": self.research_kb,
+                "model_name": self.router_model,  # Use same model as router
+                # Note: gre, self_awareness_llm, working_memory, meta_memory are optional
+                # Router doesn't initialize these components, so they default to None
+                # ResearchLLM will work fine without them (graceful degradation)
+            }
+            self.research = ParallelSpecialistAdapter(
+                ResearchLLM,
+                n_workers=self.parallel_workers,
+                name="research",
+                worker_kwargs=research_kwargs,
+            )
+
         # Build specialists dict for handlers (needed for voting and expansion)
         self._handler_specialists = {
             "general": self.general,
@@ -444,7 +492,7 @@ class Router:
         }
         if self.research is not None:
             self._handler_specialists["research"] = self.research
-        
+
         self.voting_handler = VotingHandler(self._handler_specialists, self.config)
         self.expansion_handler = ExpansionHandler(self._handler_specialists, self.config)
 
@@ -519,13 +567,23 @@ class Router:
         # 3.5) Novelty Detection - Check if query requires a new domain
         novelty_result = self.novelty_handler.detect(user_query, memory_brief)
         if novelty_result.get("requires_new_domain", False):
-            # Trigger specialists voting system
-            voting_result = self.voting_handler.vote(
-                user_query=user_query,
-                detected_domain=novelty_result.get("detected_domain"),
-                novelty_reasoning=novelty_result.get("reasoning", ""),
-                memory_brief=memory_brief,
-            )
+            # Trigger specialists voting system with graceful timeout handling
+            try:
+                voting_result = self.voting_handler.vote(
+                    user_query=user_query,
+                    detected_domain=novelty_result.get("detected_domain"),
+                    novelty_reasoning=novelty_result.get("reasoning", ""),
+                    memory_brief=memory_brief,
+                )
+            except (TimeoutError, Exception) as voting_error:
+                # Gracefully handle voting timeout - continue without expansion
+                self._logger.warning(f"Voting system timeout/error: {voting_error}. Skipping expansion.")
+                voting_result = {
+                    "majority_yes": False,
+                    "skipped": True,
+                    "error": str(voting_error),
+                    "votes": {},
+                }
             if voting_result.get("majority_yes", False):
                 # Trigger expansion engine
                 expansion_result = self.expansion_handler.trigger(
@@ -565,11 +623,10 @@ class Router:
         # 5) LFM Module — adjust plan using past failures
         # #region agent log
         try:
-            import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H1", "location": "router.py:handle", "message": "Before LFM adjust_plan", "data": {"has_base_plan": bool(base_plan), "user_query": user_query[:100]}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H1", "location": "router.py:handle", "message": "Before LFM adjust_plan", "data": {"has_base_plan": bool(base_plan), "user_query": user_query[:100]}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
         # #endregion
         try:
             adjusted_plan = self.lfm.adjust_plan(
@@ -580,11 +637,10 @@ class Router:
         except Exception as e:
             # #region agent log
             try:
-                import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H1", "location": "router.py:handle", "message": "LFM adjust_plan exception", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200]}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H1", "location": "router.py:handle", "message": "LFM adjust_plan exception", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200]}, "timestamp": int(time.time() * 1000)})
+            except Exception as ex:
+                logging.warning(f"Debug logging failed: {ex}")
             # #endregion
             self._logger.error(f"LFM adjust_plan failed: {type(e).__name__}: {e}", exc_info=True)
             # Fallback to base_plan if LFM fails
@@ -595,11 +651,10 @@ class Router:
             }
         # #region agent log
         try:
-            import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H1", "location": "router.py:handle", "message": "After LFM adjust_plan", "data": {"has_adjusted_plan": bool(adjusted_plan), "entry_specialist": adjusted_plan.get("entry_specialist") if adjusted_plan else None}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H1", "location": "router.py:handle", "message": "After LFM adjust_plan", "data": {"has_adjusted_plan": bool(adjusted_plan), "entry_specialist": adjusted_plan.get("entry_specialist") if adjusted_plan else None}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
         # #endregion
         
         # CRITICAL: Ensure adjusted_plan is always a valid dict
@@ -710,12 +765,21 @@ class Router:
         wot_start_time = time.time()
         # #region agent log
         try:
-            import json
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H3", "location": "router.py:handle", "message": "Before WoT execution", "data": {"has_adjusted_plan": bool(adjusted_plan), "entry_specialist": entry_specialist, "active_domains": active_domains}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H3", "location": "router.py:handle", "message": "Before WoT execution", "data": {"has_adjusted_plan": bool(adjusted_plan), "entry_specialist": entry_specialist, "active_domains": active_domains}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
         # #endregion
         try:
+            # Determine WoT mode from config/plan
+            wot_mode = adjusted_plan.get("wot_mode", "metacognitive").lower()
+            use_adaptive_mode = wot_mode == "adaptive"
+
+            # OPTIMIZATION: Set adaptive mode on specialists (uses 1 worker instead of 4)
+            if use_adaptive_mode:
+                for spec in specialists.values():
+                    if hasattr(spec, 'set_adaptive_mode'):
+                        spec.set_adaptive_mode(True)
+
             wot = TrueWoT(
                 domain_names=list(specialists.keys()),
                 memory_llm=self._memory_core,  # direct MemoryLLM path
@@ -725,6 +789,7 @@ class Router:
                 query=full_query,
                 specialists=specialists,
                 max_steps=max_steps,
+                mode=wot_mode if wot_mode in ("adaptive", "parallel", "beam_search", "consensus", "metacognitive", "state_machine") else None,
             )
             
             wot_end_time = time.time()
@@ -736,9 +801,9 @@ class Router:
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H3", "location": "router.py:handle", "message": "WoT exception caught", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200], "has_adjusted_plan": 'adjusted_plan' in locals(), "adjusted_plan_type": type(adjusted_plan).__name__ if 'adjusted_plan' in locals() else "N/A"}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H3", "location": "router.py:handle", "message": "WoT exception caught", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200], "has_adjusted_plan": 'adjusted_plan' in locals(), "adjusted_plan_type": type(adjusted_plan).__name__ if 'adjusted_plan' in locals() else "N/A"}, "timestamp": int(time.time() * 1000)})
+            except Exception as ex:
+                logging.warning(f"Debug logging failed: {ex}")
             # #endregion
             self._logger.error(f"WoT execution failed: {type(e).__name__}: {e}", exc_info=True)
             wot_end_time = time.time()
@@ -776,9 +841,9 @@ class Router:
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H6", "location": "router.py:handle", "message": "router_plan_for_refiner defined", "data": {"has_router_plan": bool(router_plan_for_refiner), "entry_specialist": router_plan_for_refiner.get("entry_specialist") if router_plan_for_refiner else None}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H6", "location": "router.py:handle", "message": "router_plan_for_refiner defined", "data": {"has_router_plan": bool(router_plan_for_refiner), "entry_specialist": router_plan_for_refiner.get("entry_specialist") if router_plan_for_refiner else None}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
         # #endregion
         try:
             refiner_packet = self._build_refiner_packet(
@@ -813,9 +878,9 @@ class Router:
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H6", "location": "router.py:handle", "message": "Refiner/Verifier exception caught", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200], "has_router_plan_for_refiner": 'router_plan_for_refiner' in locals()}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H6", "location": "router.py:handle", "message": "Refiner/Verifier exception caught", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200], "has_router_plan_for_refiner": 'router_plan_for_refiner' in locals()}, "timestamp": int(time.time() * 1000)})
+            except Exception as ex:
+                logging.warning(f"Debug logging failed: {ex}")
             # #endregion
             self._logger.error(f"Refiner/Verifier execution failed: {type(e).__name__}: {e}", exc_info=True)
             refined_output = f"[Error during refinement/verification: {str(e)}]"
@@ -842,9 +907,9 @@ class Router:
         # Use router_plan_for_refiner if available, otherwise fall back to adjusted_plan
         # #region agent log
         try:
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "router.py:handle", "message": "Before PointGame router_plan check", "data": {}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "router.py:handle", "message": "Before PointGame router_plan check", "data": {}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
         # #endregion
         try:
             router_plan_for_pg = router_plan_for_refiner
@@ -914,13 +979,12 @@ class Router:
             try:
                 router_plan_in_locals = 'router_plan_for_refiner' in locals()
                 adjusted_plan_in_locals = 'adjusted_plan' in locals()
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "router.py:handle", "message": "Checking router_plan availability", "data": {"router_plan_in_locals": router_plan_in_locals, "adjusted_plan_in_locals": adjusted_plan_in_locals, "has_router_plan_for_refiner": 'router_plan_for_refiner' in globals() if 'router_plan_for_refiner' in globals() else False}, "timestamp": int(time.time() * 1000)}) + "\n")
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "router.py:handle", "message": "Checking router_plan availability", "data": {"router_plan_in_locals": router_plan_in_locals, "adjusted_plan_in_locals": adjusted_plan_in_locals, "has_router_plan_for_refiner": 'router_plan_for_refiner' in globals() if 'router_plan_for_refiner' in globals() else False}, "timestamp": int(time.time() * 1000)})
             except Exception as e:
                 try:
-                    with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "router.py:handle", "message": "Error checking router_plan", "data": {"error": str(e)}, "timestamp": int(time.time() * 1000)}) + "\n")
-                except: pass
+                    log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "router.py:handle", "message": "Error checking router_plan", "data": {"error": str(e)}, "timestamp": int(time.time() * 1000)})
+                except Exception as ex:
+                    logging.warning(f"Debug logging failed: {ex}")
             # #endregion
             # Try to access router_plan_for_refiner directly (it should be in outer scope)
             try:
@@ -934,9 +998,9 @@ class Router:
                     router_plan_for_lfm = {}
             # #region agent log
             try:
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "router.py:handle", "message": "router_plan_for_lfm determined", "data": {"has_router_plan": bool(router_plan_for_lfm), "entry_specialist": router_plan_for_lfm.get("entry_specialist") if router_plan_for_lfm else None}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H4", "location": "router.py:handle", "message": "router_plan_for_lfm determined", "data": {"has_router_plan": bool(router_plan_for_lfm), "entry_specialist": router_plan_for_lfm.get("entry_specialist") if router_plan_for_lfm else None}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
             lfm_report = self.lfm.analyze(
                 user_query=user_query,
@@ -977,11 +1041,10 @@ class Router:
         # Use router_plan_for_refiner if available, otherwise fall back to adjusted_plan
         # #region agent log
         try:
-            import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M2", "location": "router.py:handle", "message": "Before memory log_session", "data": {"has_memory_core": self._memory_core is not None, "has_lfm_report": lfm_report is not None}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M2", "location": "router.py:handle", "message": "Before memory log_session", "data": {"has_memory_core": self._memory_core is not None, "has_lfm_report": lfm_report is not None}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
         # #endregion
         try:
             router_plan_for_memory = router_plan_for_refiner
@@ -1005,9 +1068,9 @@ class Router:
             try:
                 import json
                 import time
-                with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M2", "location": "router.py:handle", "message": "memory log_session completed", "data": {}, "timestamp": int(time.time() * 1000)}) + "\n")
-            except: pass
+                log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "M2", "location": "router.py:handle", "message": "memory log_session completed", "data": {}, "timestamp": int(time.time() * 1000)})
+            except Exception as e:
+                logging.warning(f"Debug logging failed: {e}")
             # #endregion
         except TypeError:
             # backwards compatibility if log_session has different signature
@@ -1048,9 +1111,9 @@ class Router:
         try:
             import json
             import time
-            with open("/Users/syedabdurrehman/ANM V0-OpenSource/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H6", "location": "router.py:handle", "message": "Final return router_plan", "data": {"has_router_plan": bool(router_plan_for_return), "entry_specialist": router_plan_for_return.get("entry_specialist") if router_plan_for_return else None}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
+            log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H6", "location": "router.py:handle", "message": "Final return router_plan", "data": {"has_router_plan": bool(router_plan_for_return), "entry_specialist": router_plan_for_return.get("entry_specialist") if router_plan_for_return else None}, "timestamp": int(time.time() * 1000)})
+        except Exception as e:
+            logging.warning(f"Debug logging failed: {e}")
         # #endregion
         return {
             "status": status,
@@ -1087,7 +1150,7 @@ class Router:
         self.logger.new_run(user_query)
 
         # 2. Load memory brief (PAST-ONLY context)
-        from anm.router.memory_builder import build_memory_brief
+        # build_memory_brief is already imported at top (line 65)
         memory_info = build_memory_brief(self._memory_core, user_query)
         memory_brief = memory_info["brief_text"]
         self.logger.log_memory(memory_brief)
@@ -1124,11 +1187,12 @@ class Router:
         full_query = f"{user_query}\n\n{memory_brief}\n\n[RESEARCH MODE: Correctness required]"
 
         try:
-            from anm.wot.true_wot import TrueWoT
+            # TrueWoT is already imported at top (line 57)
             wot = TrueWoT(
                 domain_names=list(specialists.keys()),
                 memory_llm=self._memory_core,
-                min_depth=min_depth,  # Enforce minimum reasoning depth
+                # min_depth parameter doesn't exist in TrueWoT constructor
+                # Depth validation happens after wot.run() at line 1143
             )
             domain_cots = wot.run(
                 entry_domain=entry_domain,
@@ -1238,10 +1302,33 @@ class Router:
                     output_path = None
                     output_format = "none"
 
-        # 13. Save logs
+        # 13. Index research output in knowledge base (RAG)
+        if self.research_kb and self.research_kb.is_available() and output_path:
+            try:
+                from datetime import datetime, timezone
+
+                # Extract active domains for metadata
+                active_domains = list(domain_cots.keys()) if domain_cots else []
+
+                self.research_kb.add_research_output(
+                    query=user_query,
+                    research_content=refined_output,
+                    metadata={
+                        "domains": active_domains,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "format": output_format,
+                        "verification_status": status,
+                    },
+                    output_path=output_path,
+                )
+                self._logger.info(f"Indexed research output in KB: {output_path}")
+            except Exception as e:
+                self._logger.warning(f"Failed to index research output: {e}")
+
+        # 14. Save logs
         log_path = self.logger.save()
 
-        # 14. Return comprehensive result
+        # 15. Return comprehensive result
         return {
             "status": status,
             "result": refined_output,
@@ -1579,15 +1666,15 @@ Provide your general reasoning and end with WOT_REQUEST: NONE"""
                     "specialist": step.get("specialist", step.get("domain", "unknown")),
                     "action": step.get("action", "process"),
                 })
-            else:
-                # Fallback: create steps from domain_cots
-                for domain, output in domain_cots.items():
-                    if output and output.strip():
-                        wot_steps.append({
-                            "domain": domain,
-                            "specialist": domain,
-                            "action": "process",
-                        })
+        else:
+            # Fallback: create steps from domain_cots
+            for domain, output in domain_cots.items():
+                if output and output.strip():
+                    wot_steps.append({
+                        "domain": domain,
+                        "specialist": domain,
+                        "action": "process",
+                    })
         
         return wot_steps
 
@@ -2214,7 +2301,7 @@ Format as JSON with keys: consistency, confidence, uncertainty, limitations"""
             try:
                 import json
                 audit = json.loads(response)
-            except:
+            except Exception:
                 audit = {
                     "consistency": "Unable to parse",
                     "confidence": "Medium",
