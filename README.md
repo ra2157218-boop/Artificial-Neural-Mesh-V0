@@ -4,6 +4,7 @@
   <img src="https://img.shields.io/badge/Python-3.9--3.13-blue?style=for-the-badge&logo=python" alt="Python">
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/Status-Research%20Artifact-orange?style=for-the-badge" alt="Status">
+  <a href="https://github.com/ra2157218-boop/Artificial-Neural-Mesh-V0/releases/tag/v0.1.0"><img src="https://img.shields.io/badge/Release-v0.1.0-purple?style=for-the-badge&logo=github" alt="Release"></a>
   <a href="https://zenodo.org/records/18112435"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18112435-blue?style=for-the-badge&logo=zenodo" alt="DOI"></a>
 </p>
 
@@ -66,45 +67,21 @@ ANM [Ready]> What is quantum entanglement?
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         ANM Core                            │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
-│  │  Math   │  │ Physics │  │Chemistry│  │ Biology │        │
-│  │   LLM   │  │   LLM   │  │   LLM   │  │   LLM   │        │
-│  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘        │
-│       │            │            │            │              │
-│       └────────────┴─────┬──────┴────────────┘              │
-│                          │                                   │
-│                    ┌─────▼─────┐                            │
-│                    │   Router  │ ◄── Domain Detection       │
-│                    └─────┬─────┘                            │
-│                          │                                   │
-│                    ┌─────▼─────┐                            │
-│                    │    WoT    │ ◄── Web-of-Thought Engine  │
-│                    │  Engine   │                            │
-│                    └─────┬─────┘                            │
-│                          │                                   │
-│         ┌────────────────┼────────────────┐                 │
-│         │                │                │                 │
-│   ┌─────▼─────┐   ┌──────▼──────┐  ┌─────▼─────┐           │
-│   │  Refiner  │   │   Verifier  │  │  Memory   │           │
-│   └───────────┘   └─────────────┘  │    Hub    │           │
-│                                     └───────────┘           │
-└─────────────────────────────────────────────────────────────┘
-```
+ANM implements a **five-layer architecture** separating input, routing, specialist execution, output processing, and delivery.
+
+<p align="center">
+  <img src="docs/architecture.png" alt="ANM Architecture" width="700">
+</p>
 
 ### Components
 
-| Component | Description |
-|-----------|-------------|
-| **Router** | Analyzes queries and routes to appropriate specialists |
-| **WoT Engine** | Chains specialists for multi-step reasoning |
-| **Specialists** | 12 domain-specific LLM adapters |
-| **Refiner** | Composes final answers from specialist outputs |
-| **Verifier** | Validates output quality and safety |
-| **Memory Hub** | Manages diary memory, working memory, and learning |
+| Layer | Component | Description |
+|-------|-----------|-------------|
+| **Layer 1** | Input, Classify, Memory | Query intake, classification, context retrieval |
+| **Layer 2** | Router, Planner, Metacog | Domain detection, execution planning, self-assessment |
+| **Layer 3** | 12 Specialists + WoT | Domain experts with Web-of-Thought orchestration |
+| **Layer 4** | Refiner, Verifier, Law Book | Output composition, quality validation, constitutional governance |
+| **Layer 5** | Response, PDF Gen, Session | Delivery formatting and session management |
 
 ---
 
