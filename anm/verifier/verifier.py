@@ -142,10 +142,10 @@ class Verifier:
         query_match = re.search(r"user query:\s*['\"](.*?)['\"]", packet, re.IGNORECASE | re.DOTALL)
         if not query_match:
             query_match = re.search(r"user_query:\s*(.*?)(?:\n|merged_reasoning)", packet, re.IGNORECASE | re.DOTALL)
-        
+
         user_query = query_match.group(1).strip() if query_match else ""
         query_lower = user_query.lower()
-        
+
         analysis = {
             "query": user_query,
             "query_length": len(user_query),
@@ -156,13 +156,36 @@ class Verifier:
             "expected_length": "medium",
             "domain_hints": [],
         }
-        
+
         # Determine query type
-        # IMPORTANT: Check for calculations/math FIRST (before "what is" which is too broad)
-        if any(word in query_lower for word in ["code", "function", "program", "script", "algorithm", "implement", "write a"]):
+        # CRITICAL: Check for CODE FIRST (highest priority)
+        # This catches "write a function to calculate..." which should be code, not calculation
+        code_keywords = [
+            "code", "function", "program", "script", "algorithm", "implement",
+            "binary search", "sorting", "recursion", "data structure",
+            "class", "method", "api", "endpoint"
+        ]
+        code_patterns = [
+            r"write\s+(a\s+)?(\w+\s+)?function",
+            r"implement\s+(a\s+)?(\w+\s+)?algorithm",
+            r"create\s+(a\s+)?(\w+\s+)?class",
+            r"write\s+(a\s+)?(\w+\s+)?program",
+            r"code\s+to\s+\w+",
+            r"script\s+that\s+\w+",
+            r"how\s+to\s+\w+\s+in\s+(python|javascript|java|c\+\+|go|rust)",
+        ]
+
+        is_code_query = (
+            any(word in query_lower for word in code_keywords) or
+            any(re.search(p, query_lower) for p in code_patterns)
+        )
+
+        if is_code_query:
             analysis["query_type"] = "code"
             analysis["expected_format"] = "code"
             analysis["requirements"].append("code_blocks")
+            # Code queries may also need explanation, so set appropriate length
+            analysis["expected_length"] = "medium"
         elif any(word in query_lower for word in ["calculate", "compute", "solve", "derive", "prove", "formula"]) or any(op in user_query for op in ["+", "-", "*", "/", "=", "×", "÷", "^"]):
             # Check for math operations FIRST (before "what is" which catches too much)
             analysis["query_type"] = "calculation"
@@ -330,29 +353,20 @@ class Verifier:
         
         # Check if answer matches expected format
         if question_analysis["expected_format"] == "code":
-            # Expanded code detection - recognize various code patterns
-            analysis["has_expected_format"] = (
-                "```" in answer_text or           # Code blocks
-                "def " in answer_lower or         # Python functions
-                "function" in answer_lower or     # JS/other functions
-                "class " in answer_lower or       # Class definitions
-                "import " in answer_lower or      # Import statements
-                "return " in answer_lower or      # Return statements
-                "for " in answer_lower or         # For loops
-                "while " in answer_lower or       # While loops
-                "if " in answer_lower or          # Conditionals
-                "elif " in answer_lower or        # Python elif
-                "else:" in answer_lower or        # Else blocks
-                "->" in answer_text or            # Type hints / arrow functions
-                "==" in answer_text or            # Equality comparisons
-                "!=" in answer_text or            # Inequality comparisons
-                "+=" in answer_text or            # Compound assignment
-                "[]" in answer_text or            # Array literals
-                "{}" in answer_text or            # Dict/object literals
-                "lambda" in answer_lower or       # Lambda functions
-                "async " in answer_lower or       # Async functions
-                "await " in answer_lower          # Await expressions
-            )
+            # Use comprehensive code validation
+            code_validation = self._validate_code_quality(answer_text, question_analysis.get("query", ""))
+            analysis["code_validation"] = code_validation  # Store for use in fallback
+
+            # Use validation result for format check
+            analysis["has_expected_format"] = code_validation["is_valid"]
+
+            # Add code-specific quality indicators
+            if code_validation["has_complete_function"]:
+                analysis["quality_indicators"].append("complete_function")
+            if code_validation["has_proper_syntax"]:
+                analysis["quality_indicators"].append("proper_syntax")
+            if code_validation["issues"]:
+                analysis["quality_indicators"].extend([f"code_issue:{i}" for i in code_validation["issues"]])
         elif question_analysis["expected_format"] == "math":
             # For simple calculations, accept plain numbers OR text answers like "2 + 2 equals 4"
             if question_analysis["complexity"] == "simple" and question_analysis["query_type"] == "calculation":
@@ -445,7 +459,113 @@ class Verifier:
             analysis["quality_indicators"].append("substantive")
         
         return analysis
-    
+
+    def _validate_code_quality(self, code_text: str, query: str) -> Dict[str, Any]:
+        """
+        Comprehensive code quality validation.
+
+        Checks for:
+        - Code block presence
+        - Complete function definitions
+        - Return statements (for calculation queries)
+        - Syntax balance (parentheses, brackets, braces)
+        - Placeholder detection (TODO, FIXME, pass, ...)
+
+        Returns:
+            {
+                "is_valid": bool,
+                "issues": List[str],
+                "score": int (0-100),
+                "has_complete_function": bool,
+                "has_proper_syntax": bool,
+            }
+        """
+        issues = []
+        score = 100
+
+        # Check for code block presence
+        has_code_block = "```" in code_text
+        has_inline_code = "def " in code_text.lower() or "function " in code_text.lower()
+
+        if not has_code_block and not has_inline_code:
+            issues.append("no_code_found")
+            return {
+                "is_valid": False,
+                "issues": issues,
+                "score": 0,
+                "has_complete_function": False,
+                "has_proper_syntax": False,
+            }
+
+        # Extract code blocks for analysis
+        code_blocks = re.findall(r'```[\w]*\n?(.*?)```', code_text, re.DOTALL)
+        if not code_blocks:
+            # Try to find inline code patterns
+            code_blocks = [code_text]
+
+        combined_code = "\n".join(code_blocks)
+
+        # Check for complete function definition
+        has_complete_function = bool(
+            re.search(r'def\s+\w+\s*\([^)]*\)\s*:', combined_code) or  # Python
+            re.search(r'function\s+\w+\s*\([^)]*\)\s*\{', combined_code) or  # JS
+            re.search(r'\w+\s+\w+\s*\([^)]*\)\s*\{', combined_code)  # C/Java style
+        )
+
+        if not has_complete_function:
+            issues.append("incomplete_function_definition")
+            score -= 30
+
+        # Check for return statement (most functions should return)
+        has_return = "return " in combined_code
+        if has_complete_function and not has_return:
+            query_lower = query.lower()
+            if "calculate" in query_lower or "compute" in query_lower or "get" in query_lower or "find" in query_lower:
+                issues.append("missing_return_statement")
+                score -= 15
+
+        # Check for obvious syntax issues (basic heuristics)
+        syntax_issues = []
+
+        # Mismatched brackets/parens
+        open_parens = combined_code.count('(')
+        close_parens = combined_code.count(')')
+        if open_parens != close_parens:
+            syntax_issues.append("mismatched_parentheses")
+
+        open_brackets = combined_code.count('[')
+        close_brackets = combined_code.count(']')
+        if open_brackets != close_brackets:
+            syntax_issues.append("mismatched_brackets")
+
+        open_braces = combined_code.count('{')
+        close_braces = combined_code.count('}')
+        if open_braces != close_braces:
+            syntax_issues.append("mismatched_braces")
+
+        if syntax_issues:
+            issues.extend(syntax_issues)
+            score -= 20
+
+        # Check for placeholder/incomplete markers
+        placeholder_patterns = [
+            r"#\s*TODO", r"#\s*FIXME", r"^\s*pass\s*$",
+            r"\.\.\.(?!\.)", r"#\s*your code here", r"#\s*implement this"
+        ]
+        for pattern in placeholder_patterns:
+            if re.search(pattern, combined_code, re.IGNORECASE | re.MULTILINE):
+                issues.append("contains_placeholders")
+                score -= 25
+                break
+
+        return {
+            "is_valid": len(issues) == 0 or score >= 50,
+            "issues": issues,
+            "score": max(0, score),
+            "has_complete_function": has_complete_function,
+            "has_proper_syntax": len(syntax_issues) == 0,
+        }
+
     def _build_adaptive_prompt(
         self,
         packet: str,
@@ -600,63 +720,67 @@ ADAPTIVE DECISION CRITERIA:
                 notes = f"Adaptive fallback: {question_analysis['query_type']} query, but answer is missing."
                 all_issues = issues
         else:
-            # For code queries, be more lenient - check if answer has code-like content
+            # For code queries, use comprehensive code validation
             if question_analysis["query_type"] == "code":
-                # Code queries: approve if answer contains code indicators, even if format is slightly off
+                # Get code validation result from answer_analysis (computed in _analyze_answer)
+                code_validation = answer_analysis.get("code_validation", {})
                 answer_text_for_check = answer_analysis.get("answer_text", answer_analysis.get("answer", ""))
-                answer_lower = answer_text_for_check.lower()
 
-                # Expanded code indicators - recognize various code patterns
-                has_code_indicators = (
-                    "```" in answer_text_for_check or      # Code blocks
-                    "def " in answer_lower or              # Python functions
-                    "function" in answer_lower or          # JS/other functions
-                    "class " in answer_lower or            # Class definitions
-                    "import " in answer_lower or           # Import statements
-                    "return " in answer_lower or           # Return statements
-                    "for " in answer_lower or              # For loops
-                    "while " in answer_lower or            # While loops
-                    "if " in answer_lower or               # Conditionals
-                    "elif " in answer_lower or             # Python elif
-                    "else:" in answer_lower or             # Else blocks
-                    "->" in answer_text_for_check or       # Type hints / arrow functions
-                    "==" in answer_text_for_check or       # Equality comparisons
-                    "!=" in answer_text_for_check or       # Inequality comparisons
-                    "+=" in answer_text_for_check or       # Compound assignment
-                    "[]" in answer_text_for_check or       # Array literals
-                    "{}" in answer_text_for_check or       # Dict/object literals
-                    "lambda" in answer_lower or            # Lambda functions
-                    "async " in answer_lower or            # Async functions
-                    "await " in answer_lower               # Await expressions
-                )
-
-                # Also recognize algorithm/code explanations as valid
-                has_algorithm_content = (
-                    "algorithm" in answer_lower or
-                    "complexity" in answer_lower or
-                    "o(" in answer_lower or                # Big-O notation
-                    "step 1" in answer_lower or
-                    "binary search" in answer_lower or
-                    "sorting" in answer_lower or
-                    "recursion" in answer_lower or
-                    "iteration" in answer_lower
-                )
-
-                if answer_analysis["has_answer"] and (has_code_indicators or has_algorithm_content or reasoning_analysis["supports_answer"]):
-                    status = "approved"
-                    notes = f"Adaptive fallback: code query - answer contains code/algorithm content."
-                    all_issues = [i for i in issues if i not in ["missing_expected_format_code", "requirements_not_met"]]
-                    score = max(60, score)  # Ensure minimum passing score
-                elif len(answer_text_for_check) > 100:
-                    # For longer answers, give benefit of the doubt
-                    status = "approved"
-                    notes = f"Adaptive fallback: code query - substantial answer provided."
-                    all_issues = [i for i in issues if i not in ["missing_expected_format_code"]]
-                    score = max(50, score)
+                if code_validation:
+                    # Use comprehensive code validation result
+                    if code_validation.get("is_valid", False):
+                        status = "approved"
+                        notes = f"Adaptive fallback: code query - code validation passed (score: {code_validation.get('score', 0)})"
+                        all_issues = [i for i in issues if not i.startswith("missing_expected_format")]
+                        score = max(code_validation.get("score", 60), score)
+                    else:
+                        # Code exists but has quality issues - check which issues
+                        code_issues = code_validation.get("issues", [])
+                        if "no_code_found" in code_issues:
+                            # No code at all - reject
+                            status = "rejected"
+                            notes = "Adaptive fallback: code query but no code found in answer"
+                            all_issues = issues + code_issues
+                        elif "incomplete_function_definition" in code_issues and not code_validation.get("has_complete_function"):
+                            # Check if it's just explaining/discussing code (allow)
+                            answer_lower = answer_text_for_check.lower()
+                            has_explanation = any(word in answer_lower for word in ["algorithm", "complexity", "approach", "solution"])
+                            if has_explanation and len(answer_text_for_check) > 100:
+                                status = "approved"
+                                notes = f"Adaptive fallback: code query - contains code explanation/algorithm discussion"
+                                all_issues = [i for i in issues if not i.startswith("missing_expected_format")]
+                                score = max(55, score)
+                            else:
+                                status = "rejected"
+                                notes = f"Adaptive fallback: code provided but function is incomplete"
+                                all_issues = issues + code_issues
+                        else:
+                            # Minor issues - approve with warning
+                            status = "approved"
+                            notes = f"Adaptive fallback: code has minor issues: {', '.join(code_issues)}"
+                            all_issues = [i for i in issues if not i.startswith("missing_expected_format")]
+                            score = max(50, score - 10)
                 else:
-                    status = "rejected"
-                    notes = f"Adaptive fallback: Question analysis shows code query, but answer does not match requirements."
-                    all_issues = issues
+                    # No code_validation available - use fallback pattern matching
+                    answer_lower = answer_text_for_check.lower()
+                    has_code_indicators = (
+                        "```" in answer_text_for_check or "def " in answer_lower or
+                        "function" in answer_lower or "class " in answer_lower
+                    )
+                    if answer_analysis["has_answer"] and has_code_indicators:
+                        status = "approved"
+                        notes = "Adaptive fallback: code query - answer contains code patterns"
+                        all_issues = [i for i in issues if not i.startswith("missing_expected_format")]
+                        score = max(60, score)
+                    elif len(answer_text_for_check) > 100:
+                        status = "approved"
+                        notes = "Adaptive fallback: code query - substantial answer provided"
+                        all_issues = [i for i in issues if not i.startswith("missing_expected_format")]
+                        score = max(50, score)
+                    else:
+                        status = "rejected"
+                        notes = "Adaptive fallback: code query but answer does not contain code"
+                        all_issues = issues
             else:
                 # For other queries, use original fallback for safety checks
                 original_fallback = self._fallback(packet)
@@ -665,8 +789,8 @@ ADAPTIVE DECISION CRITERIA:
                     log_debug({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "H5", "location": "verifier.py:_adaptive_fallback", "message": "After calling _fallback", "data": {"original_status": original_fallback.get("status"), "original_notes": original_fallback.get("notes", "")[:100], "original_issues": original_fallback.get("issues", [])}, "timestamp": int(time.time() * 1000)})
                 except Exception as e:
                     logging.warning(f"Debug logging failed: {e}")
-            # #endregion
-                
+                # #endregion
+
                 # Combine issues (but filter out "too_short" for queries expecting short answers)
                 fallback_issues = original_fallback.get("issues", [])
                 if question_analysis.get("expected_length") == "short" and "too_short" in fallback_issues:
@@ -674,15 +798,15 @@ ADAPTIVE DECISION CRITERIA:
                     # Also remove the "too short" note
                 if "answer too short" in original_fallback.get("notes", "").lower():
                     original_fallback["notes"] = original_fallback.get("notes", "").replace("Fallback: answer too short for meaningful response (< 50 chars)", "").strip()
-            all_issues = list(set(issues + fallback_issues))
-            
-            # Make final decision
-            if score < 50 or "reasoning_does_not_support_answer" in all_issues or not answer_analysis["matches_requirements"]:
-                status = "rejected"
-                notes = f"Adaptive fallback: Question analysis shows {question_analysis['query_type']} query, but answer {'does not match requirements' if not answer_analysis['matches_requirements'] else 'reasoning does not support answer' if not reasoning_analysis['supports_answer'] else 'is incomplete'}."
-            else:
-                status = original_fallback.get("status", "approved")
-                notes = f"Adaptive fallback: Based on question analysis ({question_analysis['query_type']}), reasoning quality ({reasoning_analysis['reasoning_quality']}), and answer completeness ({answer_analysis['completeness']}). " + original_fallback.get("notes", "")
+                all_issues = list(set(issues + fallback_issues))
+
+                # Make final decision for non-code queries
+                if score < 50 or "reasoning_does_not_support_answer" in all_issues or not answer_analysis["matches_requirements"]:
+                    status = "rejected"
+                    notes = f"Adaptive fallback: Question analysis shows {question_analysis['query_type']} query, but answer {'does not match requirements' if not answer_analysis['matches_requirements'] else 'reasoning does not support answer' if not reasoning_analysis['supports_answer'] else 'is incomplete'}."
+                else:
+                    status = original_fallback.get("status", "approved")
+                    notes = f"Adaptive fallback: Based on question analysis ({question_analysis['query_type']}), reasoning quality ({reasoning_analysis['reasoning_quality']}), and answer completeness ({answer_analysis['completeness']}). " + original_fallback.get("notes", "")
         
         return {
             "status": status,

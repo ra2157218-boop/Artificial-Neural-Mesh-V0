@@ -24,7 +24,96 @@ __all__ = [
     "analyze_output",
     "normalize_text",
     "remove_prefixes",
+    "strip_internal_markers",
 ]
+
+
+# ============================================================
+#  INTERNAL MARKERS TO STRIP FROM FINAL OUTPUT
+# ============================================================
+
+INTERNAL_MARKER_PATTERNS = [
+    # WoT/Domain markers
+    r"WOT_REQUEST:\s*\S+",
+    r"\[DOMAIN_HEALTH\][\s\S]*?(?=\[(?:ROUTER_HINTS|GLOBAL_RULES|EFFICIENCY|CODE_ANALYSIS)|$)",
+    r"\[ROUTER_HINTS\][\s\S]*?(?=\[(?:DOMAIN_HEALTH|GLOBAL_RULES|EFFICIENCY|CODE_ANALYSIS)|WOT_REQUEST|$)",
+    r"\[GLOBAL_RULES\][\s\S]*?(?=\[(?:DOMAIN_HEALTH|ROUTER_HINTS|EFFICIENCY|CODE_ANALYSIS)|WOT_REQUEST|$)",
+    r"\[EFFICIENCY_METRICS\][\s\S]*?(?=\[(?:DOMAIN_HEALTH|ROUTER_HINTS|GLOBAL_RULES|CODE_ANALYSIS)|WOT_REQUEST|$)",
+    r"\[CODE_ANALYSIS\][\s\S]*?(?=\[(?:DOMAIN_HEALTH|ROUTER_HINTS|GLOBAL_RULES|EFFICIENCY)|WOT_REQUEST|$)",
+    r"\[MATH_ANALYSIS\][\s\S]*?(?=\[(?:DOMAIN_HEALTH|ROUTER_HINTS|GLOBAL_RULES)|WOT_REQUEST|$)",
+    r"\[PHYSICS_ANALYSIS\][\s\S]*?(?=\[(?:DOMAIN_HEALTH|ROUTER_HINTS|GLOBAL_RULES)|WOT_REQUEST|$)",
+    r"\[POINTGAME_FEEDBACK\][\s\S]*?(?=\[|$)",
+    r"\[META-COGNITION\][\s\S]*?\[/META-COGNITION\]",
+    r"\[META-EFFICIENCY\][\s\S]*?\[/META-EFFICIENCY\]",
+    # Instruction text that leaks
+    r"The WOT request should be something like.*?(?:\n|$)",
+    r"Do:\s*\[query\].*?End with:.*?WOT_REQUEST.*?(?:\n\n|$)",
+    r"Provide domain reasoning.*?WOT_REQUEST.*?(?:\n|$)",
+    r"End with:\s*WOT_REQUEST:.*?(?:\n|$)",
+    r"domain:\s*\w+\s*\nconfidence:.*?(?=\n\n|$)",
+    # Standalone metadata lines
+    r"^domain:\s*\w+\s*$",
+    r"^confidence:\s*\w+\s*$",
+    r"^uncertainty:\s*\w+\s*$",
+    r"^confidence_score:\s*[\d.]+\s*$",
+    r"^version:\s*[\d.]+-\w+\s*$",
+    r"^passed:\s*\w+\s*$",
+    r"^risk_level:\s*\w+\s*$",
+    r"^violations:\s*\w+\s*$",
+    r"^task_type:\s*\w+\s*$",
+    r"^suggested_specialist:\s*\w+\s*$",
+    r"^complexity:\s*\w+\s*$",
+]
+
+
+def strip_internal_markers(text: str, preserve_code_blocks: bool = True) -> str:
+    """
+    Strip ALL internal markers from text, preserving code blocks.
+
+    This is the CENTRAL function for cleaning final output before
+    it reaches the user. It removes:
+    - WOT_REQUEST markers
+    - [DOMAIN_HEALTH], [ROUTER_HINTS], [GLOBAL_RULES] blocks
+    - [EFFICIENCY_METRICS], [CODE_ANALYSIS] blocks
+    - Instruction text that leaks from prompts
+    - Metadata lines (domain:, confidence:, etc.)
+
+    Args:
+        text: Text to clean
+        preserve_code_blocks: If True, protect code blocks from cleaning
+
+    Returns:
+        Cleaned text with internal markers removed
+    """
+    if not text:
+        return ""
+
+    # First, extract and protect code blocks
+    code_blocks = []
+    if preserve_code_blocks:
+        # Find all code blocks and replace with placeholders
+        code_block_pattern = r'(```[\w]*\n[\s\S]*?```)'
+        for i, match in enumerate(re.finditer(code_block_pattern, text)):
+            placeholder = f"__PROTECTED_CODE_BLOCK_{i}__"
+            code_blocks.append((placeholder, match.group(1)))
+
+        # Replace code blocks with placeholders (reverse order to preserve indices)
+        for placeholder, code in reversed(code_blocks):
+            text = text.replace(code, placeholder, 1)
+
+    # Apply all marker patterns
+    for pattern in INTERNAL_MARKER_PATTERNS:
+        text = re.sub(pattern, "", text, flags=re.DOTALL | re.IGNORECASE | re.MULTILINE)
+
+    # Restore code blocks
+    for placeholder, code in code_blocks:
+        text = text.replace(placeholder, code)
+
+    # Clean up excessive whitespace
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r'^\s*\n', '', text)  # Remove leading empty lines
+
+    return text.strip()
 
 
 def clean_thinking_tags(text: str) -> str:

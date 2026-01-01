@@ -2543,15 +2543,47 @@ Classification (ONE WORD):"""
         """
         Deterministic keyword-based domain detection for Research Mode.
         Returns list of detected domains in priority order.
+
+        IMPORTANT: Code detection runs FIRST to catch "write a function to calculate..."
         """
         detected_domains = []
         query_lower = user_query.lower()
 
-        # Math patterns
+        # CODE DETECTION FIRST (highest priority for programming tasks)
+        # This catches "write a function to calculate..." which should be code, not math
+        code_keywords = [
+            "code", "program", "function", "algorithm", "python", "javascript",
+            "java", "c++", "sql", "debug", "syntax", "compile", "execute",
+            "implement", "script", "write a", "create a class", "build a",
+            "binary search", "sorting", "recursion", "data structure",
+            "api", "endpoint", "method", "variable", "loop", "array", "list"
+        ]
+        code_patterns = [
+            r"write\s+(a\s+)?(\w+\s+)?function",
+            r"implement\s+(a\s+)?(\w+\s+)?algorithm",
+            r"create\s+(a\s+)?(\w+\s+)?class",
+            r"code\s+to\s+\w+",
+            r"script\s+that\s+\w+",
+            r"how\s+to\s+\w+\s+in\s+(python|javascript|java|c\+\+)",
+        ]
+        import re
+        is_code_query = (
+            any(kw in query_lower for kw in code_keywords) or
+            any(re.search(p, query_lower) for p in code_patterns)
+        )
+        if is_code_query:
+            detected_domains.append("code")
+
+        # Math patterns (check AFTER code to avoid "write a function to calculate")
         math_keywords = ["calculate", "equation", "integral", "derivative", "matrix", "algebra",
                         "geometry", "trigonometry", "calculus", "math", "formula", "solve"]
+        # Only add math if query has math keywords AND is not primarily a code query
         if any(kw in query_lower for kw in math_keywords):
-            detected_domains.append("math")
+            if "code" not in detected_domains:
+                detected_domains.append("math")
+            else:
+                # Both code and math - code is primary, but include math for reference
+                detected_domains.append("math")
 
         # Physics patterns (expanded for astronomy/astrophysics)
         physics_keywords = ["physics", "force", "energy", "momentum", "velocity", "acceleration",
@@ -2574,12 +2606,6 @@ Classification (ONE WORD):"""
                            "ecosystem", "species", "bacteria", "virus", "anatomy"]
         if any(kw in query_lower for kw in biology_keywords):
             detected_domains.append("biology")
-
-        # Code patterns
-        code_keywords = ["code", "program", "function", "algorithm", "python", "javascript",
-                        "java", "c++", "sql", "debug", "syntax", "compile", "execute"]
-        if any(kw in query_lower for kw in code_keywords):
-            detected_domains.append("code")
 
         # Internet research patterns
         internet_keywords = ["research", "latest", "recent", "current", "news", "web", "online",
