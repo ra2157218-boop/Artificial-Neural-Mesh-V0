@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Python-3.9--3.13-blue?style=for-the-badge&logo=python" alt="Python">
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/Status-Research%20Artifact-orange?style=for-the-badge" alt="Status">
-  <a href="https://zenodo.org/records/18112435"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.18112435.svg" alt="DOI"></a>
+  <a href="https://zenodo.org/records/18112435"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18112435-blue?style=for-the-badge&logo=zenodo" alt="DOI"></a>
 </p>
 
 <p align="center">
