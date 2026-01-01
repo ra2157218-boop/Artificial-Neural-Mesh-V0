@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/Status-Research%20Artifact-orange?style=flat" alt="Status" height="18" style="border-radius: 5%;">
   <a href="https://github.com/ra2157218-boop/Artificial-Neural-Mesh-V0/releases/tag/v0.1.0"><img src="https://img.shields.io/badge/Release-v0.1.0-purple?style=flat&logo=github" alt="Release" height="18" style="border-radius: 5%;"></a>
   <a href="https://zenodo.org/records/18112435"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18112435-blue?style=flat&logo=zenodo" alt="DOI" height="18" style="border-radius: 5%;"></a>
+  <a href="https://huggingface.co/datasets/Abd0r/anm-v0-benchmark"><img src="https://img.shields.io/badge/Dataset-HuggingFace-FFE066?style=flat&logo=huggingface" alt="HuggingFace Dataset" height="18" style="border-radius: 5%;"></a>
   <a href="https://x.com/SyedAbdurR2hman"><img src="https://img.shields.io/badge/Author-@SyedAbdurR2hman-black?style=flat&logo=x" alt="Author/Updates" height="18" style="border-radius: 5%;"></a>
 </p>
 
@@ -132,6 +133,43 @@ ANM uses quantized GGUF models for efficient local inference:
 | Qwen2.5-3B-Instruct | ~2GB | Internet research |
 
 Models are automatically downloaded from HuggingFace on first use.
+
+---
+
+## Benchmark Dataset
+
+> **Official benchmark results and WoT traces are available on HuggingFace. This is the authoritative source for ANM performance metrics.**
+
+<p align="center">
+  <a href="https://huggingface.co/datasets/Abd0r/anm-v0-benchmark">
+    <img src="https://img.shields.io/badge/Dataset-Abd0r/anm--v0--benchmark-FFE066?style=for-the-badge&logo=huggingface" alt="HuggingFace Dataset">
+  </a>
+</p>
+
+The dataset includes:
+- **14 benchmark queries** across 9 domains (Math, Physics, Code, Chemistry, Biology, General, Cross-domain, Research, Memory)
+- **Complete WoT execution traces** showing how queries are routed through specialists
+- **Performance metrics** including latency, verification scores, and domain usage
+- **Structured query files** organized by domain for easy analysis
+
+### Load the Dataset
+
+```python
+from datasets import load_dataset
+
+# Load benchmark results
+dataset = load_dataset("Abd0r/anm-v0-benchmark")
+
+# Or download specific files
+from huggingface_hub import hf_hub_download
+import json
+
+math_queries = json.load(open(hf_hub_download(
+    repo_id="Abd0r/anm-v0-benchmark",
+    filename="queries/math.json",
+    repo_type="dataset"
+)))
+```
 
 ---
 
