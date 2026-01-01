@@ -1,11 +1,16 @@
-# Artificial Neural Mesh (ANM) V0-OpenSource
+<p align="center">
+  <img src="docs/ANM-White-Logo.png" alt="ANM Logo" width="400">
+</p>
+
+<h1 align="center">Artificial Neural Mesh (ANM) V0-OpenSource</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.9--3.13-blue?style=for-the-badge&logo=python" alt="Python">
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
-  <img src="https://img.shields.io/badge/Status-Research%20Artifact-orange?style=for-the-badge" alt="Status">
-  <a href="https://github.com/ra2157218-boop/Artificial-Neural-Mesh-V0/releases/tag/v0.1.0"><img src="https://img.shields.io/badge/Release-v0.1.0-purple?style=for-the-badge&logo=github" alt="Release"></a>
-  <a href="https://zenodo.org/records/18112435"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18112435-blue?style=for-the-badge&logo=zenodo" alt="DOI"></a>
+  <img src="https://img.shields.io/badge/Python-3.9--3.13-blue?style=flat&logo=python" alt="Python" height="18" style="border-radius: 5%;">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat" alt="License" height="18" style="border-radius: 5%;">
+  <img src="https://img.shields.io/badge/Status-Research%20Artifact-orange?style=flat" alt="Status" height="18" style="border-radius: 5%;">
+  <a href="https://github.com/ra2157218-boop/Artificial-Neural-Mesh-V0/releases/tag/v0.1.0"><img src="https://img.shields.io/badge/Release-v0.1.0-purple?style=flat&logo=github" alt="Release" height="18" style="border-radius: 5%;"></a>
+  <a href="https://zenodo.org/records/18112435"><img src="https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18112435-blue?style=flat&logo=zenodo" alt="DOI" height="18" style="border-radius: 5%;"></a>
+  <a href="https://x.com/SyedAbdurR2hman"><img src="https://img.shields.io/badge/Author-@SyedAbdurR2hman-black?style=flat&logo=x" alt="Author/Updates" height="18" style="border-radius: 5%;"></a>
 </p>
 
 <p align="center">
